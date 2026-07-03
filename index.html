@@ -162,7 +162,7 @@ main{width:100%;}
   from{opacity:0;transform:translateY(6px)}
   to{opacity:1;transform:translateY(0)}
 }
-.bank-card{animation:fadeSlideIn .22s ease-out;}
+.bank-card.bank-anim{animation:fadeSlideIn .22s ease-out;}   /* fade jen při změně banky, ne při každém renderu */
 /* Smooth theme cross-fade — active only during a light/dark toggle (scoped so normal interactions stay snappy) */
 html.theming, html.theming body,
 html.theming .panel, html.theming .bank-card, html.theming .bank-section,
@@ -1442,9 +1442,12 @@ function _updateTabsFade(el) {   // audit S9 — naznačit, že řada tabů pře
 }
 
 
+let _lastRenderedBank = -1;
 function renderPanels() {
   const b  = cfg.banks[activeBank];
   const bi = activeBank;
+  const bankChanged = bi !== _lastRenderedBank;   // fade-in přehrát jen při reálné změně banky (jinak render probliká kartu)
+  _lastRenderedBank = bi;
 
   // Tags as pill badges
   const tagBadges = (b.tags||[]).map((tg,ti) => `
@@ -1491,7 +1494,7 @@ function renderPanels() {
 
   document.getElementById('panels-row').innerHTML = `
     <!-- Single bank card containing all sections -->
-    <div class="bank-card">
+    <div class="bank-card${bankChanged ? ' bank-anim' : ''}">
       <div class="bank-section" data-fader="fader1" onmouseenter="hoverFaderLink('fader1',true)" onmouseleave="hoverFaderLink('fader1',false)">
         ${faderSectionContent('fader1', b.fader1, bi)}
       </div>
