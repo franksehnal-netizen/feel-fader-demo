@@ -1740,11 +1740,13 @@ function encoderPanel(ctrl, bi) {
   const rmode    = cfg.banks[bi].roller_mode || 'cc';
   const badge    = rmode === 'cc' ? initName : '';
 
+  const modeTitle = rmode === 'keyswitch' ? 'Keyswitch' : rmode === 'track_nav' ? 'Navigation' : 'Articulation';
   return `
   <div class="panel panel-wide">
-    <div class="panel-head">
-      <div class="panel-dot solid"></div>
-      <span class="panel-name">Roller</span>
+    <div class="fader-side-cap">ROLLER</div>
+    <div class="section-head" data-fader="roller">
+      <div class="panel-dot"></div>
+      <span class="panel-name">${modeTitle}</span>
       ${badge ? `<span class="section-live-val${_ffConnected ? '' : ' live-placeholder'}" id="enc-artic-badge">${badge}</span>` : ''}
     </div>
       <div class="roller-mode-row" style="display:flex;gap:6px;margin:8px 0">
