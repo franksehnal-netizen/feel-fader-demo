@@ -2455,7 +2455,7 @@ function setBanner(type, m){
   } else if (type === 'error') {
     dot.className = 'h-status-dot err';
     txt.classList.remove('hidden');
-    txt.textContent = t('midi.unavailable');
+    txt.textContent = m || t('midi.unavailable');   // denied ≠ unsupported (debugging 2026-07-03)
   }
 }
 
@@ -2721,6 +2721,9 @@ async function loadConfigFromDevice() {
   _serialGranted = true;
   render();
   updateStatus();
+  if (!midiAccess) {   // serial OK, ale MIDI zamítnuté/nedostupné → live fadery nepojedou
+    toast('i', "Loaded over USB serial, but MIDI is blocked — live fader display won't update. Allow MIDI in the browser's site settings and reload.");
+  }
 }
 
 function showStartBtn() {
@@ -2988,7 +2991,7 @@ var TRANSLATIONS = {
     'toast.bank_min': 'At least 1 bank required',
     'toast.fix_errors': 'Fix errors before saving',
     'toast.bank_max': `Maximum ${MAX_BANKS} banks`,
-    'midi.denied': 'MIDI access denied.',
+    'midi.denied': 'MIDI access is blocked for this site — click the icon by the address bar → Site settings → MIDI devices → Allow, then reload.',
     'panel.rename_hint': 'Click to rename',
     'validate.missing_def': 'Bank {b} {k}: missing definition',
     'validate.cc_range': 'Bank "{b}" {k}: CC must be 0–127',
