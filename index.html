@@ -810,6 +810,7 @@ html.dark .lib-badge-sm{background:#555}
   border-bottom:1px solid var(--border);
   margin-bottom:12px;
 }
+.live-placeholder{opacity:.45;}   /* audit S8 — default hodnoty bez zařízení nejsou live stav */
 .section-live-val{
   margin-left:auto;
   font-size:11px;
@@ -934,6 +935,8 @@ button:focus-visible{outline-offset:3px;}
   display:flex;align-items:center;gap:4px;
 }
 .bank-block-tab span{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bank-tab-idx{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.55;}
+.bank-block-tabs.tabs-fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);}
 .bank-block-tab:hover{color:var(--t2);background:var(--bg-input);}
 .bank-block-tab.active{
   color:var(--t1);
@@ -1166,7 +1169,7 @@ html.dark .val-bar{background:var(--t2);}
       <div class="settings-subhead">Getting started</div>
       <p style="margin:0 0 12px">Connect your Feel Fader via USB and click <b>Start</b>. The configurator reads the device config; edits are sent back automatically.</p>
       <div class="settings-subhead">Banks &amp; tags</div>
-      <p style="margin:0 0 12px">Each bank stores fader/roller assignments, a name, an icon and free-text tags. Names, icons and tags are saved both in this browser and on the device. Tag suggestions come from tags you have used before.</p>
+      <p style="margin:0 0 12px">Each bank stores fader/roller assignments, a name, an icon and free-text tags. Names, icons and tags live in this browser and are kept across device syncs; CC/channel assignments live on the device. Tag suggestions come from tags you have used before.</p>
       <div class="settings-subhead">Roller modes</div>
       <p style="margin:0 0 12px"><b>Articulation (CC)</b> — the roller steps through articulations (UACC). <b>Keyswitch</b> — the roller sends note keyswitches. <b>Navigation (keys)</b> — the roller sends a keyboard key per detent (e.g. arrows) to navigate your DAW. Navigation requires Keyboard (HID) enabled.</p>
       <div class="settings-subhead">Keyboard (HID)</div>
@@ -1429,12 +1432,19 @@ function renderBankTabs() {
   const el = document.getElementById('bank-tabs');
   const tabsHtml = cfg.banks.map((b,i) => {
     const iconHtml = b.icon ? `<span style="font-size:13px;line-height:1">${b.icon}</span>` : '';
-    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})">${iconHtml}<span>${b.name || 'Bank '+(i+1)}</span></button>`;
+    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})"><span class="bank-tab-idx">${i+1}</span>${iconHtml}<span>${b.name || 'Bank '+(i+1)}</span></button>`;
   }).join('');
   const addHtml = cfg.banks.length < MAX_BANKS
     ? `<button class="bank-block-tab-add" onclick="addBank()" title="Add bank">+</button>`
     : '';
   el.innerHTML = tabsHtml + addHtml;
+  const act = el.querySelector('.bank-block-tab.active');
+  if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  _updateTabsFade(el);
+  if (!el._fadeHooked) { el._fadeHooked = true; el.addEventListener('scroll', () => _updateTabsFade(el)); }
+}
+function _updateTabsFade(el) {   // audit S9 — naznačit, že řada tabů přetéká
+  el.classList.toggle('tabs-fade-r', el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
 }
 
 
@@ -1520,7 +1530,7 @@ function faderSectionContent(key, ctrl, bi) {
       <div class="panel-dot"></div>
       <input class="panel-name-input" value="${displayLabel}"
         onchange="onFaderLabel(${bi},'${key}',this.value)" />
-      <span class="section-live-val" id="${valId}-val">${lv}</span>
+      <span class="section-live-val${_ffConnected ? '' : ' live-placeholder'}" id="${valId}-val">${lv}</span>
     </div>
     <div class="section-fields">
       <div class="section-field-row">
@@ -1732,18 +1742,17 @@ function encoderPanel(ctrl, bi) {
     <div class="panel-head">
       <div class="panel-dot solid"></div>
       <span class="panel-name">Roller</span>
-      ${badge ? `<span class="section-live-val" id="enc-artic-badge">${badge}</span>` : ''}
+      ${badge ? `<span class="section-live-val${_ffConnected ? '' : ' live-placeholder'}" id="enc-artic-badge">${badge}</span>` : ''}
     </div>
       <div class="roller-mode-row" style="display:flex;gap:6px;margin:8px 0">
         ${['cc','keyswitch','track_nav'].map(m => {
           const labels = {cc:'Articulation (CC)', keyswitch:'Keyswitch', track_nav:'Navigation (keys)'};
-          const disabled = (m === 'track_nav') && !DEVICE_INFO.hid_enabled;
           const active = (cfg.banks[bi].roller_mode || 'cc') === m;
-          return `<button class="roller-mode-btn${active?' active':''}" ${disabled?'disabled title="Requires Keyboard (HID) — enable it in Device & Settings"':''}
+          return `<button class="roller-mode-btn${active?' active':''}"
             onclick="setRollerMode(${bi},'${m}')"
             style="flex:1;padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);
                    background:${active?'var(--red)':'var(--bg-card)'};color:${active?'#fff':'var(--t2)'};
-                   cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?0.45:1};font-size:11px">${labels[m]}</button>`;
+                   cursor:pointer;font-size:11px">${labels[m]}</button>`;
         }).join('')}
       </div>
     ${cfg.banks[bi].roller_mode === 'keyswitch' ? keyswitchBody(bi)
@@ -1758,6 +1767,7 @@ function trackNavBody(bi){
   const ccwLbl = keyComboLabel(b.nav_keys_ccw || [0x51]);
   return `
   <div class="enc-unified-body">
+    ${DEVICE_INFO.hid_enabled ? '' : `<div class="uacc-note" style="margin:8px 0;color:var(--red)">Keyboard (HID) is off — Navigation won't send keys until you enable it in Device &amp; Settings. You can still configure it here.</div>`}
     <div class="uacc-note" style="margin:8px 0">Rotating the roller sends a key (HID). Click a field and press a key (also with Ctrl/Shift/Alt/Cmd).</div>
     <div class="section-field-row">
       <div class="field-block">
@@ -1883,9 +1893,7 @@ function onCtrl(bi, key, field, val) {
   dirty = true; runValidation();
 }
 function setRollerMode(bi, mode) {
-  if (mode === 'track_nav' && !DEVICE_INFO.hid_enabled) {
-    toast('i','Navigation requires Keyboard (HID) — enable it in Device & Settings'); return;
-  }
+  // audit I6 — konfigurace je vždy povolená; runtime gate (HID off) řeší inline notice v trackNavBody
   cfg.banks[bi].roller_mode = mode;
   if (mode === 'keyswitch' && (!cfg.banks[bi].ks_notes || cfg.banks[bi].ks_notes.length === 0)) {
     cfg.banks[bi].ks_notes = ksRange(0, 11);   // default standard C-2..B-2
@@ -2410,17 +2418,17 @@ function onMidiMsg(event){
   if(type===0xB0){
     const cc=data[1],val=data[2];
     if(cc===bank.fader1.cc && ch===bank.fader1.channel){
-      liveValues.f1=val;pF('track-l','thumb-l',val);setTxt('f1-val',val);setBar('f1-bar',val);
+      liveValues.f1=val;pF('track-l','thumb-l',val);setTxt('f1-val',val);liveOn('f1-val');setBar('f1-bar',val);
     }
     if(cc===bank.fader2.cc && ch===bank.fader2.channel){
-      liveValues.f2=val;pF('track-r','thumb-r',val);setTxt('f2-val',val);setBar('f2-bar',val);
+      liveValues.f2=val;pF('track-r','thumb-r',val);setTxt('f2-val',val);liveOn('f2-val');setBar('f2-bar',val);
     }
     if(cc===bank.encoder.cc && ch===bank.encoder.channel){
       encLiveVal = val;
       setTxt('enc-val', val);
       // Find name — UACC standard or custom
       setTxt('enc-artic-name', uaccName(val));
-      if((bank.roller_mode||'cc')==='cc') setTxt('enc-artic-badge', uaccName(val));
+      if((bank.roller_mode||'cc')==='cc'){ setTxt('enc-artic-badge', uaccName(val)); liveOn('enc-artic-badge'); }
       const idx = bank.uacc_values.indexOf(val);
       if(idx !== -1){ encIndex = idx; renderEncChips(); }
     }
@@ -2491,13 +2499,17 @@ function normalizeFwConfig(p) {
   if (p.banks[0] && p.banks[0].fader1) return p;
   return {
     macro_keys: Array.isArray(p.macro_keys) ? p.macro_keys : [],
-    banks: p.banks.map((b, i) => ({
-      name:        `Bank ${i + 1}`,
-      icon:        '',
-      tags:        [],
+    banks: p.banks.map((b, i) => {
+      // audit C1 — device prezentační pole (name/icon/tags/label) nezná;
+      // drž je z dosavadního cfg (localStorage), funkční data ber ze zařízení
+      const prev = (typeof cfg === 'object' && cfg && Array.isArray(cfg.banks) && cfg.banks[i]) || {};
+      return ({
+      name:        prev.name || `Bank ${i + 1}`,
+      icon:        prev.icon || '',
+      tags:        Array.isArray(prev.tags) ? prev.tags : [],
       uacc_values: Array.isArray(b.uacc_values) ? b.uacc_values : [],
-      fader1:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[0] : 11, channel: Array.isArray(b.fader_ch) ? b.fader_ch[0] : (b.channel ?? 0), label: '' },
-      fader2:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[1] : 1,  channel: Array.isArray(b.fader_ch) ? b.fader_ch[1] : (b.channel ?? 0), label: '' },
+      fader1:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[0] : 11, channel: Array.isArray(b.fader_ch) ? b.fader_ch[0] : (b.channel ?? 0), label: (prev.fader1 && prev.fader1.label) || '' },
+      fader2:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[1] : 1,  channel: Array.isArray(b.fader_ch) ? b.fader_ch[1] : (b.channel ?? 0), label: (prev.fader2 && prev.fader2.label) || '' },
       encoder:     { cc: typeof b.encoder === 'number' ? b.encoder : 32, channel: typeof b.encoder_ch === 'number' ? b.encoder_ch : (b.channel ?? 0) },
       roller_mode: (b.roller_mode === 'keyswitch' || b.roller_mode === 'track_nav') ? b.roller_mode : 'cc',
       ks_notes:    Array.isArray(b.ks_notes) ? b.ks_notes : [],
@@ -2506,7 +2518,8 @@ function normalizeFwConfig(p) {
       nav_keys_cw:  Array.isArray(b.nav_keys_cw)  ? b.nav_keys_cw  : [0x52],
       nav_keys_ccw: Array.isArray(b.nav_keys_ccw) ? b.nav_keys_ccw : [0x51],
       nav_invert:   !!b.nav_invert,
-    }))
+      });
+    })
   };
 }
 
@@ -2729,6 +2742,8 @@ async function loadConfigFromDevice() {
 function showStartBtn() {
   const btn = document.getElementById('welcome-start');
   if (btn) { btn.hidden = false; btn.disabled = false; btn.textContent = 'Start'; }
+  const sub = document.querySelector('#welcome-screen .welcome-sub');   // audit V12 — copy odpovídá reálnému kroku
+  if (sub) sub.textContent = 'Press Start and pick your Feel Fader to connect.';
 }
 
 // Welcome "Start" — the one user gesture that grants the serial port, loads the
@@ -2887,6 +2902,7 @@ function updateStatus(){
   }
 }
 function setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function liveOn(id){const e=document.getElementById(id);if(e)e.classList.remove('live-placeholder');}   // audit S8 — reálná data ze zařízení = plná sytost
 function setBar(id,v){} // value bar removed — value shown in section header
 function toast(t,m){
   const icons={s:'✓',e:'✕',i:'i'},c=document.getElementById('toasts'),el=document.createElement('div');
