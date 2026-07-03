@@ -329,9 +329,9 @@ html.dark .lib-tag{background:#e0e0e0;color:#111;}
 
 /* PANEL NAME EDITABLE */
 .fader-side-cap{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
-.section-head.fader-linked{position:relative;}
-/* hover link = jemný zelený glow (Frank 2026-07-03), rgba z --green #34c759 */
-.bank-section.fader-linked{box-shadow:0 0 0 1px rgba(52,199,89,.4),0 0 16px 2px rgba(52,199,89,.28);border-radius:var(--r);transition:box-shadow .2s;}
+/* hover link: na fotce zařízení zelený glow, v kartě tint plochy — glow rect se lámal na hranách karty (Frank 2026-07-03) */
+.bank-section.fader-linked{background:rgba(52,199,89,.06);border-radius:var(--r-sm);}
+html.dark .bank-section.fader-linked{background:rgba(52,199,89,.09);}
 .fader-track.fader-linked{box-shadow:0 0 12px 4px rgba(52,199,89,.45);border-radius:6px;transition:box-shadow .2s;}
 .ctrl-zone{position:absolute;border-radius:10px;}
 .ctrl-zone.zone-hidden{display:none;}
@@ -790,6 +790,7 @@ html.dark .lib-badge-sm{background:#555}
 }
 .bank-section{
   padding:16px;
+  transition:background .2s;
 }
 .bank-section-divider{
   height:1px;
