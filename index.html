@@ -93,8 +93,9 @@ main{width:100%;}
 
 /* STAGE */
 .stage{
-  /* parkování při scrollu řídí JS lerp follower (_stageParkInit) — plynulý ease dojezd (Frank 2026-07-03) */
-  position:relative;
+  /* parkování: sticky (kompozitor, žádný jank) + scroll-driven ease dojezd níže (Frank 2026-07-03) */
+  position:sticky;
+  top:-348px;
   z-index:40;
   display:flex;
   flex-direction:column;
@@ -115,6 +116,12 @@ main{width:100%;}
 
 
 /* SEND / LOAD */
+/* Scroll-driven dobrzdění parkování: stage zaparkuje o 60px výš a posledních ~180px scrollu
+   se ease-out dosune do finální polohy. Vše na kompozitoru — plynulé, bez JS. */
+@supports (animation-timeline: scroll()) {
+  .stage{top:-408px;animation:stageSettle ease-out both;animation-timeline:scroll(root);animation-range:457px 640px;}
+}
+@keyframes stageSettle{from{transform:translateY(0)}to{transform:translateY(60px)}}
 .send-callout{
   display:flex;
   justify-content:center;
@@ -571,7 +578,7 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 
 @media(max-width:600px){
   header{padding:12px 16px}main{width:100%;}
-  .stage{position:static;}   /* na mobilu sticky zařízení nezabírá půl viewportu */
+  .stage{position:static;animation:none;}   /* na mobilu sticky zařízení nezabírá půl viewportu */
   .send-callout{justify-content:center}
   .panel{min-width:100%;max-width:100%}.info-grid{grid-template-columns:1fr}
 }
@@ -3428,36 +3435,11 @@ window.addEventListener('beforeunload', e => {   // audit S5 — druhá síť
   if (dirty) { e.preventDefault(); e.returnValue = ''; }
 });
 
-// ── Plynulé parkování stage při scrollu — lerp follower s ease dojezdem (Frank 2026-07-03) ──
-function _stageParkInit(){
-  const stage = document.querySelector('.stage');
-  if (!stage) return;
-  const PARK = 348;   // o kolik px smí stage vyjet nad viewport, než zaparkuje (dřívější sticky top:-348px)
-  let cur = 0, target = 0, raf = null;
-  function tick(){
-    cur += (target - cur) * 0.4;   // svižný dojezd — jen decentní změkčení, žádné viditelné zpoždění
-    if (Math.abs(target - cur) < 0.5) cur = target;
-    stage.style.transform = cur ? `translateY(${cur.toFixed(1)}px)` : '';
-    raf = (cur !== target) ? requestAnimationFrame(tick) : null;
-  }
-  function onScroll(){
-    if (matchMedia('(max-width:600px)').matches) { target = 0; }
-    else {
-      const naturalTop = stage.getBoundingClientRect().top + window.scrollY - cur;
-      target = Math.max(0, window.scrollY - (naturalTop + PARK));
-    }
-    if (!raf) raf = requestAnimationFrame(tick);
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
-}
-
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('load',()=>{
   initDark();
-  _stageParkInit();
   // Language: English only
   // device-img has inline base64 src — always available immediately
   const deviceImg  = document.getElementById('device-img');
