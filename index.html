@@ -1858,7 +1858,7 @@ async function sendHidRequest(enabled){
     }
   } catch(e) {
     if (e.name !== 'AbortError' && _serialPort) { try { await _serialPort.close(); } catch(_){} _serialPort=null; }
-    toast('e', 'HID command failed: ' + (e.name === 'AbortError' ? 'cancelled' : e.message));
+    toast('e', serialErrMsg(e, 'HID command failed'));
     updateHidToggle();
   }
 }
@@ -2640,6 +2640,14 @@ async function sysexWriteConfig(cfg){
 
 // ─── Serial helpers (load from device) ───────────────────────────────────────
 
+function serialErrMsg(e, what){   // COM port je exkluzivní — „busy" (druhý tab/aplikace) je nejčastější příčina (debugging 2026-07-03)
+  if (e && e.name === 'AbortError') return what + ': cancelled';
+  const busy = e && /open|busy|in use|access/i.test(e.message || '');
+  return busy
+    ? what + ': the serial port is busy — Feel Fader is probably open in another tab or app. Close it and try again.'
+    : what + ': ' + ((e && e.message) || e);
+}
+
 async function _serialEnsureOpen() {
   if (_serialPort && _serialPort.readable) return;
   _serialPort = null;
@@ -2774,7 +2782,9 @@ async function doStart() {
   } catch(e) {
     if (e.name !== 'AbortError' && _serialPort) { try { await _serialPort.close(); } catch(_) {} _serialPort = null; }
     if (btn) { btn.disabled = false; btn.textContent = 'Start'; }
-    if (msg) msg.textContent = "Couldn't read device — try again, or continue without device.";
+    if (msg) msg.textContent = (e && e.name !== 'AbortError' && /open|busy|in use|access/i.test(e.message || ''))
+      ? "The serial port is busy — Feel Fader is probably open in another tab or app. Close it and press Start again."
+      : "Couldn't read device — try again, or continue without device.";
   }
 }
 
@@ -2825,7 +2835,7 @@ async function doSend() {
     if (e.name !== 'AbortError' && _serialPort) {
       try { await _serialPort.close(); } catch(_) {} _serialPort = null;
     }
-    toast('e', 'Send failed: ' + (e.name === 'AbortError' ? 'Cancelled' : e.message));
+    toast('e', serialErrMsg(e, 'Send failed'));
     if (btn) { btn.disabled = false; btn.textContent = t('btn.send'); btn.classList.remove('sent'); }
   }
 }
