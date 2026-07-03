@@ -1109,8 +1109,7 @@ html.dark .val-bar{background:var(--t2);}
         <div class="info-row info-row-action">
           <span class="info-lbl">Keyboard (HID)</span>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-            <input type="checkbox" id="hid-toggle" onchange="onHidToggle(this.checked)">
-            <span class="info-val" id="hid-state">—</span>
+            <input type="checkbox" id="hid-toggle" style="cursor:pointer" onchange="onHidToggle(this.checked)">
           </label>
         </div>
       </div>
@@ -1843,8 +1842,6 @@ let _hidRebootPending=false;
 function updateHidToggle(){
   const el=document.getElementById('hid-toggle');
   if(el){ el.checked = !!DEVICE_INFO.hid_enabled; el.disabled = !(_ffConnected || DEVICE_INFO.hid_available); }
-  const s=document.getElementById('hid-state');
-  if(s) s.textContent = DEVICE_INFO.hid_available ? (DEVICE_INFO.hid_enabled?'ON':'OFF') : '—';
 }
 function onHidToggle(want){
   if(want && !confirm(
