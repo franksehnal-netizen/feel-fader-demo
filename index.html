@@ -93,9 +93,8 @@ main{width:100%;}
 
 /* STAGE */
 .stage{
-  /* sticky: při scrollu zůstane viditelný spodek zařízení (roller) + send tlačítko (Frank 2026-07-03) */
-  position:sticky;
-  top:-348px;
+  /* parkování při scrollu řídí JS lerp follower (_stageParkInit) — plynulý ease dojezd (Frank 2026-07-03) */
+  position:relative;
   z-index:40;
   display:flex;
   flex-direction:column;
@@ -121,6 +120,12 @@ main{width:100%;}
   justify-content:center;
   gap:10px;
   margin-top:32px;
+  align-self:center;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(245,245,247,.5);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   position:relative;
   z-index:10;
 }
@@ -1004,6 +1009,7 @@ button:focus:not(:focus-visible){background:transparent;}
 
 /* ── NEW DARK MODE RULES ── */
 html.dark .bank-block{background:var(--bg-card);}
+html.dark .send-callout{background:rgba(15,15,17,.45);}
 html.dark .bank-card{background:var(--bg-card);}
 html.dark .bank-name-row{background:var(--bg-card);}
 html.dark .bank-block-tab{background:var(--bg-card);color:var(--t2);border-color:var(--border);}
@@ -3422,11 +3428,36 @@ window.addEventListener('beforeunload', e => {   // audit S5 — druhá síť
   if (dirty) { e.preventDefault(); e.returnValue = ''; }
 });
 
+// ── Plynulé parkování stage při scrollu — lerp follower s ease dojezdem (Frank 2026-07-03) ──
+function _stageParkInit(){
+  const stage = document.querySelector('.stage');
+  if (!stage) return;
+  const PARK = 348;   // o kolik px smí stage vyjet nad viewport, než zaparkuje (dřívější sticky top:-348px)
+  let cur = 0, target = 0, raf = null;
+  function tick(){
+    cur += (target - cur) * 0.14;
+    if (Math.abs(target - cur) < 0.5) cur = target;
+    stage.style.transform = cur ? `translateY(${cur.toFixed(1)}px)` : '';
+    raf = (cur !== target) ? requestAnimationFrame(tick) : null;
+  }
+  function onScroll(){
+    if (matchMedia('(max-width:600px)').matches) { target = 0; }
+    else {
+      const naturalTop = stage.getBoundingClientRect().top + window.scrollY - cur;
+      target = Math.max(0, window.scrollY - (naturalTop + PARK));
+    }
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('load',()=>{
   initDark();
+  _stageParkInit();
   // Language: English only
   // device-img has inline base64 src — always available immediately
   const deviceImg  = document.getElementById('device-img');
