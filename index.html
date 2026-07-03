@@ -3435,7 +3435,7 @@ function _stageParkInit(){
   const PARK = 348;   // o kolik px smí stage vyjet nad viewport, než zaparkuje (dřívější sticky top:-348px)
   let cur = 0, target = 0, raf = null;
   function tick(){
-    cur += (target - cur) * 0.3;   // svižný dojezd — jen decentní změkčení, žádné viditelné zpoždění
+    cur += (target - cur) * 0.4;   // svižný dojezd — jen decentní změkčení, žádné viditelné zpoždění
     if (Math.abs(target - cur) < 0.5) cur = target;
     stage.style.transform = cur ? `translateY(${cur.toFixed(1)}px)` : '';
     raf = (cur !== target) ? requestAnimationFrame(tick) : null;
