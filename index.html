@@ -244,6 +244,7 @@ html.theming .advanced-toggle-btn, html.theming .bank-block, html.theming header
 .uacc-tag{display:flex;align-items:center;gap:4px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r-pill);padding:3px 8px;font-family:'Mulish',sans-serif;font-size:11px;color:var(--t1)}
 .uacc-tag button{background:none;border:none;cursor:pointer;color:var(--t3);font-size:11px;padding:0 0 0 2px;line-height:1;transition:color .12s}
 .uacc-tag button:hover{color:var(--red)}
+.uacc-tag.ks-live{border-color:rgba(52,199,89,.5);background:rgba(52,199,89,.1)}
 .uacc-add-row{display:flex;align-items:center;gap:8px;margin-top:8px}
 .uacc-add-row input{width:80px;background:var(--bg-input);border:1px solid var(--border-s);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:12px;color:var(--t1);outline:none;-moz-appearance:textfield;box-shadow:inset 0 1px 3px rgba(0,0,0,.13)}
 .uacc-add-row input::-webkit-inner-spin-button,.uacc-add-row input::-webkit-outer-spin-button{-webkit-appearance:none}
@@ -562,6 +563,14 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 .toast.e{background:rgba(232,80,58,.08);border-color:rgba(232,80,58,.3);color:var(--red)}
 .toast.i{background:var(--bg-card);border-color:var(--border-s);color:var(--t2)}
 .tx{margin-left:auto;background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:13px}
+.sync-banner{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:250;   /* nad sticky stage (200) i toasty */
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);
+  border:1px solid rgba(232,160,58,.5);background:var(--bg-card);
+  width:max-content;max-width:min(92vw,560px);flex-wrap:wrap;justify-content:center;
+  font-size:12px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.sync-banner[hidden]{display:none}   /* class display:flex jinak přebije UA pravidlo pro [hidden] */
+.sync-btn{border:1px solid var(--border-s);background:var(--bg-input);border-radius:6px;
+  padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 
 /* Touch: enlarge tap targets to >=44px without bloating desktop */
 @media(pointer:coarse){
@@ -971,6 +980,8 @@ button:focus-visible{outline-offset:3px;}
   background:var(--t1);
   border-radius:var(--r-pill);
 }
+.bank-tab-live{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 2px rgba(52,199,89,.25);flex-shrink:0}
 .bank-block-tab-add{
   flex:0 0 auto;
   padding:7px 12px;
@@ -1186,7 +1197,7 @@ html.dark .val-bar{background:var(--t2);}
       <div class="settings-subhead">Getting started</div>
       <p style="margin:0 0 12px">Connect your Feel Fader via USB and click <b>Start</b>. The configurator reads the device config; edits are sent back automatically.</p>
       <div class="settings-subhead">Banks &amp; tags</div>
-      <p style="margin:0 0 12px">Each bank stores fader/roller assignments, a name, an icon and free-text tags. Names, icons and tags live in this browser and are kept across device syncs; CC/channel assignments live on the device. Tag suggestions come from tags you have used before.</p>
+      <p style="margin:0 0 12px">Names, icons and tags are saved in this browser and — with firmware 1.1.0+ — also on the device, so they follow it between computers. Tag suggestions come from tags you have used before.</p>
       <div class="settings-subhead">Roller modes</div>
       <p style="margin:0 0 12px"><b>Articulation (CC)</b> — the roller steps through articulations (UACC). <b>Keyswitch</b> — the roller sends note keyswitches. <b>Navigation (keys)</b> — the roller sends a keyboard key per detent (e.g. arrows) to navigate your DAW. Navigation requires Keyboard (HID) enabled.</p>
       <div class="settings-subhead">Keyboard (HID)</div>
@@ -1238,6 +1249,12 @@ html.dark .val-bar{background:var(--t2);}
 
 <input type="file" id="fi" accept=".json" style="display:none" onchange="onImport(event)"/>
 <div id="toasts"></div>
+<div id="sync-banner" class="sync-banner" hidden>
+  <span id="sync-banner-text"></span>
+  <button class="sync-btn" onclick="syncLoadFromDevice()">Load from device</button>
+  <button class="sync-btn" onclick="syncSendMine()">Send mine</button>
+  <button class="tx" onclick="hideSyncBanner()">✕</button>
+</div>
 
 <!-- WELCOME SCREEN -->
 <div id="welcome-screen">
@@ -1414,6 +1431,7 @@ let liveBank   = 0;
 let liveValues = { f1:64, f2:64 };
 let encIndex   = 0;
 let encLiveVal = null; // null = not yet received from device
+let ksLiveNote = null; // poslední NoteOn z ks_channel (S7b)
 let dragging   = null;
 let loaded     = !!_savedCfg;
 let dirty      = false;
@@ -1449,7 +1467,8 @@ function renderBankTabs() {
   const el = document.getElementById('bank-tabs');
   const tabsHtml = cfg.banks.map((b,i) => {
     const iconHtml = b.icon ? `<span style="font-size:13px;line-height:1">${b.icon}</span>` : '';
-    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})"><span class="bank-tab-idx">${i+1}</span>${iconHtml}<span>${b.name || 'Bank '+(i+1)}</span></button>`;
+    const liveDot = (i === liveBank && _ffConnected) ? '<span class="bank-tab-live" title="Active on device"></span>' : '';
+    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})"><span class="bank-tab-idx">${i+1}</span>${liveDot}${iconHtml}<span>${b.name || 'Bank '+(i+1)}</span></button>`;
   }).join('');
   const addHtml = cfg.banks.length < MAX_BANKS
     ? `<button class="bank-block-tab-add" onclick="addBank()" title="Add bank">+</button>`
@@ -1670,7 +1689,7 @@ function ccEncoderBody(ctrl, bi) {
 function keyswitchBody(bi) {
   const b = cfg.banks[bi];
   const tags = (b.ks_notes || []).map((n,i) => `
-    <div class="uacc-tag" title="MIDI ${n}">
+    <div class="uacc-tag${n === ksLiveNote ? ' ks-live' : ''}" data-ksnote="${n}" title="MIDI ${n}">
       <span class="uacc-num">${n}</span>
       <span class="uacc-label">${noteName(n)}</span>
       <button onclick="removeKsNote(${bi},${i})" title="Remove">✕</button>
@@ -1761,7 +1780,9 @@ function encoderPanel(ctrl, bi) {
   const initVal  = bankUacc[0] ?? 0;
   const initName = uaccName(initVal);
   const rmode    = cfg.banks[bi].roller_mode || 'cc';
-  const badge    = rmode === 'cc' ? initName : '';
+  const badge = rmode === 'cc' ? initName
+              : rmode === 'keyswitch' && ksLiveNote !== null ? noteName(ksLiveNote)
+              : '';   // nav: klávesy nemají stav → badge nikdy
 
   const modeTitle = rmode === 'keyswitch' ? 'Keyswitch' : rmode === 'track_nav' ? 'Navigation' : 'Articulation';
   return `
@@ -1872,21 +1893,24 @@ function onHidToggle(want){
 async function sendHidRequest(enabled){
   // HID set goes via Web Serial (reliable path; MIDI SysEx doesn't get through in some setups).
   try {
-    await _serialEnsureOpen();
-    const writer = _serialPort.writable.getWriter();
-    await writer.write(new TextEncoder().encode('CMD_HID:' + JSON.stringify({enabled}) + '\n'));
-    writer.releaseLock();
-    toast('i', enabled?'Enabling HID…':'Disabling HID…');
-    // device does not reboot (HID interface is always in the descriptor) → port stays open.
-    // Small delay so the firmware can process CMD_HID, then re-fetch info.
-    await new Promise(r => setTimeout(r, 200));
+    if (protocolVersion === 2) {
+      await serialRequest('CMD_HID', JSON.stringify({enabled}), 2000);   // reject při ERR/timeout
+      toast('i', enabled ? 'HID enabled' : 'HID disabled');
+    } else {
+      await serialRequest('CMD_HID', JSON.stringify({enabled}), 2000);  // legacy: resolve hned po zápisu
+      toast('i', enabled ? 'Enabling HID…' : 'Disabling HID…');
+      await new Promise(r => setTimeout(r, 200));                        // starý fw potřebuje čas
+    }
     try { await serialReadInfo(); } catch(e) {
       toast('i','HID toggled — refresh state via "Load from device"');
-      updateHidToggle();   // refresh failed → align checkbox+text to last confirmed state
+      updateHidToggle();
     }
   } catch(e) {
-    if (e.name !== 'AbortError' && _serialPort) { try { await _serialPort.close(); } catch(_){} _serialPort=null; }
-    toast('e', serialErrMsg(e, 'HID command failed'));
+    const errReason = /^ERR:(.+)$/.exec(e.message || '');
+    if (!errReason && e.message !== 'timeout' && e.name !== 'AbortError' && _serialPort) { try { await _serialPort.close(); } catch(_){} _serialPort=null; }
+    if (errReason) toast('e', 'HID command failed: ' + errReason[1]);
+    else if (e.message === 'timeout') toast('e', 'No confirmation from device — HID state unknown, re-check below.');
+    else toast('e', serialErrMsg(e, 'HID command failed'));
     updateHidToggle();
   }
 }
@@ -2418,7 +2442,9 @@ function connectInputs(){
       _ffConnected = true;
       // Pre-open output port to avoid onstatechange → connectInputs() loop on first CC send.
       midiAccess.outputs.forEach(out => { if(isFeelFader(out.name)) out.open().catch(()=>{}); });
-      _requestDeviceInfoSysex(); // request CMD_INFO via SysEx (MIDI)
+      // _requestDeviceInfoSysex() ODSTRANĚN (HW test 2026-07-07): SysEx write přes
+      // Chrome/Windows MIDI Services zasekává MIDI endpoint zařízení až do replug
+      // (nativní WinMM SysEx problém nemá). Info se stejně čte serialem (CMD_INFO).
       onDeviceConnected();  // decide: auto-enter (port granted) vs show Start (gesture needed)
     }
   } else {
@@ -2477,6 +2503,18 @@ function onMidiMsg(event){
     }
 
   }
+  // S7b — live keyswitch pozice: NoteOn na ks_channel
+  if(type===0x90 && data[2] > 0 && (bank.roller_mode||'cc')==='keyswitch'){
+    const note = data[1];
+    if(ch === (bank.ks_channel ?? 0) && (bank.ks_notes||[]).includes(note)){
+      ksLiveNote = note;
+      document.querySelectorAll('.uacc-tag.ks-live').forEach(el => el.classList.remove('ks-live'));
+      const cell = document.querySelector(`.uacc-tag[data-ksnote="${note}"]`);
+      if (cell) cell.classList.add('ks-live');
+      const bdg = document.getElementById('enc-artic-badge');
+      if (bdg) { bdg.textContent = noteName(note); liveOn('enc-artic-badge'); }
+    }
+  }
   // Bank switch via Program Change from hardware button
   if(type===0xC0){
     const pc=data[1];
@@ -2510,6 +2548,23 @@ function setBanner(type, m){
   }
 }
 
+function showSyncBanner(kind) {
+  const el = document.getElementById('sync-banner');
+  const tx = document.getElementById('sync-banner-text');
+  if (!el) return;
+  tx.textContent = kind === 'defaults'
+    ? 'Device reset to factory settings (stored config was unreadable).'
+    : 'Device config differs from this browser’s last sync.';
+  el.hidden = false;
+}
+function hideSyncBanner() { const el = document.getElementById('sync-banner'); if (el) el.hidden = true; }
+async function syncLoadFromDevice() {
+  hideSyncBanner();
+  try { await loadConfigFromDevice(); setBanner('connected', t('midi.synced')); toast('s', t('toast.config_loaded')); }
+  catch(e) { toast('e', "Couldn't sync with device — showing local config"); }
+}
+async function syncSendMine() { hideSyncBanner(); doSend(); }
+
 // ═══════════════════════════════════════════════════════════
 // SYSEX
 // ═══════════════════════════════════════════════════════════
@@ -2518,6 +2573,10 @@ let _pendingRead  = null;  // { resolve, reject, timer }
 let _pendingWrite = null;  // { resolve, reject, timer }
 let _chunkBuf     = null;  // { chunks: Array, received: number, total: number }
 let _serialPort   = null;  // Web Serial port (cached for session)
+let protocolVersion = 1;        // 1 = legacy, 2 = rid framing; nastaví bootstrap CMD_INFO
+let _ridCounter = 0;
+let _txnChain = Promise.resolve();   // serializace transakcí — jedna naráz
+const LS_HASH_KEY = 'ff-last-hash';  // poslední hash potvrzený zařízením (ACK/load)
 function _requestDeviceInfoSysex(){
   const out=getOut();
   if(out) try{ out.send([0xF0,MFR,DEV_ID,CMD_INFO,0xF7]); }catch(e){}
@@ -2546,13 +2605,15 @@ function normalizeFwConfig(p) {
       // audit C1 — device prezentační pole (name/icon/tags/label) nezná;
       // drž je z dosavadního cfg (localStorage), funkční data ber ze zařízení
       const prev = (typeof cfg === 'object' && cfg && Array.isArray(cfg.banks) && cfg.banks[i]) || {};
+      const m = (b.m && typeof b.m === 'object') ? b.m : {};
+      const mL = Array.isArray(m.l) ? m.l : [];
       return ({
-      name:        prev.name || `Bank ${i + 1}`,
-      icon:        prev.icon || '',
-      tags:        Array.isArray(prev.tags) ? prev.tags : [],
+      name:        m.n || prev.name || `Bank ${i + 1}`,
+      icon:        m.i || prev.icon || '',
+      tags:        Array.isArray(m.t) ? m.t : (Array.isArray(prev.tags) ? prev.tags : []),
       uacc_values: Array.isArray(b.uacc_values) ? b.uacc_values : [],
-      fader1:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[0] : 11, channel: Array.isArray(b.fader_ch) ? b.fader_ch[0] : (b.channel ?? 0), label: (prev.fader1 && prev.fader1.label) || '' },
-      fader2:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[1] : 1,  channel: Array.isArray(b.fader_ch) ? b.fader_ch[1] : (b.channel ?? 0), label: (prev.fader2 && prev.fader2.label) || '' },
+      fader1:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[0] : 11, channel: Array.isArray(b.fader_ch) ? b.fader_ch[0] : (b.channel ?? 0), label: mL[0] || (prev.fader1 && prev.fader1.label) || '' },
+      fader2:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[1] : 1,  channel: Array.isArray(b.fader_ch) ? b.fader_ch[1] : (b.channel ?? 0), label: mL[1] || (prev.fader2 && prev.fader2.label) || '' },
       encoder:     { cc: typeof b.encoder === 'number' ? b.encoder : 32, channel: typeof b.encoder_ch === 'number' ? b.encoder_ch : (b.channel ?? 0) },
       roller_mode: (b.roller_mode === 'keyswitch' || b.roller_mode === 'track_nav') ? b.roller_mode : 'cc',
       ks_notes:    Array.isArray(b.ks_notes) ? b.ks_notes : [],
@@ -2703,68 +2764,80 @@ async function _serialEnsureOpen() {
   _serialPort = port;
 }
 
-async function serialReadConfig() {
-  await _serialEnsureOpen();
-  const port = _serialPort;
-  const writer = port.writable.getWriter();
-  await writer.write(new TextEncoder().encode('CMD_R\n'));
-  writer.releaseLock();
+// Wave 2 — jediné místo, které čte serial. Jedna transakce naráz; v2 odpovědi
+// se párují podle typu + rid, cizí/stale řádky se zahazují (to je ta ochrana,
+// drain je jen best-effort úklid nulové ceny).
+function serialRequest(cmd, payload, timeoutMs) {
+  const run = async () => {
+    await _serialEnsureOpen();
+    const port = _serialPort;
+    const v2 = protocolVersion === 2;
+    const rid = v2 ? String(++_ridCounter) : null;
+    const line = payload == null
+      ? (v2 ? `${cmd}:${rid}` : cmd)
+      : (v2 ? `${cmd}:${rid}:${payload}` : `${cmd}:${payload}`);
+    const writer = port.writable.getWriter();
+    await writer.write(new TextEncoder().encode(line + '\n'));
+    writer.releaseLock();
+    if (!v2 && (cmd === 'CMD_W' || cmd === 'CMD_HID')) return '';   // legacy: bez odpovědi
+    const expect = { CMD_R: 'CFG', CMD_INFO: 'INFO', CMD_W: 'ACK', CMD_HID: 'ACK' }[cmd];
+    return await _readReply(port, v2, expect, rid, timeoutMs);
+  };
+  const p = _txnChain.then(run, run);
+  _txnChain = p.catch(() => {});
+  return p;
+}
+
+function _readReply(port, v2, expect, rid, timeoutMs) {
   return new Promise((resolve, reject) => {
     const reader = port.readable.getReader();
     const dec = new TextDecoder();
     let buf = '';
-    const timer = setTimeout(() => {
-      reader.releaseLock();
-      reject(new Error('Timeout — no response from device'));
-    }, 5000);
+    const timer = setTimeout(() => { try { reader.releaseLock(); } catch(_){} reject(new Error('timeout')); }, timeoutMs);
+    const done = (fn, v) => { clearTimeout(timer); try { reader.releaseLock(); } catch(_){} fn(v); };
     (async () => {
       try {
         while (true) {
-          const { value, done } = await reader.read();
-          if (done) { clearTimeout(timer); reader.releaseLock(); reject(new Error('Port closed')); return; }
+          const { value, done: eof } = await reader.read();
+          if (eof) return done(reject, new Error('Port closed'));
           buf += dec.decode(value);
-          const nl = buf.indexOf('\n');
-          if (nl !== -1) { clearTimeout(timer); reader.releaseLock(); resolve(buf.slice(0, nl).trim()); return; }
+          let nl;
+          while ((nl = buf.indexOf('\n')) !== -1) {
+            const lineIn = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+            if (!lineIn) continue;
+            if (!v2) return done(resolve, lineIn);          // legacy: první řádek vyhrává
+            const m = lineIn.match(/^(CFG|INFO|ACK|ERR):([^:]*)(?::([\s\S]*))?$/);
+            if (!m) { console.debug('[serial] discard', lineIn.slice(0, 40)); continue; }
+            const [, typ, r, pl] = m;
+            if (r !== rid) { console.debug('[serial] stale rid', typ, r); continue; }
+            if (typ === 'ERR') return done(reject, new Error('ERR:' + (pl || 'unknown')));
+            if (typ === expect) return done(resolve, pl ?? '');
+            console.debug('[serial] unexpected type', typ);
+          }
         }
-      } catch(e) {
-        clearTimeout(timer);
-        try { reader.releaseLock(); } catch(_) {}
-        reject(e);
-      }
+      } catch (e) { done(reject, e); }
     })();
   });
+}
+
+async function serialReadConfig() {
+  return await serialRequest('CMD_R', null, 5000);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function serialReadInfo() {
-  await _serialEnsureOpen();
-  const port = _serialPort;
-  const writer = port.writable.getWriter();
-  await writer.write(new TextEncoder().encode('CMD_INFO\n'));
-  writer.releaseLock();
-  const line = await new Promise((resolve, reject) => {
-    const reader = port.readable.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    const timer = setTimeout(() => { reader.releaseLock(); reject(new Error('Timeout — no info')); }, 5000);
-    (async () => {
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) { clearTimeout(timer); reader.releaseLock(); reject(new Error('Port closed')); return; }
-          buf += dec.decode(value);
-          const nl = buf.indexOf('\n');
-          if (nl !== -1) { clearTimeout(timer); reader.releaseLock(); resolve(buf.slice(0, nl).trim()); return; }
-        }
-      } catch(e) { clearTimeout(timer); try { reader.releaseLock(); } catch(_) {} reject(e); }
-    })();
-  });
+  protocolVersion = 1;   // bootstrap: první dotaz vždy legacy rámcem — starý i nový firmware odpoví
+  // ze schema_version+config_hash se určí protocolVersion pro všechno další.
+  const line = await serialRequest('CMD_INFO', null, 5000);
   const info = JSON.parse(line);
+  protocolVersion = (info.schema_version >= 2 && typeof info.config_hash === 'string') ? 2 : 1;
   if (info.firmware) DEVICE_INFO.firmware = info.firmware;
   if (info.serial)   DEVICE_INFO.serial   = info.serial;
   if (typeof info.hid_available === 'boolean') DEVICE_INFO.hid_available = info.hid_available;
   if (typeof info.hid_enabled   === 'boolean') DEVICE_INFO.hid_enabled   = info.hid_enabled;
+  DEVICE_INFO.config_hash   = info.config_hash   || null;
+  DEVICE_INFO.config_source = info.config_source || null;
   try { localStorage.setItem(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId); } catch(e) {}
   updateDeviceInfo(); updateHidToggle();
   render();   // re-render roller selector — track_nav gating depends on hid_enabled
@@ -2783,6 +2856,9 @@ async function loadConfigFromDevice() {
   cfgSave();
   try { localStorage.setItem(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId); } catch(e) {}
   _serialGranted = true;
+  if (protocolVersion === 2 && DEVICE_INFO.config_hash) {
+    try { localStorage.setItem(LS_HASH_KEY, DEVICE_INFO.config_hash); } catch(_) {}
+  }
   render();
   updateStatus();
   if (!midiAccess) {   // serial OK, ale MIDI zamítnuté/nedostupné → live fadery nepojedou
@@ -2828,8 +2904,19 @@ async function onDeviceConnected() {
   if (granted) {
     // Returning user / in-app reconnect: load silently (skip if unsaved edits), no gesture needed.
     if (!dirty) {
-      try { await loadConfigFromDevice(); setBanner('connected', t('midi.synced')); toast('s', t('toast.config_loaded')); }
-      catch(e) {   // audit C4 — desync musí být vidět; header zůstává v „searching"
+      try {
+        await serialReadInfo();   // bootstrap: protocolVersion + config_hash/source
+        const stored = localStorage.getItem(LS_HASH_KEY);
+        if (protocolVersion === 2 && DEVICE_INFO.config_source === 'defaults') {
+          showSyncBanner('defaults'); setBanner('searching', '');
+        } else if (protocolVersion === 2 && stored && DEVICE_INFO.config_hash
+                   && stored !== DEVICE_INFO.config_hash) {
+          showSyncBanner('differs'); setBanner('searching', '');
+        } else {
+          await loadConfigFromDevice();
+          setBanner('connected', t('midi.synced')); toast('s', t('toast.config_loaded'));
+        }
+      } catch(e) {   // audit C4 — desync musí být vidět; header zůstává v „searching"
         toast('e', "Couldn't sync with device — showing local config");
         setBanner('searching', '');
       }
@@ -2848,10 +2935,12 @@ async function doSend() {
   const btn = document.getElementById('send-btn');
   if (btn) { btn.disabled = true; btn.textContent = '…sending'; btn.classList.remove('sent'); }
   try {
-    await _serialEnsureOpen();
-    const writer = _serialPort.writable.getWriter();
-    await writer.write(new TextEncoder().encode('CMD_W:' + JSON.stringify(cfg) + '\n'));
-    writer.releaseLock();
+    const ackHash = await serialRequest('CMD_W', JSON.stringify(cfg), 5000);
+    // protocolVersion 1: ackHash === '' (legacy fire-and-forget, dnešní chování)
+    if (protocolVersion === 2 && ackHash) {
+      try { localStorage.setItem(LS_HASH_KEY, ackHash.trim()); } catch(_) {}
+      DEVICE_INFO.config_hash = ackHash.trim();
+    }
     cfgSave();
     dirty = false;
     reflectDirty();
@@ -2862,10 +2951,13 @@ async function doSend() {
     }
   } catch(e) {
     console.warn('[Send] failed:', e);
-    if (e.name !== 'AbortError' && _serialPort) {
+    const errReason = /^ERR:(.+)$/.exec(e.message || '');
+    if (!errReason && e.message !== 'timeout' && e.name !== 'AbortError' && _serialPort) {
       try { await _serialPort.close(); } catch(_) {} _serialPort = null;
     }
-    toast('e', serialErrMsg(e, 'Send failed'));
+    if (errReason) toast('e', 'Device rejected config: ' + errReason[1] + ' — kept as unsaved.');
+    else if (e.message === 'timeout') toast('e', 'No confirmation from device — kept as unsaved. Retry send.');
+    else toast('e', serialErrMsg(e, 'Send failed'));
     if (btn) { btn.disabled = false; btn.textContent = t('btn.send'); btn.classList.remove('sent'); }
   }
 }
