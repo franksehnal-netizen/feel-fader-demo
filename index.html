@@ -724,11 +724,16 @@ html.dark #welcome-device-img{
 }
 #welcome-track-l{left:11.89%;top:11.64%;height:68.10%;}
 #welcome-track-r{left:65.84%;top:11.64%;height:68.10%;}
+/* thumb is a full-rail-height frame moved via transform (own compositor layer), so translateY(%)
+   is % of the rail — same range as the old top:% — and iOS doesn't smear the img drop-shadow into
+   ghost trails the way animating top (non-composited paint) on a filtered element does. */
 .welcome-fader-thumb{
-  position:absolute;left:50%;transform:translateX(-50%);
-  width:100%;
+  position:absolute;left:50%;top:0;height:100%;width:100%;
+  transform:translate3d(-50%,0,0);
+  will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden;
 }
 .welcome-fader-thumb img{
+  position:absolute;top:0;left:0;
   display:block;width:100%;
   filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));
 }
@@ -736,16 +741,16 @@ html.dark #welcome-device-img{
 #welcome-thumb-r{animation:welcome-fader-slave  5.5s ease-in-out .5s infinite;}
 
 @keyframes welcome-fader-master{
-  0%  {top:32%}
-  38% {top:58%}
-  70% {top:28%}
-  100%{top:32%}
+  0%  {transform:translate3d(-50%,32%,0)}
+  38% {transform:translate3d(-50%,58%,0)}
+  70% {transform:translate3d(-50%,28%,0)}
+  100%{transform:translate3d(-50%,32%,0)}
 }
 @keyframes welcome-fader-slave{
-  0%  {top:44%}
-  38% {top:56%}
-  70% {top:42%}
-  100%{top:44%}
+  0%  {transform:translate3d(-50%,44%,0)}
+  38% {transform:translate3d(-50%,56%,0)}
+  70% {transform:translate3d(-50%,42%,0)}
+  100%{transform:translate3d(-50%,44%,0)}
 }
 
 /* connect transition */
