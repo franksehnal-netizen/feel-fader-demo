@@ -73,7 +73,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 /* MAIN */
 main{width:100%;}
 
-.center-col{width:100%;max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:24px;padding:0 16px 64px;box-sizing:border-box;overflow:visible;}
+.center-col{width:100%;max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding:0 16px 64px;box-sizing:border-box;overflow:visible;}
 .center-col>*{width:100%;box-sizing:border-box;}
 .blk{width:100%;box-sizing:border-box;}
 .blk-wide{display:flex;align-items:center;width:100%;}
@@ -128,13 +128,23 @@ main{width:100%;}
   gap:10px;
   margin:32px auto 0;
   width:fit-content;
-  padding:4px;
-  border-radius:999px;
-  background:rgba(245,245,247,.5);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
   position:relative;
   z-index:10;
+}
+/* Frosted halo lives on a pseudo-element and fades out with distance from the button
+   (radial mask) instead of a hard-edged offset pill (Frank 2026-07-09). */
+.send-callout::before{
+  content:'';
+  position:absolute;
+  inset:-16px;
+  z-index:-1;
+  pointer-events:none;
+  border-radius:999px;
+  background:rgba(245,245,247,.55);
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
+  -webkit-mask-image:radial-gradient(ellipse closest-side, #000 36%, transparent 100%);
+  mask-image:radial-gradient(ellipse closest-side, #000 36%, transparent 100%);
 }
 .send-arrow{display:none}
 .send-btn{
@@ -142,7 +152,7 @@ main{width:100%;}
   font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;
   padding:9px 24px;cursor:pointer;white-space:nowrap;
   transition:background .14s,transform .1s;
-  box-shadow:0 4px 16px rgba(232,80,58,.4);
+  box-shadow:0 3px 12px rgba(232,80,58,.28);
   letter-spacing:.01em;
 }
 .send-btn:hover{background:var(--red2);box-shadow:0 6px 20px rgba(232,80,58,.45);}
@@ -292,16 +302,16 @@ html.theming, html.theming *, html.theming *::before, html.theming *::after{
 .bank-name-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t2);white-space:nowrap}
 .icon-picker-trigger{
   background:var(--bg-input);border:1px solid var(--border-s);border-radius:var(--r-sm);
-  cursor:pointer;padding:4px 8px;color:var(--t2);
+  cursor:pointer;padding:3px 6px;color:var(--t2);
   display:flex;align-items:center;justify-content:center;
-  min-width:34px;min-height:34px;transition:all .13s;flex-shrink:0;
+  min-width:28px;min-height:28px;transition:all .13s;flex-shrink:0;
 }
 .icon-picker-trigger:hover{border-color:var(--red);color:var(--red)}
 html.dark .icon-picker-trigger{background:var(--bg-input);border-color:var(--border-s);color:var(--t2);}
 html.dark .icon-picker-trigger svg{opacity:.7;}
 .bank-name-input{
   flex:1;min-width:0;background:transparent;border:none;border-bottom:1px solid transparent;
-  font-family:'Mulish',sans-serif;font-size:16px;font-weight:600;color:var(--t1);
+  font-family:'Mulish',sans-serif;font-size:15px;font-weight:600;color:var(--t1);
   outline:none;padding:2px 0;transition:border-color .14s;
   text-align:left;letter-spacing:-.01em;
 }
@@ -376,7 +386,7 @@ html.dark .bank-section.fader-linked{background:rgba(52,199,89,.09);box-shadow:0
 @media(max-width:540px){
   .faders-row{grid-template-columns:1fr;}
   .center-col{padding:16px 12px 48px;gap:12px;}
-  .section-field-row{display:flex;flex-direction:row;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+  .section-field-row{display:flex;flex-direction:row;align-items:flex-start;gap:16px;flex-wrap:wrap;}
   .field-block-value{min-width:0;width:100%;}
   .bank-tab-add,.btn-remove-bank{right:-36px;width:28px;height:28px;font-size:14px;}
   .device-wrap{width:min(196px,55vw);}
@@ -826,12 +836,12 @@ html.dark .lib-badge-sm{background:#555}
 .bank-card{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--r-lg);
-  box-shadow:var(--shadow);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);   /* lighter than before (was --shadow, --r-lg) — decentnější */
   overflow:hidden;
 }
 .bank-section{
-  padding:16px;
+  padding:11px 14px;
   transition:background .2s, box-shadow .2s;
 }
 .bank-section-divider{
@@ -840,13 +850,13 @@ html.dark .lib-badge-sm{background:#555}
   margin:0;
 }
 .bank-section-encoder{
-  padding:16px;
+  padding:11px 14px;
 }
 .section-head{
   display:flex;align-items:center;gap:8px;
-  padding-bottom:12px;
+  padding-bottom:8px;
   border-bottom:1px solid var(--border);
-  margin-bottom:12px;
+  margin-bottom:9px;
 }
 .live-placeholder{opacity:.45;}   /* audit S8 — default hodnoty bez zařízení nejsou live stav */
 .section-live-val{
@@ -870,7 +880,7 @@ html.dark .lib-badge-sm{background:#555}
 }
 .section-fields{}
 .section-field-row{
-  display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;
+  display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;
 }
 
 
@@ -942,8 +952,8 @@ button:focus-visible{outline-offset:3px;}
 .bank-block{
   background:var(--bg-card);
   border:1px solid var(--border);
-  border-radius:var(--r-lg);
-  box-shadow:var(--shadow);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
   overflow:hidden;
   width:100%;
   box-sizing:border-box;
@@ -952,7 +962,7 @@ button:focus-visible{outline-offset:3px;}
   display:flex;
   align-items:center;
   gap:0;
-  padding:8px 8px 0;
+  padding:6px 6px 0;
   background:var(--bg-card);
   overflow-x:auto;
   scrollbar-width:none;
@@ -960,7 +970,7 @@ button:focus-visible{outline-offset:3px;}
 .bank-block-tabs::-webkit-scrollbar{display:none;}
 .bank-block-tab{
   flex:0 0 auto;
-  padding:7px 16px;
+  padding:6px 13px;
   border-radius:var(--r-sm);
   border:none;
   background:transparent;
@@ -1003,8 +1013,8 @@ button:focus-visible{outline-offset:3px;}
   margin:0 0 0;
 }
 .bank-block-name{
-  display:flex;flex-direction:column;gap:6px;
-  padding:12px 16px;
+  display:flex;flex-direction:column;gap:4px;
+  padding:8px 14px;
 }
 .bank-block-name-top{
   display:flex;align-items:center;gap:8px;
@@ -1029,7 +1039,7 @@ button:focus:not(:focus-visible){background:transparent;}
 
 /* ── NEW DARK MODE RULES ── */
 html.dark .bank-block{background:var(--bg-card);}
-html.dark .send-callout{background:rgba(15,15,17,.45);}
+html.dark .send-callout::before{background:rgba(15,15,17,.5);}
 html.dark .bank-card{background:var(--bg-card);}
 html.dark .bank-name-row{background:var(--bg-card);}
 html.dark .bank-block-tab{color:var(--t2);border-color:var(--border);}  /* no background: base is transparent in both themes (shows .bank-block-tabs strip) — an explicit dark-only bg would alpha-fade off-rhythm vs siblings on theme toggle */
