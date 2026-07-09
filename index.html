@@ -700,12 +700,15 @@ html.dark .dark-toggle svg{transform:rotate(180deg)}
   background:var(--red);color:#fff;border:none;border-radius:var(--r-pill);
   font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;letter-spacing:.01em;
   padding:11px 36px;cursor:pointer;box-shadow:0 4px 16px rgba(232,80,58,.4);
-  transition:background .14s,transform .1s;
+  /* Space is reserved from the start (no display:none) and the button fades in via .show,
+     so surfacing it after the timeout never shifts the text below (Frank 2026-07-09). */
+  opacity:0;pointer-events:none;
+  transition:opacity .4s ease,background .14s,transform .1s;
 }
+.welcome-start.show{opacity:1;pointer-events:auto;}
 .welcome-start:hover{background:var(--red2);box-shadow:0 6px 20px rgba(232,80,58,.45);}
 .welcome-start:active{transform:scale(.97);}
 .welcome-start:disabled{opacity:.6;cursor:default;}
-.welcome-start[hidden]{display:none;}
 .welcome-start-msg{font-size:11px;color:var(--red);min-height:14px;margin:8px 0 0;}
 .welcome-skip{
   font-size:12px;color:var(--t3);background:none;border:none;
@@ -1294,7 +1297,7 @@ html.dark .val-bar{background:var(--t2);}
       </div>
       <div class="welcome-title" data-i18n="welcome.connect">Connect Feel Fader</div>
       <div class="welcome-sub" data-i18n="welcome.sub">Plug in via USB-C — configuration loads automatically.</div>
-      <button class="welcome-start" id="welcome-start" hidden onclick="doStart()">Start</button>
+      <button class="welcome-start" id="welcome-start" onclick="doStart()">Start</button>
       <div class="welcome-start-msg" id="welcome-start-msg"></div>
       <button class="welcome-skip" onclick="skipWelcome()">
         <span data-i18n="welcome.skip">Continue without device</span>
@@ -2903,7 +2906,7 @@ async function loadConfigFromDevice() {
 
 function showStartBtn() {
   const btn = document.getElementById('welcome-start');
-  if (btn) { btn.hidden = false; btn.disabled = false; btn.textContent = 'Start'; }
+  if (btn) { btn.classList.add('show'); btn.disabled = false; btn.textContent = 'Start'; }
   const sub = document.querySelector('#welcome-screen .welcome-sub');   // audit V12 — copy odpovídá reálnému kroku
   if (sub) sub.textContent = 'Press Start and pick your Feel Fader to connect.';
 }
