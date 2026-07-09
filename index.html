@@ -109,7 +109,7 @@ main{width:100%;}
 .fader-tracks{position:absolute;top:0;left:0;right:0;bottom:0}
 .fader-track{position:absolute;cursor:grab;user-select:none}
 .fader-track:active{cursor:grabbing}
-.fader-thumb{position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;transition:top .06s linear}
+.fader-thumb{position:absolute;left:50%;top:0;transform:translate3d(-50%,0,0);pointer-events:none;transition:transform .06s linear;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .fader-thumb img{display:block;width:100%;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
 
 
@@ -178,13 +178,18 @@ main{width:100%;}
   from{opacity:0;transform:translateY(6px)}
   to{opacity:1;transform:translateY(0)}
 }
-.bank-card.bank-anim{animation:fadeSlideIn .22s ease-out;}   /* fade jen při změně banky, ne při každém renderu */
-/* Smooth theme cross-fade — active only during a light/dark toggle (scoped so normal interactions stay snappy) */
-html.theming, html.theming body,
-html.theming .panel, html.theming .bank-card, html.theming .bank-section,
-html.theming input, html.theming .stepper, html.theming .step-btn,
-html.theming .advanced-toggle-btn, html.theming .bank-block, html.theming header{
-  transition:background-color .45s ease,color .45s ease,border-color .45s ease !important;
+@keyframes bankFade{
+  from{opacity:0}
+  to{opacity:1}
+}
+.bank-card.bank-anim,
+.bank-block-name.bank-anim{animation:bankFade .14s ease-out;}   /* T3: jednotný opacity fade hlavičky i karty, bez posunu */
+/* Smooth theme cross-fade — during a light/dark toggle force ONE uniform color
+   transition on EVERY element (incl. pseudo-elements) so nothing races ahead on its
+   own transition:all or snaps instantly. Scoped to the 500ms theming window, so normal
+   interactions stay snappy. Overriding per-element transitions is the point of !important. */
+html.theming, html.theming *, html.theming *::before, html.theming *::after{
+  transition:background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease,fill .45s ease,stroke .45s ease !important;
 }
 .bank-name-row{animation:fadeSlideIn .18s ease-out;}
 .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:16px;flex:1;min-width:160px;box-shadow:var(--shadow)}
@@ -951,7 +956,7 @@ button:focus-visible{outline-offset:3px;}
 .bank-block-tab{
   flex:0 0 auto;
   padding:7px 16px;
-  border-radius:var(--r-sm) var(--r-sm) 0 0;
+  border-radius:var(--r-sm);
   border:none;
   background:transparent;
   cursor:pointer;
@@ -970,15 +975,7 @@ button:focus-visible{outline-offset:3px;}
   color:var(--t1);
   font-weight:600;
   background:var(--bg-input);
-  position:relative;
-}
-.bank-block-tab.active::after{
-  content:'';
-  position:absolute;
-  bottom:0;left:8px;right:8px;
-  height:2px;
-  background:var(--t1);
-  border-radius:var(--r-pill);
+  border-radius:var(--r-sm);
 }
 .bank-tab-live{width:6px;height:6px;border-radius:50%;background:var(--green);
   box-shadow:0 0 0 2px rgba(52,199,89,.25);flex-shrink:0}
@@ -1030,9 +1027,8 @@ html.dark .bank-block{background:var(--bg-card);}
 html.dark .send-callout{background:rgba(15,15,17,.45);}
 html.dark .bank-card{background:var(--bg-card);}
 html.dark .bank-name-row{background:var(--bg-card);}
-html.dark .bank-block-tab{background:var(--bg-card);color:var(--t2);border-color:var(--border);}
-html.dark .bank-block-tab.active{background:var(--bg-input);color:var(--t1);}
-html.dark .bank-block-tab.active::after{background:var(--t1);}
+html.dark .bank-block-tab{color:var(--t2);border-color:var(--border);}  /* no background: base is transparent in both themes (shows .bank-block-tabs strip) — an explicit dark-only bg would alpha-fade off-rhythm vs siblings on theme toggle */
+html.dark .bank-block-tab.active{background:#3a3a3c;color:var(--t1);}
 html.dark .section-head{border-bottom-color:var(--border);}
 html.dark .bank-section-divider{background:var(--border);}
 html.dark .stepper{background:var(--bg-input);border-color:var(--border);}
@@ -1048,7 +1044,8 @@ html.dark .welcome-title{color:var(--t1);}
 html.dark .welcome-sub{color:var(--t2);}
 html.dark .bank-block-tabs{background:var(--bg-card);}
 html.dark .bank-block-divider{background:var(--border);}
-html.dark .bank-block-name{background:var(--bg-card);}
+/* .bank-block-name: no background in either theme — it sits on .bank-block (var(--bg-card) both themes),
+   so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
 html.dark .advanced-toggle-btn{color:var(--t1);}
 html.dark .val-bar{background:var(--t2);}
 </style>
@@ -1429,6 +1426,9 @@ let cfg        = _savedCfg || JSON.parse(JSON.stringify(DEFAULT_CFG));
 let activeBank = 0;
 let liveBank   = 0;
 let liveValues = { f1:64, f2:64 };
+let _faderTravel   = 0;                 // T4: cachovaná dráha thumbu (px) = trackH - thumbH
+let _faderDirty    = { l:false, r:false };
+let _faderRafPending = false;
 let encIndex   = 0;
 let encLiveVal = null; // null = not yet received from device
 let ksLiveNote = null; // poslední NoteOn z ks_channel (S7b)
@@ -1511,7 +1511,7 @@ function renderPanels() {
 
   // Name row goes into bank-name-area (inside bank-block)
   document.getElementById('bank-name-area').innerHTML = `
-    <div class="bank-block-name">
+    <div class="bank-block-name${bankChanged ? ' bank-anim' : ''}">
       <div class="bank-block-name-top">
         <button class="icon-picker-trigger" onclick="openIconPicker(${bi}, 'icon')">
           ${b.icon
@@ -2351,6 +2351,7 @@ function layoutFaders(){
   stT('track-l',Math.round(FLX*W-tw/2),tT,tw,tH);
   stT('track-r',Math.round(FRX*W-tw/2),tT,tw,tH);
   stTh('thumb-l',tw,th);stTh('thumb-r',tw,th);
+  _faderTravel = tH - th;   // T4: dráha thumbu se mění jen s layoutem, ne per CC zpráva
   // hover zóny (roller + macro button) — px vůči obrázku; % by braly výšku celého device-wrap vč. send tlačítka
   stT('zone-roller',Math.round(0.37*W),Math.round(0.865*H),Math.round(0.26*W),Math.round(0.115*H));
   // macro = půlkruh přiléhající k pravé hraně těla (~0.955 W), obloukem ven; končí nad spodním zaoblením rohu
@@ -2360,10 +2361,29 @@ function layoutFaders(){
 function stT(id,l,t,w,h){const e=document.getElementById(id);e.style.cssText=`left:${l}px;top:${t}px;width:${w}px;height:${h}px`;}
 function stTh(id,w,h){const e=document.getElementById(id);e.style.width=w+'px';e.style.height=h+'px';}
 function positionThumbs(){pF('track-l','thumb-l',liveValues.f1);pF('track-r','thumb-r',liveValues.f2);}
+function scheduleFaderFrame(){
+  if(_faderRafPending)return;
+  _faderRafPending=true;
+  requestAnimationFrame(flushFaderFrame);
+}
+function flushFaderFrame(){
+  _faderRafPending=false;
+  if(_faderDirty.l){ _faderDirty.l=false; pF('track-l','thumb-l',liveValues.f1); setTxt('f1-val',liveValues.f1); liveOn('f1-val'); }
+  if(_faderDirty.r){ _faderDirty.r=false; pF('track-r','thumb-r',liveValues.f2); setTxt('f2-val',liveValues.f2); liveOn('f2-val'); }
+}
 function pF(tid,thid,v){
-  const tr=document.getElementById(tid),th=document.getElementById(thid);
-  if(!tr||!th)return;
-  th.style.top=Math.round((1-v/127)*(tr.offsetHeight-(th.offsetHeight||24)))+'px';
+  const th=document.getElementById(thid);
+  if(!th)return;
+  // T4: použij cachovanou dráhu; fallback na měření jen když ještě nebyl layout
+  let travel=_faderTravel;
+  if(travel<=0){
+    const tr=document.getElementById(tid);
+    if(!tr)return;
+    travel=tr.offsetHeight-(th.offsetHeight||24);
+  }
+  // move via transform (own compositor layer) not top: iOS WebKit smears the img's
+  // drop-shadow into ghost trails when a filtered element is animated via top (non-composited)
+  th.style.transform='translate3d(-50%,'+Math.round((1-v/127)*travel)+'px,0)';
 }
 function drag(e,k){e.preventDefault();dragging=k;document.addEventListener('mousemove',onDrag);document.addEventListener('mouseup',stopDrag);}
 function dragT(e,k){dragging=k;document.addEventListener('touchmove',onDragT,{passive:false});document.addEventListener('touchend',stopDrag);}
@@ -2487,10 +2507,10 @@ function onMidiMsg(event){
   if(type===0xB0){
     const cc=data[1],val=data[2];
     if(cc===bank.fader1.cc && ch===bank.fader1.channel){
-      liveValues.f1=val;pF('track-l','thumb-l',val);setTxt('f1-val',val);liveOn('f1-val');setBar('f1-bar',val);
+      liveValues.f1=val;_faderDirty.l=true;scheduleFaderFrame();
     }
     if(cc===bank.fader2.cc && ch===bank.fader2.channel){
-      liveValues.f2=val;pF('track-r','thumb-r',val);setTxt('f2-val',val);liveOn('f2-val');setBar('f2-bar',val);
+      liveValues.f2=val;_faderDirty.r=true;scheduleFaderFrame();
     }
     if(cc===bank.encoder.cc && ch===bank.encoder.channel){
       encLiveVal = val;
