@@ -61,7 +61,17 @@ body{background:var(--bg);color:var(--t1);font-family:'Mulish',sans-serif;font-s
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:var(--r-pill)}
 
 /* HEADER */
-header{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;border-bottom:1px solid var(--border);background:rgba(228,228,228,.93);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50}
+header{display:flex;align-items:center;justify-content:space-between;padding:9px 28px;background:rgba(228,228,228,.93);backdrop-filter:blur(8px)}
+.top-sticky{position:sticky;top:0;z-index:50;}
+.bank-bar{
+  background:rgba(228,228,228,.93);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  padding:3px 12px;
+}
+html.dark .bank-bar{background:rgba(15,15,17,.92);}
+.bank-bar .bank-block-tabs{background:transparent;padding:0;}
+html.dark .bank-bar .bank-block-tabs{background:transparent;}
 .h-left{display:flex;align-items:center;gap:12px}
 .h-title{font-size:13px;font-weight:700;letter-spacing:-.01em}
 .h-ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)}
@@ -192,8 +202,7 @@ main{width:100%;}
   from{opacity:0}
   to{opacity:1}
 }
-.bank-card.bank-anim,
-.bank-block-name.bank-anim{animation:bankFade .14s ease-out;}   /* T3: jednotný opacity fade hlavičky i karty, bez posunu */
+.bank-card.bank-anim{animation:bankFade .14s ease-out;}   /* T3: opacity fade celé karty vč. name-row */
 /* Smooth theme cross-fade — during a light/dark toggle force ONE uniform color
    transition on EVERY element (incl. pseudo-elements) so nothing races ahead on its
    own transition:all or snaps instantly. Scoped to the 500ms theming window, so normal
@@ -578,7 +587,7 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 .toast.e{background:rgba(232,80,58,.08);border-color:rgba(232,80,58,.3);color:var(--red)}
 .toast.i{background:var(--bg-card);border-color:var(--border-s);color:var(--t2)}
 .tx{margin-left:auto;background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:13px}
-.sync-banner{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:250;   /* nad sticky stage (200) i toasty */
+.sync-banner{position:fixed;top:98px;left:50%;transform:translateX(-50%);z-index:250;   /* pod header+bank-bar (~88px), nad stage (z-40) i toasty */
   display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);
   border:1px solid rgba(232,160,58,.5);background:var(--bg-card);
   width:max-content;max-width:min(92vw,560px);flex-wrap:wrap;justify-content:center;
@@ -602,7 +611,7 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 
 @media(max-width:600px){
   header{padding:12px 16px}main{width:100%;}
-  .stage{position:static;animation:none;}   /* na mobilu sticky zařízení nezabírá půl viewportu */
+  .stage{position:static;top:auto;animation:none;}   /* na mobilu sticky zařízení nezabírá půl viewportu */
   .send-callout{justify-content:center}
   .panel{min-width:100%;max-width:100%}.info-grid{grid-template-columns:1fr}
 }
@@ -952,15 +961,6 @@ button:focus-visible{outline-offset:3px;}
   50%{transform:translateY(-6px)}
 }
 /* ── BANK BLOCK ── */
-.bank-block{
-  background:var(--bg-card);
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  box-shadow:var(--shadow-sm);
-  overflow:hidden;
-  width:100%;
-  box-sizing:border-box;
-}
 .bank-block-tabs{
   display:flex;
   align-items:center;
@@ -973,7 +973,7 @@ button:focus-visible{outline-offset:3px;}
 .bank-block-tabs::-webkit-scrollbar{display:none;}
 .bank-block-tab{
   flex:0 0 auto;
-  padding:6px 13px;
+  padding:5px 13px;
   border-radius:var(--r-sm);
   border:none;
   background:transparent;
@@ -987,6 +987,12 @@ button:focus-visible{outline-offset:3px;}
 }
 .bank-block-tab span{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bank-tab-idx{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.55;}
+.bank-tab-ic{font-size:13px;line-height:1;}
+.bank-block-tab .bank-tab-name{
+  display:inline-block;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;
+  transition:max-width .2s ease,opacity .2s ease,margin-left .2s ease;margin-left:0;
+}
+.bank-block-tab.active .bank-tab-name{max-width:140px;opacity:1;margin-left:5px;text-overflow:ellipsis;}
 .bank-block-tabs.tabs-fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);}
 .bank-block-tab:hover{color:var(--t2);background:var(--bg-input);}
 .bank-block-tab.active{
@@ -1010,14 +1016,9 @@ button:focus-visible{outline-offset:3px;}
   display:flex;align-items:center;
 }
 .bank-block-tab-add:hover{color:var(--t1);background:var(--bg-input);}
-.bank-block-divider{
-  height:1px;
-  background:var(--border);
-  margin:0 0 0;
-}
 .bank-block-name{
   display:flex;flex-direction:column;gap:4px;
-  padding:8px 14px;
+  padding:11px 14px 4px;
 }
 .bank-block-name-top{
   display:flex;align-items:center;gap:8px;
@@ -1041,7 +1042,6 @@ button:focus:not(:focus-visible){background:transparent;}
 }
 
 /* ── NEW DARK MODE RULES ── */
-html.dark .bank-block{background:var(--bg-card);}
 html.dark .send-callout::before{background:rgba(15,15,17,.5);}
 html.dark .bank-card{background:var(--bg-card);}
 html.dark .bank-name-row{background:var(--bg-card);}
@@ -1061,8 +1061,7 @@ html.dark .welcome-inner{background:var(--bg);}
 html.dark .welcome-title{color:var(--t1);}
 html.dark .welcome-sub{color:var(--t2);}
 html.dark .bank-block-tabs{background:var(--bg-card);}
-html.dark .bank-block-divider{background:var(--border);}
-/* .bank-block-name: no background in either theme — it sits on .bank-block (var(--bg-card) both themes),
+/* .bank-block-name: no background in either theme — it sits on .bank-card (var(--bg-card) both themes),
    so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
 html.dark .advanced-toggle-btn{color:var(--t1);}
 html.dark .val-bar{background:var(--t2);}
@@ -1070,6 +1069,7 @@ html.dark .val-bar{background:var(--t2);}
 </head>
 <body>
 
+<div class="top-sticky">
 <header>
   <div class="h-left">
     <span class="h-title">Feel Fader</span>
@@ -1089,6 +1089,8 @@ html.dark .val-bar{background:var(--t2);}
 
   </div>
 </header>
+<div class="bank-bar" id="bank-bar"><div class="bank-block-tabs" id="bank-tabs"></div></div>
+</div>
 
 <main>
 <div class="center-col">
@@ -1118,13 +1120,6 @@ html.dark .val-bar{background:var(--t2);}
       </div>
       <div class="dirty-hint" id="dirty-hint" hidden><span class="dirty-dot"></span>Unsaved changes — send to device</div>
     </div>
-  </div>
-
-  <!-- BANK BLOCK: tabs + name in one card -->
-  <div class="bank-block">
-    <div class="bank-block-tabs" id="bank-tabs"></div>
-    <div class="bank-block-divider"></div>
-    <div id="bank-name-area"></div>
   </div>
 
   <!-- CONTROL PANELS (bank-card inside) -->
@@ -1484,9 +1479,10 @@ function renderBankTabs() {
   cfgAutosave();
   const el = document.getElementById('bank-tabs');
   const tabsHtml = cfg.banks.map((b,i) => {
-    const iconHtml = b.icon ? `<span style="font-size:13px;line-height:1">${b.icon}</span>` : '';
+    const iconHtml = b.icon ? `<span class="bank-tab-ic">${b.icon}</span>` : '';
     const liveDot = (i === liveBank && _ffConnected) ? '<span class="bank-tab-live" title="Active on device"></span>' : '';
-    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})"><span class="bank-tab-idx">${i+1}</span>${liveDot}${iconHtml}<span>${b.name || 'Bank '+(i+1)}</span></button>`;
+    const nm = (b.name || 'Bank '+(i+1)).replace(/"/g,'&quot;');
+    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})"><span class="bank-tab-idx">${i+1}</span>${liveDot}${iconHtml}<span class="bank-tab-name">${nm}</span></button>`;
   }).join('');
   const addHtml = cfg.banks.length < MAX_BANKS
     ? `<button class="bank-block-tab-add" onclick="addBank()" title="Add bank">+</button>`
@@ -1496,6 +1492,20 @@ function renderBankTabs() {
   if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   _updateTabsFade(el);
   if (!el._fadeHooked) { el._fadeHooked = true; el.addEventListener('scroll', () => _updateTabsFade(el)); }
+}
+function setActiveTab(i){
+  const el=document.getElementById('bank-tabs'); if(!el)return;
+  el.querySelectorAll('.bank-block-tab').forEach((btn,idx)=>{
+    btn.classList.toggle('active', idx===i);
+    const dot=btn.querySelector('.bank-tab-live'); if(dot) dot.remove();
+    if(idx===liveBank && _ffConnected && !btn.querySelector('.bank-tab-live')){
+      const s=document.createElement('span'); s.className='bank-tab-live'; s.title='Active on device';
+      btn.insertBefore(s, btn.children[1]||null);
+    }
+  });
+  const act=el.querySelector('.bank-block-tab.active');
+  if(act&&act.scrollIntoView) act.scrollIntoView({block:'nearest',inline:'nearest'});
+  _updateTabsFade(el);
 }
 function _updateTabsFade(el) {   // audit S9 — naznačit, že řada tabů přetéká
   el.classList.toggle('tabs-fade-r', el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
@@ -1527,9 +1537,9 @@ function renderPanels() {
   }));
   const tagSuggestions = suggestList.map(s=>`<option value="${s}">`).join('');
 
-  // Name row goes into bank-name-area (inside bank-block)
-  document.getElementById('bank-name-area').innerHTML = `
-    <div class="bank-block-name${bankChanged ? ' bank-anim' : ''}">
+  // Name row is now the first child inside .bank-card (fades with the card on bank change)
+  const bankNameRowHtml = `
+    <div class="bank-block-name">
       <div class="bank-block-name-top">
         <button class="icon-picker-trigger" onclick="openIconPicker(${bi}, 'icon')">
           ${b.icon
@@ -1555,6 +1565,7 @@ function renderPanels() {
   document.getElementById('panels-row').innerHTML = `
     <!-- Single bank card containing all sections -->
     <div class="bank-card${bankChanged ? ' bank-anim' : ''}">
+      ${bankNameRowHtml}
       <div class="bank-section" data-fader="fader1" onmouseenter="hoverFaderLink('fader1',true)" onmouseleave="hoverFaderLink('fader1',false)">
         ${faderSectionContent('fader1', b.fader1, bi)}
       </div>
@@ -2040,7 +2051,7 @@ window.addEventListener('pointerdown', e => {   // klik mimo capture tlačítko 
 window.addEventListener('blur', () => cancelKeyCapture());
 
 // BANKS
-function selectBank(i) { activeBank = i; render(); }
+function selectBank(i){ activeBank=i; renderPanels(); renderUacc(); runValidation(); setActiveTab(i); if(jsonOpen)refreshJson(); }
 
 function onBankRename(bi, val) {
   cfg.banks[bi].name = val.trim() || ('Bank ' + (bi+1));
@@ -2379,6 +2390,16 @@ function layoutFaders(){
 function stT(id,l,t,w,h){const e=document.getElementById(id);e.style.cssText=`left:${l}px;top:${t}px;width:${w}px;height:${h}px`;}
 function stTh(id,w,h){const e=document.getElementById(id);e.style.width=w+'px';e.style.height=h+'px';}
 function positionThumbs(){pF('track-l','thumb-l',liveValues.f1);pF('track-r','thumb-r',liveValues.f2);}
+// Sync-on-connect (A1): apply fader positions reported by firmware in CMD_INFO (info.faders=[v1,v2], 0-127).
+// Sets liveValues only (state) — caller positions DOM after render(). Defensive: absent/invalid -> no-op, returns false.
+function applyInfoFaders(info){
+  if(!info || !Array.isArray(info.faders) || info.faders.length < 2) return false;
+  const a = Number(info.faders[0]), b = Number(info.faders[1]);
+  if(!isFinite(a) || !isFinite(b)) return false;
+  const clamp7 = v => Math.max(0, Math.min(127, Math.round(v)));
+  liveValues.f1 = clamp7(a); liveValues.f2 = clamp7(b);
+  return true;
+}
 function scheduleFaderFrame(){
   if(_faderRafPending)return;
   _faderRafPending=true;
@@ -2559,7 +2580,7 @@ function onMidiMsg(event){
     if(pc < cfg.banks.length){
       liveBank   = pc;
       activeBank = pc;   // sync UI to hardware
-      renderBankTabs();
+      setActiveTab(activeBank);
           renderPanels();
       renderUacc();
     }
@@ -2877,8 +2898,15 @@ async function serialReadInfo() {
   DEVICE_INFO.config_hash   = info.config_hash   || null;
   DEVICE_INFO.config_source = info.config_source || null;
   try { localStorage.setItem(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId); } catch(e) {}
+  const _faders = applyInfoFaders(info);   // set liveValues BEFORE render (render recreates value spans)
   updateDeviceInfo(); updateHidToggle();
   render();   // re-render roller selector — track_nav gating depends on hid_enabled
+  if (_faders) {
+    positionThumbs();                       // thumbs live in the (persistent) stage, not rebuilt by render
+    setTxt('f1-val', liveValues.f1); setTxt('f2-val', liveValues.f2);
+    liveOn('f1-val'); liveOn('f2-val');
+    requestAnimationFrame(positionThumbs);  // best-effort follow-up if geometry wasn't ready yet
+  }
   return info;
 }
 
