@@ -25,6 +25,7 @@
   --green-text:#1e8237;
   --green-bg:rgba(52,199,89,.10);
   --green-border:rgba(52,199,89,.32);
+  --amber:#e6a23c;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);
   --shadow-sm:0 1px 2px rgba(0,0,0,.05);
   /* Radius */
@@ -633,7 +634,7 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
   box-shadow:0 0 0 2px rgba(52,199,89,.2);
 }
 .h-status-dot.err{background:var(--red)}
-.h-status-dot.warn{background:#e6a23c}
+.h-status-dot.warn{background:var(--amber)}
 @keyframes status-pulse{
   0%,100%{opacity:.4;transform:scale(1)}
   50%{opacity:1;transform:scale(1.25)}
@@ -2580,13 +2581,12 @@ async function syncSendMine() { hideSyncBanner(); doSend(); }
 // ═══════════════════════════════════════════════════════════
 // SYSEX
 // ═══════════════════════════════════════════════════════════
-const MFR=0x7D,DEV_ID=0x01,CMD_W=0x01,CMD_R=0x02,CMD_INFO=0x03,CMD_CHUNK=0x04,CMD_ACK=0x05,CMD_ERR=0x06,CMD_HID=0x07;
+const MFR=0x7D,DEV_ID=0x01,CMD_W=0x01,CMD_R=0x02,CMD_INFO=0x03,CMD_HID=0x07;
 let _serialPort   = null;  // Web Serial port (cached for session)
 let protocolVersion = 1;        // 1 = legacy, 2 = rid framing; nastaví bootstrap CMD_INFO
 let _ridCounter = 0;
 let _txnChain = Promise.resolve();   // serializace transakcí — jedna naráz
 const LS_HASH_KEY = 'ff-last-hash';  // poslední hash potvrzený zařízením (ACK/load)
-function enc7(bytes){const o=[];for(const b of bytes){o.push((b>>7)&1);o.push(b&0x7F);}return o;}
 function dec7(data){const o=[];for(let i=0;i+1<data.length;i+=2)o.push((data[i]<<7)|data[i+1]);return o;}
 function escHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -3020,12 +3020,6 @@ var TRANSLATIONS = {
     // Header
     'settings': 'Settings',
     // MIDI banner
-    'midi.searching': 'Looking for Feel Fader...',
-    'midi.connected': 'Connected',
-    'midi.loading': 'Loading configuration...',
-    'midi.synced': 'Connected and synchronized',
-    'midi.not_feel_fader': 'MIDI device found, but not Feel Fader. Please connect Feel Fader.',
-    'midi.none': 'No MIDI device found. Connect Feel Fader.',
     'midi.unavailable': 'Web MIDI not available — use Chrome or Edge.',
     // Status
     'status.connected': 'device connected',
@@ -3033,59 +3027,19 @@ var TRANSLATIONS = {
     'status.no_live_view': 'connected · no live view',
     'live.note_unavailable': 'Live positions unavailable — MIDI not connected.',
     // Panels
-    'panel.expression': 'Expression',
-    'panel.dynamics': 'Dynamics',
-    'panel.encoder': 'Articulation Encoder',
-    'panel.midi_channel': 'MIDI CHANNEL',
-    'panel.midi_cc': 'MIDI CC',
-    'panel.value': 'value',
-    'panel.articulations': 'articulations',
     // Bank
-    'bank.name_placeholder': 'e.g. Strings, Brass, Woodwinds...',
-    'bank.remove': 'Remove bank',
-    'bank.add': 'Add bank',
     // UACC
-    'uacc.add': '+ Add',
-    'uacc.templates': 'Templates',
-    'uacc.note': 'Encoder steps through these articulations. Values follow the UACC standard (Spitfire, East West, Orchestral Tools).',
-    'uacc.clear': 'Clear all',
-    'uacc.legato': 'Legato family',
-    'uacc.shorts': 'Shorts family',
-    'uacc.libraries': 'Libraries',
-    'uacc.quickfill': 'Quick fill',
     // Buttons
     'btn.send': 'send to device',
-    'btn.export': '↓ Export preset',
-    'btn.import': '↑ Import preset',
-    'btn.reset': 'Reset',
-    'btn.advanced': 'Advanced',
     // Advanced section
-    'advanced.title': 'Preset Management',
-    'advanced.export_desc': 'Save current configuration as a JSON file.',
-    'advanced.import_desc': 'Load a previously saved preset.',
-    'advanced.reset_desc': 'Reset all settings to factory defaults.',
     // Device info
-    'device.product': 'Product',
-    'device.manufacturer': 'Manufacturer',
-    'device.platform': 'Platform',
-    'device.firmware': 'Firmware',
-    'device.serial': 'Serial',
-    'device.mode': 'Mode',
-    'device.usb': 'USB Class',
-    'device.drive': 'Drive label',
     'device.show': '▼ show',
     'device.hide': '▲ hide',
     // Settings modal
     // Icon picker
     'icon.title': 'Instrument category',
-    'icon.no_icon': 'No icon',
-    'icon.close': 'Close',
     // Welcome
-    'welcome.connect': 'Connect Feel Fader',
-    'welcome.sub': 'Plug in via USB-C — configuration loads automatically.',
-    'welcome.waiting': 'Waiting for device',
     'welcome.found': 'Device found',
-    'welcome.skip': 'Continue without device',
     // Toasts
     'toast.config_loaded': 'Configuration loaded from device',
     'toast.config_sent': 'Configuration sent to device',
@@ -3094,14 +3048,8 @@ var TRANSLATIONS = {
     'toast.reset': 'Reset to factory defaults',
     'toast.copied': 'Copied to clipboard',
     'toast.clear': 'Articulation list cleared',
-    'toast.tag_exists': 'Tag already exists',
     'toast.artic_exists': 'Articulation already exists in this bank',
     // Footer
-    'footer.compat': 'Works with Chrome & Edge · Web MIDI API required',
-    'footer.support': 'support@acoustic-empire.cz',
-    'footer.privacy': 'Privacy Policy',
-    'footer.terms': 'Terms of Use',
-    'footer.made': 'Made in Czech Republic',
     // Additional
     'toast.config_error': 'Error loading configuration',
     'toast.clipboard_fail': 'Clipboard unavailable',
@@ -3110,13 +3058,11 @@ var TRANSLATIONS = {
     'toast.fix_errors': 'Fix errors before saving',
     'toast.bank_max': `Maximum ${MAX_BANKS} banks`,
     'midi.denied': 'MIDI access is blocked for this site — click the icon by the address bar → Site settings → MIDI devices → Allow, then reload.',
-    'panel.rename_hint': 'Click to rename',
     'validate.missing_def': 'Bank {b} {k}: missing definition',
     'validate.cc_range': 'Bank "{b}" {k}: CC must be 0–127',
     'validate.uacc_empty': 'Bank "{b}": articulation list must not be empty',
     'validate.ch_range': 'Bank "{b}" {k}: channel must be 0–15',
     'validate.cc_conflict': 'Bank "{b}": {k1} and {k2} share CC {cc}/ch {ch} — assign unique CCs',
-    'btn.copy': 'Copy to clipboard',
   }
 };
 
