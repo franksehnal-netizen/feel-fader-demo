@@ -64,16 +64,7 @@ body{background:var(--bg);color:var(--t1);font-family:'Mulish',sans-serif;font-s
 /* HEADER */
 header{display:flex;align-items:center;justify-content:space-between;padding:9px 28px;background:rgba(228,228,228,.93);backdrop-filter:blur(8px)}
 .top-sticky{position:sticky;top:0;z-index:50;}
-.bank-bar{
-  background:rgba(228,228,228,.93);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--border);
-  padding:3px 12px;
-}
-html.dark .bank-bar{background:rgba(15,15,17,.92);}
-.bank-bar .bank-block-tabs{background:transparent;padding:0;}
-html.dark .bank-bar .bank-block-tabs{background:transparent;}
-.h-left{display:flex;align-items:center;gap:12px}
+.h-left{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0}
 .h-title{font-size:13px;font-weight:700;letter-spacing:-.01em}
 .h-ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)}
 .h-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);border:1px solid var(--border-s);border-radius:var(--r-sm);padding:2px 8px}
@@ -589,7 +580,7 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 .toast.e{background:rgba(232,80,58,.08);border-color:rgba(232,80,58,.3);color:var(--red)}
 .toast.i{background:var(--bg-card);border-color:var(--border-s);color:var(--t2)}
 .tx{margin-left:auto;background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:13px}
-.sync-banner{position:fixed;top:98px;left:50%;transform:translateX(-50%);z-index:250;   /* pod header+bank-bar (~88px), nad stage (z-40) i toasty */
+.sync-banner{position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:250;   /* pod single-row header (~50px + 8px gap), nad stage (z-40) i toasty */
   display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);
   border:1px solid rgba(232,160,58,.5);background:var(--bg-card);
   width:max-content;max-width:min(92vw,560px);flex-wrap:wrap;justify-content:center;
@@ -620,8 +611,7 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 
 /* ── CONNECTION STATUS IN HEADER ── */
 .h-status{
-  display:flex;align-items:center;gap:4px;
-  margin-left:10px;
+  display:flex;align-items:center;
 }
 .h-status-dot{
   width:7px;height:7px;border-radius:50%;
@@ -642,9 +632,15 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 .h-status-text{
   font-size:11px;color:var(--t3);
   letter-spacing:.02em;
-  transition:opacity .4s;
+  margin-left:4px;
+  transition:opacity .4s,max-width .4s ease,margin-left .4s ease;
 }
+/* Only the LIVE state auto-hides; give its (short) text a concrete max-width so the
+   collapse animates smoothly. Error/disconnected texts stay unconstrained (no clip). */
+.h-status-dot.on ~ .h-status-text{max-width:20ch;overflow:hidden;white-space:nowrap;}
+.h-status-dot.on ~ .h-status-text.hidden{max-width:0;margin-left:0;}
 .h-status-text.hidden{opacity:0;}
+.h-div{width:1px;height:16px;background:var(--border);flex:0 0 auto;}
 
 
 
@@ -973,8 +969,9 @@ button:focus-visible{outline-offset:3px;}
   display:flex;
   align-items:center;
   gap:0;
-  padding:6px 6px 0;
-  background:var(--bg-card);
+  padding:0;
+  background:transparent;
+  min-width:0;
   overflow-x:auto;
   scrollbar-width:none;
 }
@@ -994,7 +991,6 @@ button:focus-visible{outline-offset:3px;}
   display:flex;align-items:center;gap:4px;
 }
 .bank-block-tab span{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bank-tab-idx{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.55;}
 .bank-tab-ic{font-size:13px;line-height:1;}
 .bank-block-tab .bank-tab-name{
   display:inline-block;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;
@@ -1017,7 +1013,7 @@ button:focus-visible{outline-offset:3px;}
 .bank-block-tab-add{
   flex:0 0 auto;
   padding:7px 12px;
-  border-radius:var(--r-sm) var(--r-sm) 0 0;
+  border-radius:var(--r-sm);
   border:none;
   background:transparent;
   cursor:pointer;
@@ -1080,7 +1076,6 @@ html.dark .section-live-val:not(.live-placeholder){color:var(--t2);}
 html.dark .welcome-inner{background:var(--bg);}
 html.dark .welcome-title{color:var(--t1);}
 html.dark .welcome-sub{color:var(--t2);}
-html.dark .bank-block-tabs{background:var(--bg-card);}
 /* .bank-block-name: no background in either theme — it sits on .bank-card (var(--bg-card) both themes),
    so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
 html.dark .advanced-toggle-btn{color:var(--t1);}
@@ -1092,11 +1087,13 @@ html.dark .val-bar{background:var(--t2);}
 <div class="top-sticky">
 <header>
   <div class="h-left">
-    <span class="h-title">Feel Fader</span>
     <div class="h-status" id="h-status">
       <div class="h-status-dot" id="h-status-dot"></div>
       <span class="h-status-text" id="h-status-text"></span>
     </div>
+    <span class="h-title">Feel Fader</span>
+    <span class="h-div" aria-hidden="true"></span>
+    <div class="bank-block-tabs" id="bank-tabs"></div>
   </div>
   <div class="h-right">
 
@@ -1109,7 +1106,6 @@ html.dark .val-bar{background:var(--t2);}
 
   </div>
 </header>
-<div class="bank-bar" id="bank-bar"><div class="bank-block-tabs" id="bank-tabs"></div></div>
 </div>
 
 <main>
@@ -1522,7 +1518,7 @@ function renderBankTabs() {
     const iconHtml = b.icon ? `<span class="bank-tab-ic">${escHtml(b.icon)}</span>` : '';
     const liveDot = (i === liveBank && _ffConnected) ? '<span class="bank-tab-live" title="Active on device"></span>' : '';
     const nm = escHtml(b.name || 'Bank '+(i+1));
-    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})"><span class="bank-tab-idx">${i+1}</span>${liveDot}${iconHtml}<span class="bank-tab-name">${nm}</span></button>`;
+    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i})">${liveDot}${iconHtml}<span class="bank-tab-name">${nm}</span></button>`;
   }).join('');
   const addHtml = cfg.banks.length < MAX_BANKS
     ? `<button class="bank-block-tab-add" onclick="addBank()" title="Add bank">+</button>`
@@ -1540,7 +1536,7 @@ function setActiveTab(i){
     const dot=btn.querySelector('.bank-tab-live'); if(dot) dot.remove();
     if(idx===liveBank && _ffConnected && !btn.querySelector('.bank-tab-live')){
       const s=document.createElement('span'); s.className='bank-tab-live'; s.title='Active on device';
-      btn.insertBefore(s, btn.children[1]||null);
+      btn.insertBefore(s, btn.children[0]||null);
     }
   });
   const act=el.querySelector('.bank-block-tab.active');
