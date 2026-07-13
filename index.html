@@ -23,6 +23,14 @@
   --red2:#ad3122;
   --danger:#b42318;
   --danger-bg:rgba(180,35,24,.08);
+  --glass-card:rgba(255,255,255,.66);
+  --glass-soft:rgba(255,255,255,.48);
+  --glass-dialog:rgba(255,255,255,.78);
+  --glass-border:rgba(255,255,255,.72);
+  --glass-shadow:0 14px 38px rgba(31,31,36,.09),inset 0 1px 0 rgba(255,255,255,.72);
+  --ambient-accent:rgba(201,71,53,.10);
+  --ambient-cool:rgba(84,118,255,.08);
+  --ambient-green:rgba(52,199,89,.055);
   --green:#34c759;
   --green-text:#1e8237;
   --green-bg:rgba(52,199,89,.10);
@@ -47,6 +55,14 @@ html.dark{
   --t3:#8e8e93;
   --danger:#ff7566;
   --danger-bg:rgba(255,117,102,.10);
+  --glass-card:rgba(30,30,35,.68);
+  --glass-soft:rgba(28,28,33,.50);
+  --glass-dialog:rgba(32,32,38,.82);
+  --glass-border:rgba(255,255,255,.12);
+  --glass-shadow:0 18px 46px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08);
+  --ambient-accent:rgba(255,96,75,.12);
+  --ambient-cool:rgba(94,117,255,.12);
+  --ambient-green:rgba(52,199,89,.07);
   --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.2);
   --shadow-sm:0 1px 2px rgba(0,0,0,.2);
   --green-text:#5dd47a;
@@ -62,7 +78,16 @@ html.dark .json-body,html.dark pre.json-pre{background:#111115}
 html.dark select{color-scheme:dark}
 html.dark .uacc-preset-dropdown{background:#1a1a1e}
 html{-webkit-font-smoothing:antialiased}
-body{background:var(--bg);color:var(--t1);font-family:'Mulish',sans-serif;font-size:13px;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{
+  background:
+    radial-gradient(circle at 84% 12%,var(--ambient-accent),transparent 30rem),
+    radial-gradient(circle at 12% 54%,var(--ambient-cool),transparent 34rem),
+    radial-gradient(circle at 76% 88%,var(--ambient-green),transparent 28rem),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--t1);font-family:'Mulish',sans-serif;font-size:13px;min-height:100vh;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
 .content-col{
   display:flex;flex-direction:column;align-items:center;
   width:100%;padding:0 16px 40px;
@@ -219,7 +244,11 @@ html.theming, html.theming *, html.theming *::before, html.theming *::after{
   transition:background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease,fill .45s ease,stroke .45s ease !important;
 }
 .bank-name-row{animation:fadeSlideIn .18s ease-out;}
-.panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:16px;flex:1;min-width:160px;box-shadow:var(--shadow)}
+.panel{
+  background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));
+  border:1px solid var(--glass-border);border-radius:var(--r);padding:16px;flex:1;min-width:160px;
+  box-shadow:var(--glass-shadow);backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
+}
 .panel-wide{width:100%;max-width:none;box-sizing:border-box;}
 .panel-head{display:flex;align-items:center;gap:8px;padding-bottom:10px;margin-bottom:11px;border-bottom:1px solid var(--border)}
 .panel-dot{display:none;}
@@ -544,9 +573,9 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 }
 
 /* MODAL */
-.overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi .16s ease}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.28);backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi .16s ease}
 @keyframes fi{from{opacity:0}to{opacity:1}}
-.modal{background:var(--bg-card);border:1px solid var(--border-s);border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.22);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su .18s ease}
+.modal{background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.28);backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su .18s ease}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 .m-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--border)}
 .m-title{font-size:13px;font-weight:600}
@@ -561,21 +590,21 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 
 /* TOASTS */
 #toasts{position:fixed;bottom:22px;right:22px;z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r-sm);border:1px solid;font-size:12px;font-weight:600;pointer-events:all;max-width:310px;box-shadow:0 4px 14px rgba(0,0,0,.12);animation:su .2s ease}
-.toast.s{background:var(--green-bg);border-color:var(--green-border);color:var(--green-text)}
-.toast.e{background:var(--danger-bg);border-color:color-mix(in srgb,var(--danger) 35%,transparent);color:var(--danger)}
-.toast.i{background:var(--bg-card);border-color:var(--border-s);color:var(--t2)}
+.toast{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r-sm);border:1px solid;font-size:12px;font-weight:600;pointer-events:all;max-width:310px;box-shadow:0 12px 34px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.22);backdrop-filter:blur(20px) saturate(155%);-webkit-backdrop-filter:blur(20px) saturate(155%);animation:su .2s ease}
+.toast.s{background:linear-gradient(var(--green-bg),var(--green-bg)),var(--glass-dialog);border-color:var(--green-border);color:var(--green-text)}
+.toast.e{background:linear-gradient(var(--danger-bg),var(--danger-bg)),var(--glass-dialog);border-color:color-mix(in srgb,var(--danger) 35%,transparent);color:var(--danger)}
+.toast.i{background:var(--glass-dialog);border-color:var(--glass-border);color:var(--t2)}
 .tx{margin-left:auto;background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:13px}
 .toast-action{border:1px solid currentColor;background:transparent;color:inherit;border-radius:var(--r-sm);padding:4px 8px;font:600 12px 'Mulish',sans-serif;cursor:pointer}
 .sync-banner{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:250;   /* pod single-row header (~42px + 8px gap), nad stage (z-40) i toasty */
   display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);
-  border:1px solid rgba(232,160,58,.5);background:var(--bg-card);
+  border:1px solid rgba(232,160,58,.5);background:linear-gradient(rgba(230,162,60,.08),rgba(230,162,60,.08)),var(--glass-dialog);
   width:max-content;max-width:min(92vw,560px);flex-wrap:wrap;justify-content:center;
-  font-size:12px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  font-size:12px;font-weight:600;box-shadow:0 14px 38px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.24);backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%)}
 .sync-banner[hidden]{display:none}   /* class display:flex jinak přebije UA pravidlo pro [hidden] */
 .sync-btn{border:1px solid var(--border-s);background:var(--bg-input);border-radius:6px;
   padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.midi-help-banner{margin-top:12px;padding:10px 14px;border:1px solid color-mix(in srgb,var(--danger) 28%,transparent);border-radius:var(--r-sm);background:var(--danger-bg);color:var(--t2);font-size:12px;line-height:1.45;display:flex;gap:8px;align-items:flex-start}
+.midi-help-banner{margin-top:12px;padding:10px 14px;border:1px solid color-mix(in srgb,var(--danger) 28%,transparent);border-radius:var(--r-sm);background:linear-gradient(var(--danger-bg),var(--danger-bg)),var(--glass-soft);box-shadow:inset 0 1px 0 rgba(255,255,255,.20);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);color:var(--t2);font-size:12px;line-height:1.45;display:flex;gap:8px;align-items:flex-start}
 .midi-help-banner strong{color:var(--danger);white-space:nowrap}
 .midi-help-banner[hidden]{display:none}
 
@@ -793,13 +822,15 @@ html.dark #welcome-device-img{
 
 /* ── INSTRUMENT ICON PICKER ── */
 .icon-picker-overlay{
-  position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.35);
+  position:fixed;inset:0;z-index:150;background:rgba(12,12,16,.30);
+  backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);
   display:flex;align-items:center;justify-content:center;padding:20px;
   animation:fi .16s ease;
 }
 .icon-picker-modal{
-  background:var(--bg-card);border:1px solid var(--border-s);
-  border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.25);
+  background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);
+  border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.26);
+  backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);
   padding:20px;width:360px;max-height:82vh;overflow-y:auto;
 }
 .icon-picker-title{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:16px}
@@ -848,10 +879,11 @@ html.dark .lib-badge-sm{background:#555}
 
 /* ── BANK CARD ── */
 .bank-card{
-  background:var(--bg-card);
-  border:1px solid var(--border);
+  background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));
+  border:1px solid var(--glass-border);
   border-radius:var(--r);
-  box-shadow:var(--shadow-sm);   /* lighter than before (was --shadow, --r-lg) — decentnější */
+  box-shadow:var(--glass-shadow);
+  backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
   overflow:hidden;
 }
 .bank-section{
@@ -1030,8 +1062,8 @@ button:focus:not(:focus-visible){background:transparent;}
 
 /* ── NEW DARK MODE RULES ── */
 html.dark .send-callout::before{background:rgba(15,15,17,.5);}
-html.dark .bank-card{background:var(--bg-card);}
-html.dark .bank-name-row{background:var(--bg-card);}
+html.dark .bank-card{background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));}
+html.dark .bank-name-row{background:var(--glass-soft);}
 html.dark .bank-block-tab{color:var(--t2);border-color:var(--border);}  /* no background: base is transparent in both themes (shows .bank-block-tabs strip) — an explicit dark-only bg would alpha-fade off-rhythm vs siblings on theme toggle */
 html.dark .bank-block-tab.active{background:#3a3a3c;color:var(--t1);}
 html.dark .section-head{border-bottom-color:var(--border);}
@@ -1050,6 +1082,16 @@ html.dark .welcome-sub{color:var(--t2);}
    so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
 html.dark .advanced-toggle-btn{color:var(--t1);}
 html.dark .val-bar{background:var(--t2);}
+
+/* Glass fallback + lighter compositor load on small screens. Inputs and steppers
+   deliberately remain opaque so configuration values retain maximum contrast. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .panel,.bank-card,.modal,.icon-picker-modal,.toast,.sync-banner,.midi-help-banner{background:var(--bg-card)}
+}
+@media(max-width:600px){
+  .panel{backdrop-filter:blur(14px) saturate(135%);-webkit-backdrop-filter:blur(14px) saturate(135%)}
+  .bank-card{backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%)}
+}
 </style>
 </head>
 <body>
