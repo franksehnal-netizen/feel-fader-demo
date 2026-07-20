@@ -4061,11 +4061,13 @@ function onMidiMsg(event){
   if(type===0xC0){
     const pc=data[1];
     if(pc < cfg.banks.length){
-      liveBank   = pc;
-      activeBank = pc;   // sync UI to hardware
+      liveBank = pc;
+      if (!dirty) {
+        activeBank = pc;   // sync UI to hardware — but not while the user has unsaved edits open
+        renderPanels();
+      }
       encLiveVal = null; ksLiveNote = null;
       setActiveTab(activeBank);
-      renderPanels();
       renderUacc();
       renderLiveStrip();
     }
