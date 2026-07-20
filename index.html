@@ -98,7 +98,6 @@ html.dark header{
   box-shadow:inset 0 -1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18);
 }
 html.dark .artic-display{background:#111115}
-html.dark .json-body,html.dark pre.json-pre{background:#111115}
 html.dark select{color-scheme:dark}
 html.dark .uacc-preset-dropdown{background:#1a1a1e}
 .ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:pointer;transition:color .14s ease,filter .14s ease,transform .12s ease,box-shadow .14s ease,background-color .14s ease}
@@ -108,8 +107,6 @@ html.dark .uacc-preset-dropdown{background:#1a1a1e}
 .ui-pill{border-radius:var(--r-pill)}
 .ui-control.ui-glass{border:1px solid var(--control-glass-border);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow)}
 .ui-control.ui-glass:hover{background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow-hover)}
-.ui-primary{color:#fff!important;border:1px solid transparent!important;background:var(--red)!important;box-shadow:0 3px 10px rgba(228,87,69,.22)!important}
-.ui-primary:hover{background:var(--red2)!important}
 .ui-danger{color:#fff!important;border:1px solid var(--red)!important;background:linear-gradient(145deg,color-mix(in srgb,var(--red) 82%,white),var(--red))!important;box-shadow:0 3px 10px color-mix(in srgb,var(--red) 28%,transparent),inset 0 1px 0 rgba(255,255,255,.24)!important}
 .ui-danger:hover{filter:brightness(.96)}
 html{-webkit-font-smoothing:antialiased}
@@ -195,18 +192,7 @@ main{width:100%;}
 .blk{width:100%;box-sizing:border-box;}
 .blk-wide{display:flex;align-items:center;width:100%;}
 
-/* MIDI BANNER */
-.midi-banner{padding:8px 16px;border-radius:var(--r-sm);font-size:12px;display:flex;align-items:center;gap:8px;border:1px solid;transition:all .3s}
-.midi-banner.searching{background:rgba(0,0,0,.04);border-color:var(--border-s);color:var(--t3)}
-.midi-banner.connected{background:var(--green-bg);border-color:var(--green-border);color:var(--green-text)}
-.midi-banner.error{background:var(--danger-bg);border-color:color-mix(in srgb,var(--danger) 30%,transparent);color:var(--danger)}
-.midi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;position:relative}
-.midi-banner.searching .midi-dot{background:var(--t3);animation:blink 1.4s ease-in-out infinite}
-.midi-banner.connected .midi-dot{background:var(--green)}
-.midi-banner.connected .midi-dot::after{content:'';position:absolute;inset:-2px;border-radius:50%;background:var(--green);opacity:0;animation:pg 2.5s ease-in-out infinite}
-.midi-banner.error .midi-dot{background:var(--danger)}
 @keyframes pg{0%,100%{transform:scale(1);opacity:0}50%{transform:scale(2.2);opacity:.18}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* STAGE */
 .stage{
@@ -416,10 +402,6 @@ html.dark .roller-mode-row::before{background:var(--control-glass-bg);border-col
   .roller-mode-row::before,.roller-mode-btn,.roller-mode-content,.ks-key{transition:none;animation:none}
 }
 
-/* LIVE VALUE */
-.val-bar-wrap{flex:1;height:4px;background:rgba(0,0,0,.1);border-radius:var(--r-sm);overflow:hidden}
-.val-bar{height:100%;background:var(--t2);border-radius:var(--r-sm);transition:width .08s linear}
-.val-num{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;min-width:24px;text-align:right}
 
 /* STEPPER */
 .stepper{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border-s);border-radius:var(--r-pill);overflow:visible;background:color-mix(in srgb,var(--bg-input) 86%,transparent);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.18)}
@@ -782,15 +764,6 @@ html.dark #device-settings-chevron{color:#888}
 .vbar-go{padding:4px 9px;border:1px solid color-mix(in srgb,var(--danger) 20%,var(--glass-border));border-radius:var(--r-pill);background:var(--glass-soft);color:var(--t2);font-size:10px;white-space:nowrap}
 .validation-target{box-shadow:0 0 0 2px color-mix(in srgb,var(--danger) 28%,transparent)!important}
 
-/* JSON */
-.json-section{width:100%;max-width:600px}
-.json-toggle{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;font-size:11px;color:var(--t3)}
-.json-toggle:hover{color:var(--t2)}
-.json-body{display:none;background:var(--bg-input);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;padding:12px}
-pre.json-pre{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t2);line-height:1.65;max-height:260px;overflow:auto}
-.json-copy-btn{margin-top:7px;font-size:11px;color:var(--t3);background:none;border:none;cursor:pointer;font-family:'Mulish',sans-serif;padding:0;transition:color .13s}
-.json-copy-btn:hover{color:var(--t1)}
-
 /* STATUS DOT (used in footer) */
 .status-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2)}
 .s-dot{width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0;position:relative}
@@ -834,17 +807,6 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 .modal{background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.28);backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su .18s ease}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
-.m-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--border)}
-.m-title{font-size:13px;font-weight:600}
-.m-close{width:27px;height:27px;border-radius:var(--r-sm);background:none;border:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--t2);display:flex;align-items:center;justify-content:center}
-.m-close:hover{background:rgba(0,0,0,.07)}
-.m-body{padding:16px 20px;display:flex;flex-direction:column;gap:16px}
-.m-section{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t2)}
-.m-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.m-lbl{font-size:12px;color:var(--t2)}
-.m-note{font-size:12px;color:var(--t2);line-height:1.5}
-.m-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
-
 /* TOASTS */
 #toasts{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;width:min(360px,calc(100vw - 32px));flex-direction:column;align-items:flex-end;gap:7px;pointer-events:none}
 .toast{
@@ -881,7 +843,6 @@ html.dark .footer-logo{filter:grayscale(1) invert(1) !important}
 @media(pointer:coarse){
   .step-btn{width:44px;height:44px}
   .stepper input{width:40px}
-  .m-close{width:44px;height:44px}
   .btn-remove-bank,.bank-action-btn{width:44px;height:44px}
   .icon-picker-trigger{min-width:44px;min-height:44px}
   .dark-toggle{width:44px;height:44px}
@@ -1549,7 +1510,6 @@ html.dark .welcome-inner{background:var(--bg);}
 /* .bank-block-name: no background in either theme — it sits on .bank-card (var(--bg-card) both themes),
    so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
 html.dark .advanced-toggle-btn{color:var(--t1);}
-html.dark .val-bar{background:var(--t2);}
 
 /* Glass fallback + lighter compositor load on small screens. Inputs and steppers
    deliberately remain opaque so configuration values retain maximum contrast. */
@@ -1737,10 +1697,8 @@ html.dark .val-bar{background:var(--t2);}
           <button class="btn btn-ghost quick-preset-btn backup-reset-btn ui-control ui-pill ui-danger" onclick="doReset()" aria-label="Reset full device configuration">Reset</button>
         </div>
       </div>
-      <div id="json-body" style="display:none" hidden><pre id="json-pre"></pre><span id="json-lbl"></span></div>
     </div>
   </div>
-  <div id="json-sec" style="display:none"></div>
 
   <!-- HELP / GUIDE -->
   <div class="panel panel-wide" style="padding:0;overflow:hidden;width:100%">
@@ -2174,7 +2132,6 @@ let loaded     = !!_savedCfg;
 let dirty      = false;
 let _serialGranted = false;  // true once user has granted a serial port (enables silent auto-load)
 let _welcomeStartTimer = null;  // fallback timer to reveal Start if device isn't auto-detected
-let jsonOpen   = false;
 let midiAccess = null;
 let _midiInputNames = [];
 let _lastMidiDiagnostic = null;
@@ -2385,7 +2342,6 @@ function render() {
   // those signals change (connectInputs(), handleSysEx(), etc.).
   updateDeviceInfo();
   renderLiveStrip();
-  if (jsonOpen) refreshJson();
 }
 
 function renderBankTabs() {
@@ -2526,10 +2482,6 @@ function renderPanels() {
     requestAnimationFrame(() => ksRevealRange(bi, false));
   }
   updateStickySectionHeads();
-}
-
-function faderPanel(key, ctrl, bi) {
-  return faderSectionContent(key, ctrl, bi);
 }
 
 function faderSectionContent(key, ctrl, bi) {
@@ -2988,7 +2940,6 @@ function stepCtrl(bi, key, field, delta) {
   if (inp) inp.value = isCh ? c[field] + 1 : c[field];
   runValidation();
   refreshSectionSemantics(bi, key === 'encoder' ? 'roller' : key);
-  if (jsonOpen) refreshJson();
 }
 function onCtrl(bi, key, field, val) {
   if (isNaN(val)) return;
@@ -3004,7 +2955,6 @@ function onFaderName(bi, key, value) {
   reflectDirty();
   cfgAutosave();
   refreshSectionSemantics(bi,key);
-  if (jsonOpen) refreshJson();
 }
 function rollerModeKey(e, bi, index) {
   const modes = ['cc','keyswitch','track_nav'];
@@ -3061,8 +3011,7 @@ function setRollerMode(bi, mode) {
     content.classList.add('is-entering');
     content.addEventListener('animationend', () => content.classList.remove('is-entering'), {once:true});
     runValidation();
-    if (jsonOpen) refreshJson();
-  }, 160));
+    }, 160));
 }
 
 // ── Track-nav key capture ─────────────────────────────────────────────────────
@@ -3119,7 +3068,7 @@ window.addEventListener('pointerdown', e => {   // klik mimo capture tlačítko 
 window.addEventListener('blur', () => cancelKeyCapture());
 
 // BANKS
-function selectBank(i){ activeBank=i; renderPanels(); renderUacc(); runValidation(); setActiveTab(i); if(jsonOpen)refreshJson(); }
+function selectBank(i){ activeBank=i; renderPanels(); renderUacc(); runValidation(); setActiveTab(i); }
 
 function onBankRename(bi, val) {
   cfg.banks[bi].name = val.trim() || ('Bank ' + (bi+1));
@@ -3394,12 +3343,6 @@ function removeUacc(i) {
   if (encIndex >= bank.uacc_values.length) encIndex = Math.max(0, bank.uacc_values.length - 1);
   dirty = true; render();
 }
-function addUaccFromPreset(values) {
-  // Add values to current bank
-  const bank = cfg.banks[activeBank];
-  values.forEach(v => { if (!bank.uacc_values.includes(v)) bank.uacc_values.push(v); });
-  dirty = true; render();
-}
 
 // ── KEYSWITCH (roller_mode === 'keyswitch') ───────────────────────────────────
 function stepKs(bi, field, delta) {
@@ -3425,12 +3368,10 @@ function addKsNote(bi) {
   cfg.banks[bi].ks_notes = [...cur,v];
   inp.value = '';
   dirty = true; ksLiveRefresh(bi); runValidation();
-  if (jsonOpen) refreshJson();
 }
 function removeKsNote(bi, i) {
   cfg.banks[bi].ks_notes.splice(i, 1);
   dirty = true; ksLiveRefresh(bi); runValidation();
-  if (jsonOpen) refreshJson();
 }
 // Keyswitch presets (extensible — real library maps to be added later).
 // Contiguous range: {name, lo, hi}. Non-contiguous (later): {name, notes:[...]}.
@@ -3467,7 +3408,6 @@ function setKsBound(bi, which, val) {
   dirty = true;
   ksLiveRefresh(bi, true, true);
   runValidation();
-  if (jsonOpen) refreshJson();
 }
 function moveKsNote(bi, index, delta) {
   const notes = cfg.banks[bi].ks_notes || [];
@@ -3475,7 +3415,6 @@ function moveKsNote(bi, index, delta) {
   if (next < 0 || next >= notes.length) return;
   [notes[index],notes[next]] = [notes[next],notes[index]];
   dirty = true; ksLiveRefresh(bi); runValidation();
-  if (jsonOpen) refreshJson();
 }
 
 let _sequenceDrag = null;
@@ -3584,7 +3523,6 @@ function ksKeyboardSelect(bi, note) {
   dirty = true;
   ksLiveRefresh(bi);
   runValidation();
-  if (jsonOpen) refreshJson();
 }
 
 let ksKeyboardDrag = null; // { bi, anchor, last, pointerId }
@@ -3621,7 +3559,6 @@ function ksKeyboardEnd(e) {
   document.removeEventListener('pointercancel', ksKeyboardEnd);
   ksLiveRefresh(bi);
   runValidation();
-  if (jsonOpen) refreshJson();
 }
 
 function ksKeyboardKey(e, bi, note) {
@@ -3646,13 +3583,11 @@ function applyKsPreset(bi, idx) {
   if (!p) return;
   cfg.banks[bi].ks_notes = p.notes ? p.notes.slice() : ksRange(p.lo, p.hi);
   dirty = true; ksLiveRefresh(bi, true, true); runValidation();
-  if (jsonOpen) refreshJson();
 }
 
 function resetKs(bi) {
   cfg.banks[bi].ks_notes = ksRange(0, 11);   // default standard C-2..B-2
   dirty = true; ksLiveRefresh(bi, true, true); runValidation();
-  if (jsonOpen) refreshJson();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3671,19 +3606,21 @@ function validate() {
     if (mode === 'cc') {
       if (!b.uacc_values || b.uacc_values.length === 0)
         errs.push({ field:`b${i}.uacc`, target:'uacc-input', msg:t('validate.uacc_empty').replace('{b}', b.name||i+1) });
+      else if (b.uacc_values.some(n => !Number.isFinite(n) || n < 0 || n > 127))
+        errs.push({ field:`b${i}.uacc`, target:'uacc-input', msg:`${b.name || 'Bank ' + (i+1)}: articulation values must be numbers between 0 and 127` });
     } else if (mode === 'keyswitch') {
       if (!b.ks_notes || b.ks_notes.length === 0)
         errs.push({ field:`b${i}.uacc`, target:`ks-note-input-${i}`, msg:`${b.name || 'Bank ' + (i+1)}: add at least one keyswitch note` });
-      if (b.ks_notes && b.ks_notes.some(n => n < 0 || n > 127))
+      if (b.ks_notes && b.ks_notes.some(n => !Number.isFinite(n) || n < 0 || n > 127))
         errs.push({ field:`b${i}.uacc`, target:`ks-kbd-${i}`, msg:`${b.name || 'Bank ' + (i+1)}: keyswitch notes must be between 0 and 127` });
     }
     ['fader1','fader2','encoder'].forEach(k => {
       const c = b[k];
       const friendly = controlFriendlyName(b,k);
       if (!c) { console.warn('[V] bank',i,'missing',k,'| keys:',Object.keys(b).join(',')); errs.push({field:`b${i}.${k}`, target:`section-toggle-${i}-${k==='encoder'?'roller':k}`, msg:t('validate.missing_def').replace('{b}', i+1).replace('{k}', friendly)}); return; }
-      if (c.cc < 0 || c.cc > 127)
+      if (!Number.isFinite(c.cc) || c.cc < 0 || c.cc > 127)
         errs.push({field:`b${i}.${k}`, target:`b${i}-${k}-cc`, msg:t('validate.cc_range').replace('{b}', b.name||i+1).replace('{k}', friendly)});
-      if (c.channel < 0 || c.channel > 15)
+      if (!Number.isFinite(c.channel) || c.channel < 0 || c.channel > 15)
         errs.push({field:`b${i}.${k}`, target:`b${i}-${k}-ch`, msg:t('validate.ch_range').replace('{b}', b.name||i+1).replace('{k}', friendly)});
     });
     const ctrls = ['fader1','fader2','encoder'];
@@ -4098,11 +4035,27 @@ const LS_HASH_KEY = 'ff-last-hash';  // poslední hash potvrzený zařízením (
 function dec7(data){const o=[];for(let i=0;i+1<data.length;i+=2)o.push((data[i]<<7)|data[i+1]);return o;}
 function escHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// Untrusted-input guards (device response, SysEx payload, or imported file) —
+// coerce/clamp before values reach cfg and get rendered. See structure audit
+// 2026-07-20 SEC-001/SEC-002: unclamped values could carry HTML through
+// unescaped template interpolation.
+function clampCc(v, dflt) { v = Number(v); return Number.isFinite(v) ? Math.max(0, Math.min(127, Math.trunc(v))) : dflt; }
+function clampChannel(v, dflt) { v = Number(v); return Number.isFinite(v) ? Math.max(0, Math.min(15, Math.trunc(v))) : dflt; }
+function clampCcList(arr) { return Array.isArray(arr) ? arr.map(v => clampCc(v, 0)) : []; }
+
 function normalizeFwConfig(p) {
   if (!p.banks) return p;
   dropLegacyBankTags(p);   // old browser exports / firmware m.t migrate silently
   if (p.banks[0] && p.banks[0].fader1) {
     p.banks.forEach(bank => {
+      ['fader1','fader2','encoder'].forEach(k => {
+        const c = bank[k];
+        if (!c) return;
+        c.cc = clampCc(c.cc, 0);
+        c.channel = clampChannel(c.channel, 0);
+      });
+      bank.uacc_values = clampCcList(bank.uacc_values);
+      bank.ks_notes = clampCcList(bank.ks_notes);
       if (bank.fader1) bank.fader1.label = faderDisplayName(bank.fader1,'fader1');
       if (bank.fader2) bank.fader2.label = faderDisplayName(bank.fader2,'fader2');
     });
@@ -4119,12 +4072,12 @@ function normalizeFwConfig(p) {
       return ({
       name:        m.n || prev.name || `Bank ${i + 1}`,
       icon:        m.i || prev.icon || '',
-      uacc_values: Array.isArray(b.uacc_values) ? b.uacc_values : [],
-      fader1:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[0] : 11, channel: Array.isArray(b.fader_ch) ? b.fader_ch[0] : (b.channel ?? 0), label: mL[0] || (prev.fader1 && prev.fader1.label) || 'Expression' },
-      fader2:      { cc: Array.isArray(b.fader_cc) ? b.fader_cc[1] : 1,  channel: Array.isArray(b.fader_ch) ? b.fader_ch[1] : (b.channel ?? 0), label: mL[1] || (prev.fader2 && prev.fader2.label) || 'Dynamics' },
-      encoder:     { cc: typeof b.encoder === 'number' ? b.encoder : 32, channel: typeof b.encoder_ch === 'number' ? b.encoder_ch : (b.channel ?? 0) },
+      uacc_values: clampCcList(Array.isArray(b.uacc_values) ? b.uacc_values : []),
+      fader1:      { cc: clampCc(Array.isArray(b.fader_cc) ? b.fader_cc[0] : 11, 11), channel: clampChannel(Array.isArray(b.fader_ch) ? b.fader_ch[0] : (b.channel ?? 0), 0), label: mL[0] || (prev.fader1 && prev.fader1.label) || 'Expression' },
+      fader2:      { cc: clampCc(Array.isArray(b.fader_cc) ? b.fader_cc[1] : 1, 1),  channel: clampChannel(Array.isArray(b.fader_ch) ? b.fader_ch[1] : (b.channel ?? 0), 0), label: mL[1] || (prev.fader2 && prev.fader2.label) || 'Dynamics' },
+      encoder:     { cc: clampCc(typeof b.encoder === 'number' ? b.encoder : 32, 32), channel: clampChannel(typeof b.encoder_ch === 'number' ? b.encoder_ch : (b.channel ?? 0), 0) },
       roller_mode: (b.roller_mode === 'keyswitch' || b.roller_mode === 'track_nav') ? b.roller_mode : 'cc',
-      ks_notes:    Array.isArray(b.ks_notes) ? b.ks_notes : [],
+      ks_notes:    clampCcList(Array.isArray(b.ks_notes) ? b.ks_notes : []),
       ks_channel:  typeof b.ks_channel === 'number' ? b.ks_channel : (typeof b.encoder_ch === 'number' ? b.encoder_ch : 0),
       ks_velocity: typeof b.ks_velocity === 'number' ? b.ks_velocity : 100,
       nav_keys_cw:  Array.isArray(b.nav_keys_cw)  ? b.nav_keys_cw  : [0x52],
@@ -4457,12 +4410,6 @@ function dlJson(d,n){
 // ═══════════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════
-function toggleJson(){
-  jsonOpen=!jsonOpen;
-  document.getElementById('json-body').style.display=jsonOpen?'block':'none';
-  document.getElementById('json-lbl').textContent=jsonOpen?(t('device.hide')):(t('device.show'));
-  if(jsonOpen)refreshJson();
-}
 
 function toggleDeviceSettings(){
   const body    = document.getElementById('device-settings-body');
@@ -4489,8 +4436,6 @@ function toggleHelp(){
 function hoverFaderLink(key, on){
   document.querySelectorAll(`[data-fader="${key}"]`).forEach(el => el.classList.toggle('fader-linked', on));
 }
-function refreshJson(){document.getElementById('json-pre').textContent=JSON.stringify(cfg,null,2);}
-function copyJson(){navigator.clipboard.writeText(JSON.stringify(cfg,null,2)).then(()=>toast('s',t('toast.copied'))).catch(()=>toast('e', t('toast.clipboard_fail')));}
 
 // ── Connection state — single source of truth (Vlna 3) ──
 function liveAllowed(){ return _midiState === 'granted' && _ffConnected; }
@@ -4601,7 +4546,6 @@ function renderConnState(){
   renderConnectionPopover();
 }
 function setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
-function setBar(id,v){} // value bar removed — value shown in section header
 function toast(t,m,action=null){
   const icons={s:'✓',e:'✕',i:'i',sent:'✓'},c=document.getElementById('toasts'),el=document.createElement('div');
   el.className='toast '+t;
@@ -5663,10 +5607,13 @@ function applyLibraryPreset(name, scope = 'all') {
   rememberQuickSetup(name);
   const bank = cfg.banks[activeBank];
   if (preset.custom) {
+    // preset.custom presets can come from an imported JSON file (untrusted) —
+    // clamp cc/channel/value fields same as normalizeFwConfig (SEC-001).
     if (scope === 'all' && preset.mapping) {
       bank.fader1 = {...bank.fader1,...(preset.mapping.fader1 || {})};
       bank.fader2 = {...bank.fader2,...(preset.mapping.fader2 || {})};
       bank.encoder = {...bank.encoder,...(preset.mapping.encoder || {})};
+      [bank.fader1, bank.fader2, bank.encoder].forEach(c => { c.cc = clampCc(c.cc, 0); c.channel = clampChannel(c.channel, 0); });
     }
     if (scope === 'all' && preset.roller) {
       bank.roller_mode = preset.roller.roller_mode || 'cc';
@@ -5675,9 +5622,9 @@ function applyLibraryPreset(name, scope = 'all') {
       bank.nav_invert = !!preset.roller.nav_invert;
     }
     if (preset.articulations) {
-      bank.uacc_values = [...(preset.articulations.uacc_values || [])];
-      bank.ks_notes = [...(preset.articulations.ks_notes || [])];
-      bank.ks_channel = preset.articulations.ks_channel ?? 0;
+      bank.uacc_values = clampCcList(preset.articulations.uacc_values || []);
+      bank.ks_notes = clampCcList(preset.articulations.ks_notes || []);
+      bank.ks_channel = clampChannel(preset.articulations.ks_channel ?? 0, 0);
       bank.ks_velocity = preset.articulations.ks_velocity ?? 100;
     }
     if (scope === 'all' && Object.prototype.hasOwnProperty.call(preset,'icon')) bank.icon = preset.icon;
@@ -5760,7 +5707,6 @@ window.openIconPicker    = openIconPicker;
 window.closeIconPicker   = closeIconPicker;
 window.selectIcon        = selectIcon;
 window.clearIcon         = clearIcon;
-window.toggleJson        = toggleJson;
 window.toggleDeviceSettings = toggleDeviceSettings;
 window.toggleConnectionPopover = toggleConnectionPopover;
 window.openConnectionDiagnostics = openConnectionDiagnostics;
@@ -5775,8 +5721,6 @@ window.onImport          = onImport;
 window.doSave            = doSave;
 window.doStart           = doStart;
 window.doReset           = doReset;
-window.copyJson          = copyJson;
-window.renderBankIndicator = typeof renderBankIndicator === 'function' ? renderBankIndicator : ()=>{};
 
 document.addEventListener('click', event => {
   if (!event.target.closest('.h-status-wrap')) toggleConnectionPopover(false);
