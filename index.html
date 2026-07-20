@@ -999,6 +999,7 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
 .welcome-wordmark{
   position:relative;display:grid;place-items:center;width:190px;height:32px;overflow:hidden;
   color:var(--t1);isolation:isolate;pointer-events:none;
+  transition:opacity .3s ease;
 }
 .welcome-wordmark-text{
   font:700 24px/1 'Mulish',sans-serif;letter-spacing:-.035em;white-space:nowrap;
@@ -4989,22 +4990,48 @@ function onbStartWelcome() {
   beats.style.display = 'block';
   updateWelcomeSkip();
   showStartBtn();
-  onbBeatGo(0);
+  onbBeatGo(0, true);   // instant: static first paint, no fade-in to sync (matches §3.1 "static wordmark")
 }
-function onbBeatGo(i) {
+function onbBeatGo(i, instant) {
   _onbBeat = Math.max(0, Math.min(2, i));
   const beats = document.getElementById('onb-beats');
   const textBlock = document.getElementById('welcome-text-block');
   const tEl = beats.querySelector('.onb-beat-title');
   const sEl = beats.querySelector('.onb-beat-sub');
+  const wEl = document.getElementById('welcome-wordmark');
   const dots = beats.querySelectorAll('.onb-dot');
-  tEl.classList.add('onb-beats-fade'); sEl.classList.add('onb-beats-fade');
-  textBlock?.classList.toggle('welcome-wordmark-beat', _onbBeat === 0);
-  setTimeout(() => {
+  const applyBeat = () => {
     tEl.textContent = t(_ONB_BEATS[_onbBeat].t);
     sEl.textContent = t(_ONB_BEATS[_onbBeat].s);
-    tEl.classList.remove('onb-beats-fade'); sEl.classList.remove('onb-beats-fade');
-  }, 180);
+    textBlock?.classList.toggle('welcome-wordmark-beat', _onbBeat === 0);
+  };
+  if (instant) {
+    applyBeat();
+  } else {
+    // Wordmark and title occupy the same slot and are mutually exclusive
+    // (§3.1) — fade the whole heading (whichever of the two is showing) in
+    // lockstep with the description below, instead of swapping the
+    // wordmark's visibility synchronously at click-time while title/sub
+    // ease over 300ms. See docs/feel-fader-structure-audit-2026-07-20.md
+    // follow-up, 2026-07-20.
+    tEl.classList.add('onb-beats-fade'); sEl.classList.add('onb-beats-fade');
+    wEl?.classList.add('onb-beats-fade');
+    setTimeout(() => {
+      applyBeat();
+      // tEl's visibility flip (hidden->visible when leaving beat 0) and its
+      // opacity-transition restart land in the same tick — Chrome sometimes
+      // needs a full extra paint before it treats a freshly-visible
+      // element's transition as already in flight, so tEl's fade-in starts
+      // ~1 frame behind sEl/wEl (which are never visibility-hidden) even
+      // after forcing a synchronous reflow. Removing the fade class one
+      // rAF later (after the visibility flip has actually painted) closes
+      // that gap.
+      requestAnimationFrame(() => {
+        tEl.classList.remove('onb-beats-fade'); sEl.classList.remove('onb-beats-fade');
+        wEl?.classList.remove('onb-beats-fade');
+      });
+    }, 180);
+  }
   dots.forEach((d, k) => {
     const current = k === _onbBeat;
     d.classList.toggle('on', current);
