@@ -4026,7 +4026,7 @@ async function syncSendMine() { hideSyncBanner(); doSend(); }
 // ═══════════════════════════════════════════════════════════
 // SYSEX
 // ═══════════════════════════════════════════════════════════
-const MFR=0x7D,DEV_ID=0x01,CMD_W=0x01,CMD_R=0x02,CMD_INFO=0x03,CMD_HID=0x07;
+const MFR=0x7D,DEV_ID=0x01,CMD_R=0x02,CMD_INFO=0x03,CMD_HID=0x07;
 let _serialPort   = null;  // Web Serial port (cached for session)
 let protocolVersion = 1;        // 1 = legacy, 2 = rid framing; nastaví bootstrap CMD_INFO
 let _ridCounter = 0;
@@ -4089,21 +4089,12 @@ function normalizeFwConfig(p) {
 }
 
 function handleSysEx(data){
+  // SysEx is receive-only (info push); config writes never arrive this way —
+  // firmware never sends CMD_W over SysEx, and accepting it would mean any
+  // local process with a matching virtual MIDI port name could push an
+  // unauthenticated config (structure audit 2026-07-20, SEC-003/PR-001).
   if(data[1]!==MFR||data[2]!==DEV_ID)return;
   const cmd=data[3],payload=Array.from(data.slice(4,-1));
-  if(cmd===CMD_W){
-    try{
-      let p=JSON.parse(new TextDecoder().decode(new Uint8Array(dec7(payload))));
-      if(!p.banks)throw new Error('Invalid structure');
-      p=normalizeFwConfig(p);
-      cfg=p;loaded=true;dirty=false;activeBank=0;markConfigSynced();
-      render();
-      renderConnState();
-    }catch(e){
-      toast('e', t('toast.config_error') + ': ' + e.message);
-      renderConnState();
-    }
-  }
   if(cmd===CMD_INFO){
     try{
       const info=JSON.parse(new TextDecoder().decode(new Uint8Array(dec7(payload))));
@@ -4613,7 +4604,6 @@ var TRANSLATIONS = {
     'toast.artic_exists': 'Articulation already exists in this bank',
     // Footer
     // Additional
-    'toast.config_error': 'Error loading configuration',
     'toast.clipboard_fail': 'Clipboard unavailable',
     'toast.uacc_range': 'Value must be 0–127',
     'toast.bank_min': 'At least 1 bank required',
