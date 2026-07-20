@@ -4963,6 +4963,13 @@ function skipWelcome() {
   const ws = document.getElementById('welcome-screen');
   resetAppScrollTop();
   alignAppControllerToWelcome();
+  // Move #send-btn out of the welcome slot and strip welcome-start/show —
+  // the connected path does this via handoffPrimaryActionToApp() before
+  // hiding the welcome screen; skipWelcome() never called it, so the
+  // button stayed parented inside #welcome-screen.hidden (0x0, invisible)
+  // while the rest of the app rendered normally. Root cause confirmed
+  // 2026-07-20 (Frank screenshot: "3 unsaved changes" visible, no button).
+  handoffPrimaryActionToApp();
   mountControllerInApp();
   if (ws) ws.classList.add('hidden');
   onbAfterWelcome();
