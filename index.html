@@ -4379,24 +4379,31 @@ async function onDeviceConnected() {
   if (navigator.serial) { try { const ports = await navigator.serial.getPorts(); granted = !!(ports && ports.length); } catch(e) {} }
   _serialGranted = granted;
   if (granted) {
-    // Returning user / in-app reconnect: load silently (skip if unsaved edits), no gesture needed.
-    if (!dirty) {
-      try {
-        await serialReadInfo();   // bootstrap: protocolVersion + config_hash/source
-        const stored = localStorage.getItem(LS_HASH_KEY);
-        if (protocolVersion === 2 && DEVICE_INFO.config_source === 'defaults') {
-          showSyncBanner('defaults'); renderConnState();
-        } else if (protocolVersion === 2 && stored && DEVICE_INFO.config_hash
-                   && stored !== DEVICE_INFO.config_hash) {
-          showSyncBanner('differs'); renderConnState();
-        } else {
-          await loadConfigFromDevice();
-          renderConnState();
-        }
-      } catch(e) {   // audit C4 — desync musí být vidět; header zůstává v „searching"
-        toast('e', "Couldn't sync with device — showing local config");
+    // Returning user / in-app reconnect: load silently, no gesture needed.
+    try {
+      await serialReadInfo();   // bootstrap: protocolVersion + config_hash/source
+      const stored = localStorage.getItem(LS_HASH_KEY);
+      const isDefaults = protocolVersion === 2 && DEVICE_INFO.config_source === 'defaults';
+      const differs = protocolVersion === 2 && stored && DEVICE_INFO.config_hash
+                       && stored !== DEVICE_INFO.config_hash;
+      if (!dirty) {
+        if (isDefaults) { showSyncBanner('defaults'); renderConnState(); }
+        else if (differs) { showSyncBanner('differs'); renderConnState(); }
+        else { await loadConfigFromDevice(); renderConnState(); }
+      } else {
+        // C11 — user has unsaved local edits (e.g. after "Continue without
+        // device"): never auto-load or offer to overwrite, but still surface
+        // a non-intrusive heads-up if the device looks different, so Send
+        // doesn't silently clobber something the user hasn't reviewed.
+        if (isDefaults) toast('i', "Device is on factory settings — your local edits haven't been sent yet.");
+        else if (differs) toast('i', "Device has a different saved configuration than your local edits. Review before sending.");
         renderConnState();
       }
+    } catch(e) {
+      if (!dirty) {   // audit C4 — desync musí být vidět; header zůstává v „searching"
+        toast('e', "Couldn't sync with device — showing local config");
+      }
+      renderConnState();
     }
     if (onWelcome) hideWelcome();               // auto-transition into main page
     return;
