@@ -1493,7 +1493,7 @@ button:focus-visible{outline-offset:3px;}
 }
 
 
-#onb-demo-badge{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:6;background:var(--bg-card);border:1px solid var(--border-s);color:var(--t2);border-radius:var(--r-pill);padding:3px 10px;font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
+#onb-demo-badge{position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:6;background:var(--bg-card);border:1px solid var(--border-s);color:var(--t2);border-radius:var(--r-pill);padding:3px 10px;font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
 .onb-replay-btn{margin:0 0 12px;}
 
 .uacc-tag[draggable="true"]{cursor:grab}
@@ -4996,6 +4996,17 @@ function skipWelcome() {
   onbAfterWelcome();
   requestAnimationFrame(() => {
     alignAppControllerToTarget();
+    // alignAppControllerToWelcome()/alignAppControllerToTarget() exist to
+    // match .stage's position to the welcome screen's so the animated
+    // connect transition doesn't jump. skipWelcome() has no such animation,
+    // so this offset only serves to displace .stage's direct children that
+    // aren't independently re-corrected the way #device-wrap is (e.g.
+    // #onb-demo-badge, which isn't absolutely positioned inside
+    // #device-home) — confirmed via measurement: --stage-entry-offset left
+    // at a large negative value, pushing the demo badge up under the
+    // header instead of just under it (Frank screenshot 2026-07-20, "moc
+    // nalepené nahoře"). Reset it once the instant swap is done.
+    document.querySelector('.stage')?.style.setProperty('--stage-entry-offset', '0px');
     resetAppScrollTop();
     positionThumbs();
   });
