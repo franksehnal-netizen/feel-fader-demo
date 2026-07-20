@@ -509,6 +509,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .hid-inline-notice{display:flex;align-items:center;gap:10px;margin:8px 0;padding:9px 10px;border:1px solid color-mix(in srgb,var(--amber) 34%,var(--border));border-radius:var(--r-sm);background:color-mix(in srgb,var(--amber) 7%,var(--glass-soft));color:var(--t2)}
 .hid-inline-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;font-size:11px;line-height:1.4}
 .hid-inline-copy strong{color:var(--t1);font-size:11px}
+.hid-inline-help{color:var(--t1);text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
 .hid-inline-action{flex-shrink:0;min-height:28px;padding:4px 10px;color:var(--t1);font:600 11px 'Mulish',sans-serif}
 @media(max-width:540px){.hid-inline-notice{align-items:flex-start;flex-wrap:wrap}.hid-inline-action{margin-left:auto}}
 
@@ -1669,6 +1670,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
         <div class="info-row"><span class="info-lbl">Serial</span><span class="info-val" id="di-serial" style="color:var(--t2)">—</span></div>
         <div class="info-row info-row-action">
           <span class="info-lbl">Keyboard (HID)</span>
+          <button type="button" class="tx" onclick="openHelpAt('help-hid')" aria-label="Help: Keyboard (HID)" title="Help">?</button>
           <label class="hid-switch" title="Required for Navigation and Button Macro">
             <input type="checkbox" id="hid-toggle" onchange="onHidToggle(this.checked)" aria-label="Enable keyboard HID">
             <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
@@ -1992,8 +1994,9 @@ function setSectionSummary(id, summary) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = sectionSummaryHtml(summary);
 }
-function sectionHeaderHtml(bi, key, cap, title, summary) {
+function sectionHeaderHtml(bi, key, cap, title, summary, helpAnchor) {
   const open = isBankSectionOpen(bi,key);
+  const helpBtn = helpAnchor ? `<button type="button" class="tx" onclick="event.stopPropagation();openHelpAt('${helpAnchor}')" aria-label="Help: ${escHtml(title)}" title="Help">?</button>` : '';
   if (key === 'fader1' || key === 'fader2') {
     const side = key === 'fader1' ? 'Left' : 'Right';
     return `<div class="section-head section-toggle section-head-editable" data-fader="${key}"
@@ -2004,6 +2007,7 @@ function sectionHeaderHtml(bi, key, cap, title, summary) {
           onblur="if(!this.value.trim()){this.value='${defaultFaderName(key)}';onFaderName(${bi},'${key}',this.value)}"
           onkeydown="if(event.key==='Enter')this.blur()" aria-label="${side} fader display name" />
       </span>
+      ${helpBtn}
       <button type="button" class="section-toggle-action" id="section-toggle-${bi}-${key}"
         onclick="toggleBankSection(${bi},'${key}')" aria-expanded="${open}" aria-controls="section-body-${bi}-${key}" aria-label="${open?'Collapse':'Expand'} ${escHtml(title)} settings">
         ${summary?`<span class="section-summary" id="section-summary-${bi}-${key}">${sectionSummaryHtml(summary)}</span>`:''}<span class="section-chevron" aria-hidden="true">▼</span>
@@ -2510,7 +2514,7 @@ function faderSectionContent(key, ctrl, bi) {
   const sideCap = key==='fader1' ? 'LEFT FADER' : 'RIGHT FADER';
   const open = isBankSectionOpen(bi,key);
   return `
-    ${sectionHeaderHtml(bi,key,sideCap,displayLabel,null)}
+    ${sectionHeaderHtml(bi,key,sideCap,displayLabel,null,'help-faders')}
     <div class="section-collapse-body" id="section-body-${bi}-${key}" ${open?'':'hidden'}>
     <div class="section-fields">
       <div class="section-field-row">
@@ -2792,7 +2796,7 @@ function hidEnableNotice(feature) {
   if (DEVICE_INFO.hid_enabled) return '';
   const canEnable = !!(_ffConnected || _serialPort || DEVICE_INFO.hid_available);
   return `<div class="hid-inline-notice">
-    <div class="hid-inline-copy"><strong>Keyboard (HID) is off</strong><span>${escHtml(feature)} can be configured now, but sends keys only after Keyboard is enabled.</span></div>
+    <div class="hid-inline-copy"><strong>Keyboard (HID) is off</strong><span>${escHtml(feature)} can be configured now, but sends keys only after Keyboard is enabled. <a href="#help-hid" class="hid-inline-help" onclick="event.preventDefault();openHelpAt('help-hid')">What's this?</a></span></div>
     <button type="button" class="hid-inline-action ui-control ui-pill ui-glass" onclick="requestEnableHid()">${canEnable ? 'Enable Keyboard…' : 'Connect to enable'}</button>
   </div>`;
 }
@@ -2876,6 +2880,17 @@ function openDeviceSettingsAtHid() {
     const toggle = document.getElementById('hid-toggle');
     toggle?.closest('.info-row')?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
     toggle?.focus({preventScroll:true});
+  });
+}
+function openHelpAt(anchorId) {
+  const body = document.getElementById('help-body');
+  if (body?.style.display === 'none') toggleHelp();
+  requestAnimationFrame(() => {
+    const target = document.getElementById(anchorId);
+    if (!target) return;
+    target.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+    target.setAttribute('tabindex','-1');
+    target.focus({preventScroll:true});
   });
 }
 function requestEnableHid() {
