@@ -265,6 +265,13 @@ main{width:100%;}
 .send-btn.sent{background:var(--green);box-shadow:0 4px 16px rgba(52,199,89,.4)}
 .send-btn.sent:hover{background:var(--green)}
 .send-btn.sent:disabled{opacity:1;cursor:default}
+/* Nothing dirty yet (fresh load or already-synced config) — stay in place
+   (no layout jump) but recede to the same quiet glass treatment as other
+   secondary controls, instead of the vivid red "act now" primary color.
+   Frank 2026-07-20: button shouldn't visually shout when sending would be
+   a no-op. Still fully clickable — muted, not disabled. */
+.send-btn.idle{background:var(--control-glass-bg);color:var(--t2);box-shadow:var(--control-glass-shadow);}
+.send-btn.idle:hover{background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow-hover);color:var(--t1)}
 .send-change-note{
   position:absolute;right:calc(100% + 10px);top:50%;width:max-content;max-width:150px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t2);
@@ -3674,16 +3681,20 @@ function runValidation() {
   if(errs.length===0){
     bar.className='vbar';bar.innerHTML='';
     if(_sendConfirmed&&!dirty){
-      btn.disabled=true;btn.textContent='✓ Sent';btn.classList.add('sent');btn.classList.remove('review');
+      btn.disabled=true;btn.textContent='✓ Sent';btn.classList.add('sent');btn.classList.remove('review','idle');
+    }else if(!dirty){
+      // Nothing to send (fresh load, or already matches the device) — same
+      // label/enabled state as normal, just visually quiet. See .send-btn.idle.
+      btn.disabled=false;btn.textContent=t('btn.send');btn.classList.add('idle');btn.classList.remove('review','sent');
     }else{
-      btn.disabled=false;btn.textContent=t('btn.send');btn.classList.remove('review','sent');
+      btn.disabled=false;btn.textContent=t('btn.send');btn.classList.remove('review','sent','idle');
     }
     if(changeNote)changeNote.classList.remove('has-issues');
   } else {
     const more=errs.length>1?` (+${errs.length-1} more)`:'';
     bar.className='vbar err';
     bar.innerHTML=`<button class="vbar-jump" type="button" onclick="focusValidationError(0)" aria-label="Show first configuration error"><span aria-hidden="true">⚠</span><span class="vbar-message">${escHtml(errs[0].msg)}${more}</span><span class="vbar-go">Show</span></button>`;
-    btn.disabled=false;btn.textContent='Show error';btn.classList.add('review');btn.classList.remove('sent');
+    btn.disabled=false;btn.textContent='Show error';btn.classList.add('review');btn.classList.remove('sent','idle');
     if(changeNote){setSendChangeNoteText(`${errs.length} issue${errs.length===1?'':'s'} to fix`);changeNote.classList.add('has-issues');}
   }
   cfg.banks.forEach((b,bi) => {
@@ -4333,7 +4344,7 @@ async function doSend() {
   if (validate().length) { toast('e', t('toast.fix_errors')); return; }
   if (!_ffConnected && !_serialPort) toast('i', "No device on MIDI — choose your Feel Fader's USB serial port to continue.");
   const sendButtons = [...document.querySelectorAll('[data-send-button]')];
-  sendButtons.forEach(btn => { btn.disabled = true; btn.textContent = '…sending'; btn.classList.remove('sent','review'); });
+  sendButtons.forEach(btn => { btn.disabled = true; btn.textContent = '…sending'; btn.classList.remove('sent','review','idle'); });
   try {
     const ackHash = await serialRequest('CMD_W', JSON.stringify(cfg), 5000);
     // protocolVersion 1: ackHash === '' (legacy fire-and-forget, dnešní chování)
@@ -4348,7 +4359,7 @@ async function doSend() {
     showSendInlineFeedback('✓ ' + t('toast.config_sent'));
     reflectDirty();
     renderMidiDiagnostics();
-    sendButtons.forEach(btn => { btn.disabled = true; btn.textContent = '✓ Sent'; btn.classList.add('sent'); });
+    sendButtons.forEach(btn => { btn.disabled = true; btn.textContent = '✓ Sent'; btn.classList.add('sent'); btn.classList.remove('idle'); });
   } catch(e) {
     console.warn('[Send] failed:', e);
     const errReason = /^ERR:(.+)$/.exec(e.message || '');
@@ -4970,6 +4981,16 @@ function skipWelcome() {
   // while the rest of the app rendered normally. Root cause confirmed
   // 2026-07-20 (Frank screenshot: "3 unsaved changes" visible, no button).
   handoffPrimaryActionToApp();
+  // handoffPrimaryActionToApp() also measures the button/image gap and sets
+  // --send-entry-gap so the animated connect transition doesn't visually
+  // jump. skipWelcome() has no such animation (it's an instant swap, per
+  // the comment above), and at this point in the skip flow the button and
+  // image aren't in a coherent "before" layout yet, so the measured gap is
+  // meaningless (confirmed: 162px instead of the ~32px default, doubled by
+  // the CSS that consumes it into a ~350px empty gap — Frank screenshot
+  // 2026-07-20). Reset it back to the CSS default immediately.
+  document.getElementById('device-wrap')?.style.removeProperty('--send-entry-gap');
+  document.querySelector('.stage')?.style.removeProperty('--send-entry-gap');
   mountControllerInApp();
   if (ws) ws.classList.add('hidden');
   onbAfterWelcome();
