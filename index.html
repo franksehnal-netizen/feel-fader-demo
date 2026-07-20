@@ -4207,6 +4207,7 @@ function serialErrMsg(e, what){   // COM port je exkluzivní — „busy" (druh�
 }
 
 async function _serialEnsureOpen() {
+  if (!navigator.serial) throw new Error('Web Serial not supported in this browser — use Chrome or Edge.');
   if (_serialPort && _serialPort.readable) return;
   _serialPort = null;
   // Auto-connect to previously granted Pico port (no picker)
@@ -4421,6 +4422,7 @@ async function onDeviceConnected() {
 
 async function doSend() {
   if (validate().length) { toast('e', t('toast.fix_errors')); return; }
+  if (!navigator.serial) { toast('e', 'Web Serial not supported in this browser — use Chrome or Edge to send to your device.'); return; }
   if (!_ffConnected && !_serialPort) toast('i', "No device on MIDI — choose your Feel Fader's USB serial port to continue.");
   const sendButtons = [...document.querySelectorAll('[data-send-button]')];
   sendButtons.forEach(btn => { btn.disabled = true; btn.textContent = '…sending'; btn.classList.remove('sent','review','idle'); });
