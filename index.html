@@ -3744,23 +3744,38 @@ function runValidation() {
   reflectDirty();
   const errs=validate(), bar=document.getElementById('vbar'), btn=document.getElementById('send-btn');
   const changeNote=document.getElementById('send-change-note');
+  // While the button is still .welcome-floating (i.e. showing "Connect &
+  // load" on the still-visible welcome screen), this function's own text/
+  // class updates below must not touch it — reproduced 2026-07-21: the
+  // auto-connect path (onDeviceConnected() -> loadConfigFromDevice()) calls
+  // render()/runValidation() as an ordinary side effect of loading the
+  // fetched config, WHILE the welcome overlay is still fully visible and
+  // BEFORE hideWelcome() ever runs (that only fires once the whole async
+  // handshake above it settles) — instantly relabeling the still-showing
+  // welcome button to "Send to device" (Frank: "at na te welcome page
+  // nebylo to send to device"). connectTransitionWelcome() itself calls
+  // runValidation() deliberately, but only AFTER finalizeWelcomeExit() has
+  // already removed this class, so it's unaffected by the guard.
+  const skipBtnUpdate = btn?.classList.contains('welcome-floating');
   if(errs.length===0){
     bar.className='vbar';bar.innerHTML='';
-    if(_sendConfirmed&&!dirty){
-      btn.disabled=true;btn.textContent='✓ Sent';btn.classList.add('sent');btn.classList.remove('review','idle');
-    }else if(!dirty){
-      // Nothing to send (fresh load, or already matches the device) — same
-      // label/enabled state as normal, just visually quiet. See .send-btn.idle.
-      btn.disabled=false;btn.textContent=t('btn.send');btn.classList.add('idle');btn.classList.remove('review','sent');
-    }else{
-      btn.disabled=false;btn.textContent=t('btn.send');btn.classList.remove('review','sent','idle');
+    if (!skipBtnUpdate) {
+      if(_sendConfirmed&&!dirty){
+        btn.disabled=true;btn.textContent='✓ Sent';btn.classList.add('sent');btn.classList.remove('review','idle');
+      }else if(!dirty){
+        // Nothing to send (fresh load, or already matches the device) — same
+        // label/enabled state as normal, just visually quiet. See .send-btn.idle.
+        btn.disabled=false;btn.textContent=t('btn.send');btn.classList.add('idle');btn.classList.remove('review','sent');
+      }else{
+        btn.disabled=false;btn.textContent=t('btn.send');btn.classList.remove('review','sent','idle');
+      }
     }
     if(changeNote)changeNote.classList.remove('has-issues');
   } else {
     const more=errs.length>1?` (+${errs.length-1} more)`:'';
     bar.className='vbar err';
     bar.innerHTML=`<button class="vbar-jump" type="button" onclick="focusValidationError(0)" aria-label="Show first configuration error"><span aria-hidden="true">⚠</span><span class="vbar-message">${escHtml(errs[0].msg)}${more}</span><span class="vbar-go">Show</span></button>`;
-    btn.disabled=false;btn.textContent='Show error';btn.classList.add('review');btn.classList.remove('sent','idle');
+    if (!skipBtnUpdate) { btn.disabled=false;btn.textContent='Show error';btn.classList.add('review');btn.classList.remove('sent','idle'); }
     if(changeNote){setSendChangeNoteText(`${errs.length} issue${errs.length===1?'':'s'} to fix`);changeNote.classList.add('has-issues');}
   }
   cfg.banks.forEach((b,bi) => {
@@ -5106,9 +5121,14 @@ function connectTransitionWelcome() {
     // floating, reading as "one button vanished, a different one appeared"
     // instead of one continuous element (Frank, 2026-07-21: "neni to
     // plynule"). Now both changes happen together, already hidden behind the
-    // fully-faded overlay.
-    runValidation();
+    // fully-faded overlay. finalizeWelcomeExit() must run FIRST — it drops
+    // .welcome-floating, and runValidation() now deliberately skips touching
+    // the button's text/classes while that class is present (guards against
+    // the auto-connect path relabeling the still-visible welcome button —
+    // see runValidation()'s own comment), so calling it before the class is
+    // gone would silently no-op here too.
     finalizeWelcomeExit();
+    runValidation();
     onbAfterWelcome();
     ws.classList.add('hidden');
   }, 1100);
@@ -5152,6 +5172,13 @@ function skipWelcome() {
   resetAppScrollTop();
   finalizeWelcomeExit();
   document.getElementById('send-btn')?.style.setProperty('opacity', '1');   // instant — no fade-in here, matching this whole path's "no animation" intent
+  // render()/loadDefaultDemoConfig() above ran while #send-btn still had
+  // .welcome-floating, so runValidation()'s own button text/class update was
+  // guarded off (see runValidation()'s comment — protects the still-visible
+  // welcome button from auto-connect's premature relabeling). Now that
+  // finalizeWelcomeExit() has removed that class, re-run it once so the
+  // button actually reflects the config state that was already loaded.
+  runValidation();
   if (ws) ws.classList.add('hidden');
   onbAfterWelcome();
   requestAnimationFrame(() => {
