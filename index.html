@@ -4893,33 +4893,51 @@ function finalizeWelcomeExit() {
     // place (Frank, 2026-07-21: "neni to plynule... jedno tlačítko zmizí a
     // druhé přiletí"). Suppress it with the same instant-toggle technique
     // the position-measurement functions use.
+    // Stay invisible, instantly — the button's opacity is 0 here (frozen at
+    // the end of the welcome-screen-out fade's forwards fill), but removing
+    // .welcome-floating drops it out of that animation's selector, so its
+    // target reverts to the base rule's implicit opacity:1 for a moment.
+    // Setting opacity:0 explicitly must happen in the SAME transition:none
+    // window as the class removal above — done after restoring transition,
+    // it read as a genuine "1 -> 0" change with the restored `opacity .28s
+    // ease` active, i.e. an unwanted second fade-out (reproduced 2026-07-21).
+    // This function is shared by skipWelcome() (wants the button instantly
+    // visible, no animation at all) and connectTransitionWelcome() (wants it
+    // to fade in later, once the app is already open — Frank, 2026-07-21:
+    // "at se tam to send to device objevi az plynule po otevreni te appky").
+    // Neither belongs here; each caller decides how/when the button reappears.
     btn.style.transition = 'none';
     btn.classList.remove('welcome-floating','welcome-start','show');
+    btn.style.opacity = '0';
     void btn.offsetWidth;
     btn.style.transition = '';
-    // Frank also wants the reveal ITSELF to stay a smooth fade, not an
-    // instant pop ("chci seamless experience"): the button's opacity is 0
-    // here (frozen at the end of the welcome-screen-out fade's forwards
-    // fill), and removing .welcome-floating drops it out of that animation's
-    // selector entirely. A *transition* can't pick this up — a fill-mode:
-    // forwards animation's held value outranks transitions/normal styles
-    // right up until the animation is removed, and the removal happens in
-    // the same synchronous step as the value's new target, so there's no
-    // "before" frame a transition can observe to interpolate from (tried
-    // and confirmed instant-snapping regardless of reflow ordering,
-    // 2026-07-21). A fresh keyframe animation sidesteps this cleanly.
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      btn.style.opacity = '1';
-    } else {
-      btn.style.animation = 'welcome-btn-reveal .28s ease';
-      btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
-    }
   }
   document.body.classList.remove('welcome-connecting');
   applyStageCollapse(_controllerHidden, false);
   applySendAnchorDock(_controllerHidden);
   layoutFaders();
   positionThumbs();
+}
+// Fades #send-btn in from finalizeWelcomeExit()'s opacity:0. A CSS
+// *transition* can't do this smoothly: while floating, the button's opacity
+// was driven by a fill-mode:forwards keyframe animation (welcome-screen-out),
+// and an animation's held value outranks transitions/normal styles right up
+// until the animation is removed — which happens in the same synchronous
+// step as this function setting a new opacity target, leaving no committed
+// "before" frame for a transition to interpolate from (confirmed
+// instant-snapping regardless of reflow ordering, 2026-07-21). A dedicated
+// keyframe animation sidesteps this cleanly. Skipped under
+// prefers-reduced-motion, matching every other motion-guarded spot in this
+// file.
+function revealSendBtn() {
+  const btn = document.getElementById('send-btn');
+  if (!btn) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    btn.style.opacity = '1';
+  } else {
+    btn.style.animation = 'welcome-btn-reveal .28s ease';
+    btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
+  }
 }
 // The button must sit at the EXACT same on-screen spot it will occupy once
 // welcome closes (Frank, 2026-07-21 — "to tlačítko musí být ve stejné pozici
@@ -5094,6 +5112,10 @@ function connectTransitionWelcome() {
     onbAfterWelcome();
     ws.classList.add('hidden');
   }, 1100);
+  // 6. Reveal the button once the app has actually finished opening, as its
+  // own distinct beat — not bundled into the moment above (Frank, 2026-07-21:
+  // "at se tam to send to device objevi az plynule po otevreni te appky").
+  setTimeout(revealSendBtn, 1450);
 }
 
 function hideWelcome() {
@@ -5129,6 +5151,7 @@ function skipWelcome() {
   const ws = document.getElementById('welcome-screen');
   resetAppScrollTop();
   finalizeWelcomeExit();
+  document.getElementById('send-btn')?.style.setProperty('opacity', '1');   // instant — no fade-in here, matching this whole path's "no animation" intent
   if (ws) ws.classList.add('hidden');
   onbAfterWelcome();
   requestAnimationFrame(() => {
