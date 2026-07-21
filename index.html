@@ -1554,12 +1554,11 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
   <div class="h-right">
 
     <div class="controller-toggle-wrap" title="Show/hide the controller view">
-      <svg class="controller-toggle-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <rect x="1.5" y="2" width="11" height="10" rx="1.6" stroke="currentColor" stroke-width="1.3"/>
-        <path d="M4.5 4.5v5M9.5 4.5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <svg class="controller-toggle-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" aria-hidden="true">
+        <path d="M4 2.5v9M10 2.5v9M2.5 5.2h3M8.5 8.8h3"/>
       </svg>
       <label class="hid-switch controller-switch">
-        <input type="checkbox" id="controller-toggle-input" onchange="toggleControllerVisibility(this.checked)" aria-label="Hide controller view">
+        <input type="checkbox" id="controller-toggle-input" checked onchange="toggleControllerVisibility(this.checked)" aria-label="Show controller view">
         <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
       </label>
     </div>
@@ -4724,13 +4723,22 @@ function applyLang() {
 // When a device connects, its saved theme preference is applied.
 // ════════════════════════════════════════════════════════════════
 let _controllerHidden = false;
-function applyControllerVisibility(hidden, animate = true) {
+// Split in two on purpose (2026-07-21 bugfix): #send-btn is a single shared
+// element that handoffPrimaryActionToApp() moves from the welcome screen
+// into .device-wrap's .send-callout — and that function looks for the
+// callout ONLY inside .device-wrap (controller.querySelector(...)), not
+// document-wide. If we reparent .send-anchor out to the sticky row before
+// handoff has run (e.g. at page load, still on the welcome screen), the
+// handoff can't find its target, silently no-ops, and the button is
+// stranded on the welcome screen — with the sticky row left empty and the
+// stage's --send-entry-gap never recalculated. So: the stage-collapse
+// visual (safe anytime, hidden behind the welcome overlay regardless) runs
+// at load; the actual .send-anchor dock only runs once handoff has
+// confirmed the callout is in place (see handoffPrimaryActionToApp()).
+function applyStageCollapse(hidden, animate = true) {
   const wrap = document.getElementById('stage-collapse');
   if (!wrap) return;
   const inner = wrap.querySelector(':scope > .stage');
-  const row = document.getElementById('send-sticky-row');
-  const anchor = document.querySelector('.send-anchor');
-  const deviceWrap = document.getElementById('device-wrap');
   const input = document.getElementById('controller-toggle-input');
   if (!animate) {
     wrap.style.transition = 'none';
@@ -4742,22 +4750,32 @@ function applyControllerVisibility(hidden, animate = true) {
     wrap.style.transition = '';
     if (inner) inner.style.transition = '';
   }
+  if (input) input.checked = !hidden;   // switch ON = controller visible (Frank 2026-07-21)
+}
+function applySendAnchorDock(hidden) {
+  const row = document.getElementById('send-sticky-row');
+  const anchor = document.querySelector('.send-anchor');
+  const deviceWrap = document.getElementById('device-wrap');
   if (anchor) {
     anchor.classList.toggle('docked', hidden);
     if (hidden && row && anchor.parentElement !== row) row.appendChild(anchor);
     else if (!hidden && deviceWrap && anchor.parentElement !== deviceWrap) deviceWrap.appendChild(anchor);
   }
   if (row) row.hidden = !hidden;
-  if (input) input.checked = hidden;
 }
-function toggleControllerVisibility(hidden) {
+function applyControllerVisibility(hidden, animate = true) {
+  applyStageCollapse(hidden, animate);
+  applySendAnchorDock(hidden);
+}
+function toggleControllerVisibility(visible) {
+  const hidden = !visible;   // switch ON = visible
   _controllerHidden = hidden;
   localStorage.setItem('ff-controller-hidden', hidden ? '1' : '0');
   applyControllerVisibility(hidden, true);
 }
 function initControllerVisibility() {
   _controllerHidden = localStorage.getItem('ff-controller-hidden') === '1';
-  applyControllerVisibility(_controllerHidden, false);
+  applyStageCollapse(_controllerHidden, false);   // send-anchor dock deferred — see handoffPrimaryActionToApp()
 }
 let _themeTransition = null;
 function syncThemeToggle(isDark) {
@@ -4859,6 +4877,7 @@ function handoffPrimaryActionToApp() {
   controller.classList.add('action-handoff');
   button.classList.remove('welcome-start','show');
   callout.insertBefore(button,popover || null);
+  applySendAnchorDock(_controllerHidden);   // now safe: callout is confirmed inside device-wrap
 }
 function mountControllerInWelcome() {
   const controller = sharedController();
