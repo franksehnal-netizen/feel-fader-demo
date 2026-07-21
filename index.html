@@ -5099,11 +5099,14 @@ function connectTransitionWelcome() {
     devWrap.classList.add('connect-success');
   }
 
-  // 4. Fade out welcome text
+  // 4. Fade out welcome text — same timing as the blur/button fade below
+  // (.72s delay, .34s duration, plain ease) so every part of the welcome
+  // screen fades out together, not staggered (Frank, 2026-07-22: "tlacitko
+  // zmizi pozdeji nez ty napisy. Slad to dohromady").
   setTimeout(() => {
     const tb = document.getElementById('welcome-text-block');
-    if (tb) tb.style.animation = 'welcome-text-out 0.55s ease-in forwards';
-  }, 100);
+    if (tb) tb.style.animation = 'welcome-text-out .34s ease forwards';
+  }, 720);
 
   // 5. Fade the blur overlay (and the floating Send button, via the
   //    body.welcome-connecting CSS hook) after the shared faders reach the
