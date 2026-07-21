@@ -4950,7 +4950,7 @@ function revealSendBtn() {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
     btn.style.opacity = '1';
   } else {
-    btn.style.animation = 'welcome-btn-reveal .28s ease';
+    btn.style.animation = 'welcome-btn-reveal .6s ease';
     btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
   }
 }
