@@ -1074,6 +1074,14 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
 .stage:has(#send-btn.welcome-floating),
 .send-callout:has(>#send-btn.welcome-floating){z-index:auto}
 body.welcome-connecting #send-btn.welcome-floating{
+  /* .send-btn's own base rule declares `transition:...,opacity .28s ease,...`
+     — a transition on the SAME property the animation below drives fights it
+     for control (transitions outrank animations in the cascade), so opacity
+     never actually reached 0 without this override (reproduced 2026-07-21:
+     getComputedStyle(btn).opacity read 1 the whole way through the supposed
+     fade window). Disable it for just this narrow window (both classes
+     present, i.e. only during the active connect-reveal fade). */
+  transition:none;
   animation:welcome-screen-out .34s ease .72s forwards;
 }
 @media(prefers-reduced-motion:reduce){
@@ -1136,6 +1144,10 @@ body.welcome-connecting #send-btn.welcome-floating{
 @keyframes welcome-screen-out{
   from{opacity:1}
   to  {opacity:0}
+}
+@keyframes welcome-btn-reveal{
+  from{opacity:0}
+  to  {opacity:1}
 }
 #welcome-screen.connecting{pointer-events:none}
 #welcome-screen.connecting::before{animation:welcome-screen-out .34s ease .72s forwards}
@@ -4873,17 +4885,35 @@ function finalizeWelcomeExit() {
   }
   const btn = document.getElementById('send-btn');
   if (btn) {
-    // Remove the floating escape instantly. .send-btn has a CSS transition on
-    // transform, and this class removal also flips position:fixed -> static
-    // and transform:translate(...) -> none — even though both settle at the
-    // same visual spot, letting that ease naturally through it while already
-    // fully opaque reads as the button physically sliding into place (Frank,
-    // 2026-07-21: "neni to plynule... jedno tlačítko zmizí a druhé přiletí").
-    // Same instant-toggle technique the position-measurement functions use.
+    // The floating escape's transform must drop instantly — .send-btn has a
+    // CSS transition on transform, and removing .welcome-floating flips
+    // position:fixed -> static and transform:translate(...) -> none; even
+    // though both settle at the same visual spot, letting that ease through
+    // it while already visible reads as the button physically sliding into
+    // place (Frank, 2026-07-21: "neni to plynule... jedno tlačítko zmizí a
+    // druhé přiletí"). Suppress it with the same instant-toggle technique
+    // the position-measurement functions use.
     btn.style.transition = 'none';
     btn.classList.remove('welcome-floating','welcome-start','show');
     void btn.offsetWidth;
     btn.style.transition = '';
+    // Frank also wants the reveal ITSELF to stay a smooth fade, not an
+    // instant pop ("chci seamless experience"): the button's opacity is 0
+    // here (frozen at the end of the welcome-screen-out fade's forwards
+    // fill), and removing .welcome-floating drops it out of that animation's
+    // selector entirely. A *transition* can't pick this up — a fill-mode:
+    // forwards animation's held value outranks transitions/normal styles
+    // right up until the animation is removed, and the removal happens in
+    // the same synchronous step as the value's new target, so there's no
+    // "before" frame a transition can observe to interpolate from (tried
+    // and confirmed instant-snapping regardless of reflow ordering,
+    // 2026-07-21). A fresh keyframe animation sidesteps this cleanly.
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      btn.style.opacity = '1';
+    } else {
+      btn.style.animation = 'welcome-btn-reveal .28s ease';
+      btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
+    }
   }
   document.body.classList.remove('welcome-connecting');
   applyStageCollapse(_controllerHidden, false);
