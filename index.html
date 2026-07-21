@@ -961,7 +961,8 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-start;
+  padding-top:var(--welcome-anchor-top,0px);
   box-sizing:border-box;
   overflow:hidden;
 }
@@ -1035,12 +1036,6 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
 .onb-dot:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .onb-beats-fade{opacity:0;}
 @media(max-width:600px){
-  /* The single-mount redesign stopped reparenting the device controller into this
-     column (it now stays put in .stage and shows through the blur), so nothing here
-     reserves its height any more. Centering the text alone (ignoring where the real
-     device sits) is what let the primary action overlap the device image — anchor
-     to the device's real measured position instead (positionWelcomeMobileAnchor()). */
-  #welcome-screen{justify-content:flex-start;padding-top:var(--welcome-mobile-top,0px)}
   /* Reserve three lines for every intro description so longer slide copy cannot
      push the dots down on narrow screens. */
   .onb-beat-sub{height:59px;min-height:59px;overflow:hidden;}
@@ -4313,13 +4308,14 @@ function showStartBtn() {
   const msg = document.getElementById('welcome-start-msg');
   if (msg) { msg.textContent = ''; msg.removeAttribute('title'); }
   updateWelcomeSkip();
-  // Re-measure the floating position now, synchronously — any DOM mutation that
-  // changes #welcome-action-slot's geometry (e.g. leaving/entering onboarding's
-  // taller copy stage) always happens before this call in every call site, and
-  // getBoundingClientRect() forces a layout flush, so this reflects the current
-  // state immediately. Without this, the button's cached --welcome-float-top/left
-  // (set once via requestAnimationFrame at the tail of showWelcome()) go stale the
-  // moment the slot's layout changes afterward — reproduced 2026-07-21.
+  // Re-measure now, synchronously — any DOM mutation that changes
+  // #welcome-action-slot's geometry (e.g. leaving/entering onboarding's
+  // taller copy stage) always happens before this call in every call site,
+  // and getBoundingClientRect() forces a layout flush, so this reflects the
+  // current state immediately. Anchor first (positions the card around the
+  // button's real rect), then the button itself (a no-op position-wise,
+  // just keeps its stacking-context escape current).
+  positionWelcomeAnchor();
   positionWelcomeFloatingButton();
 }
 
@@ -4882,53 +4878,67 @@ function finalizeWelcomeExit() {
   layoutFaders();
   positionThumbs();
 }
+// The button must sit at the EXACT same on-screen spot it will occupy once
+// welcome closes (Frank, 2026-07-21 — "to tlačítko musí být ve stejné pozici
+// jako je potom v appce"), not centered independently on the card. Its
+// "natural" position (in normal flow, inside .send-callout) already IS that
+// app position, since it never reparents — so measure that, with
+// .welcome-floating momentarily off, and pin --welcome-float-top/left to it.
+// The class only ever changes the button's STACKING (escapes the blur/z-index
+// trap — see the :has() rule below), never where it visually sits.
 function positionWelcomeFloatingButton() {
   const btn = document.getElementById('send-btn');
-  const slot = document.getElementById('welcome-action-slot');
-  if (!btn || !slot || !btn.classList.contains('welcome-floating')) return;
-  const r = slot.getBoundingClientRect();
-  let top = r.top + r.height / 2;
-  // On mobile, "Continue without device" is pinned to the bottom of the
-  // viewport (position:fixed, see #welcome-text-block .welcome-skip in the
-  // max-width:600px block) independent of document flow. On a short viewport
-  // with the first-run onboarding intro showing (title+subtitle+dots adds
-  // ~137px), the reserved action slot can get pushed down far enough to
-  // collide with that pinned link — and since the button now correctly
-  // paints above the whole welcome overlay (stacking-context fix above), it
-  // would sit on top of and swallow clicks meant for the skip link. Clamp so
-  // the button never drops below a safe distance from wherever the skip link
-  // actually is. Reproduced 2026-07-21 (Task 3 visual verification, 390x700,
-  // fresh onboarding). No-op whenever there's no collision to avoid (desktop,
-  // taller phones, skip link hidden because a device is already detected).
-  const skip = document.querySelector('.welcome-skip');
-  if (skip && getComputedStyle(skip).display !== 'none' && getComputedStyle(skip).position === 'fixed') {
-    const maxTop = skip.getBoundingClientRect().top - 8 - r.height / 2;
-    if (top > maxTop) top = maxTop;
-  }
-  btn.style.setProperty('--welcome-float-top', top + 'px');
+  if (!btn || !btn.classList.contains('welcome-floating')) return;
+  // .send-btn has `transition:...,transform .18s ease`. Toggling the class
+  // off (position:fixed + transform:translate(...) -> none) after the page
+  // has already painted the floating state would animate that change — a
+  // getBoundingClientRect() read immediately after would catch it mid-flight,
+  // not settled. Force the toggle instant so this is a true, not transitional,
+  // measurement (reproduced 2026-07-21: measuring after a settle delay gave a
+  // rect ~83px off from the real natural position — exactly half the button's
+  // width, consistent with reading it partway through the transform tween).
+  btn.style.transition = 'none';
+  btn.classList.remove('welcome-floating');
+  void btn.offsetWidth;
+  const r = btn.getBoundingClientRect();
+  btn.classList.add('welcome-floating');
+  void btn.offsetWidth;
+  btn.style.transition = '';
+  btn.style.setProperty('--welcome-float-top', (r.top + r.height / 2) + 'px');
   btn.style.setProperty('--welcome-float-left', (r.left + r.width / 2) + 'px');
 }
-// Below 600px, #welcome-screen's text column anchors to a measured offset (see the
-// @media(max-width:600px) #welcome-screen rule) instead of centering blind — the
-// single-mount redesign stopped reparenting the device controller in here (it now
-// stays mounted in .stage and only shows through the blur), so nothing in this
-// column's own layout reserves the device's height any more. Reproduce the ~16px
-// gap the old reparented layout gave for free by measuring the real device-home
-// and writing its bottom edge into --welcome-mobile-top. No-op above 600px, where
-// #welcome-screen keeps its static padding-top.
-function positionWelcomeMobileAnchor() {
+// Since the button no longer moves (see above), the rest of the welcome card
+// (wordmark, "Continue without device") must move to it instead — Frank,
+// 2026-07-21: "celá karta se přesune k tlačítku". #welcome-screen's
+// padding-top is adjusted so the column's #welcome-action-slot placeholder
+// (height already matches the button, 38px) lands exactly on the button's
+// real rect — wordmark ends up right above it, skip link right below, on
+// every viewport size, with no hardcoded gap constant to drift out of sync.
+function positionWelcomeAnchor() {
   const ws = document.getElementById('welcome-screen');
-  const device = document.getElementById('device-home');
-  if (!ws || !device) return;
-  if (window.innerWidth > 600) { ws.style.removeProperty('--welcome-mobile-top'); return; }
-  const gap = 16; // matches .welcome-inner's flex gap, the spacing the reparented device used to have
-  ws.style.setProperty('--welcome-mobile-top', (device.getBoundingClientRect().bottom + gap) + 'px');
+  const slot = document.getElementById('welcome-action-slot');
+  const btn = document.getElementById('send-btn');
+  if (!ws || !slot || !btn) return;
+  const hadFloating = btn.classList.contains('welcome-floating');
+  if (hadFloating) {
+    btn.style.transition = 'none';   // see positionWelcomeFloatingButton() — same instant-toggle need
+    btn.classList.remove('welcome-floating');
+    void btn.offsetWidth;
+  }
+  const btnRect = btn.getBoundingClientRect();
+  if (hadFloating) {
+    btn.classList.add('welcome-floating');
+    void btn.offsetWidth;
+    btn.style.transition = '';
+  }
+  const slotRect = slot.getBoundingClientRect();
+  const currentPaddingTop = parseFloat(getComputedStyle(ws).paddingTop) || 0;
+  ws.style.setProperty('--welcome-anchor-top', (currentPaddingTop + (btnRect.top - slotRect.top)) + 'px');
 }
 function showWelcome() {
   resetAppScrollTop();
   const ws = document.getElementById('welcome-screen');
   if (ws) ws.classList.remove('hidden','connecting');
-  positionWelcomeMobileAnchor();
   document.body.classList.remove('welcome-connecting');
   const controller = sharedController();
   controller?.classList.remove('connect-success');
@@ -4955,7 +4965,7 @@ function showWelcome() {
     clearTimeout(_welcomeStartTimer);
     showStartBtn();
   }
-  requestAnimationFrame(positionWelcomeFloatingButton);
+  requestAnimationFrame(() => { positionWelcomeAnchor(); positionWelcomeFloatingButton(); });
 }
 function resetAppScrollTop() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -5580,7 +5590,7 @@ window.addEventListener('scroll', updateStickySectionHeads, {passive:true});
 window.addEventListener('resize', updateMobileSendDock, {passive:true});
 window.addEventListener('resize', updateContextualLiveStrip, {passive:true});
 window.addEventListener('resize', updateStickySectionHeads, {passive:true});
-window.addEventListener('resize', positionWelcomeMobileAnchor, {passive:true});
+window.addEventListener('resize', () => { positionWelcomeAnchor(); positionWelcomeFloatingButton(); }, {passive:true});
 
 function customPresetFromBank(bank) {
   const preset = { custom:true, saved_at:new Date().toISOString() };
