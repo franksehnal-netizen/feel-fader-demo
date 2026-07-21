@@ -4871,7 +4871,20 @@ function finalizeWelcomeExit() {
       thumb.style.removeProperty('transition');
     });
   }
-  document.getElementById('send-btn')?.classList.remove('welcome-floating','welcome-start','show');
+  const btn = document.getElementById('send-btn');
+  if (btn) {
+    // Remove the floating escape instantly. .send-btn has a CSS transition on
+    // transform, and this class removal also flips position:fixed -> static
+    // and transform:translate(...) -> none — even though both settle at the
+    // same visual spot, letting that ease naturally through it while already
+    // fully opaque reads as the button physically sliding into place (Frank,
+    // 2026-07-21: "neni to plynule... jedno tlačítko zmizí a druhé přiletí").
+    // Same instant-toggle technique the position-measurement functions use.
+    btn.style.transition = 'none';
+    btn.classList.remove('welcome-floating','welcome-start','show');
+    void btn.offsetWidth;
+    btn.style.transition = '';
+  }
   document.body.classList.remove('welcome-connecting');
   applyStageCollapse(_controllerHidden, false);
   applySendAnchorDock(_controllerHidden);
@@ -5028,7 +5041,6 @@ function connectTransitionWelcome() {
     const tb = document.getElementById('welcome-text-block');
     if (tb) tb.style.animation = 'welcome-text-out 0.55s ease-in forwards';
   }, 100);
-  setTimeout(() => runValidation(), 650);
 
   // 5. Fade the blur overlay (and the floating Send button, via the
   //    body.welcome-connecting CSS hook) after the shared faders reach the
@@ -5037,6 +5049,17 @@ function connectTransitionWelcome() {
   document.body.classList.add('welcome-connecting');
   setTimeout(() => {
     resetAppScrollTop();
+    // runValidation() (which sets the button's post-connect text/size —
+    // "Connect & load" -> "Send to device", welcome-start's larger pill
+    // padding -> the plain app size) must land in the SAME synchronous swap
+    // as finalizeWelcomeExit()'s class/position change, not earlier. It used
+    // to fire at 650ms — well before the .72s-delayed fade even starts — so
+    // the button visibly relabeled and resized while still fully opaque and
+    // floating, reading as "one button vanished, a different one appeared"
+    // instead of one continuous element (Frank, 2026-07-21: "neni to
+    // plynule"). Now both changes happen together, already hidden behind the
+    // fully-faded overlay.
+    runValidation();
     finalizeWelcomeExit();
     onbAfterWelcome();
     ws.classList.add('hidden');
