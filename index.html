@@ -197,6 +197,13 @@ main{width:100%;}
 @keyframes pg{0%,100%{transform:scale(1);opacity:0}50%{transform:scale(2.2);opacity:.18}}
 
 /* STAGE */
+.stage-collapse{display:grid;grid-template-rows:minmax(0,1fr);transition:grid-template-rows .42s cubic-bezier(.16,1,.3,1)}
+.stage-collapse>.stage{overflow:hidden;min-height:0;transition:opacity .42s cubic-bezier(.16,1,.3,1),transform .42s cubic-bezier(.16,1,.3,1)}
+.stage-collapse.is-collapsed{grid-template-rows:minmax(0,0fr)}
+.stage-collapse.is-collapsed>.stage{opacity:0;transform:scale(.96) translateY(-8px)}
+@media(prefers-reduced-motion:reduce){
+  .stage-collapse,.stage-collapse>.stage{transition:none}
+}
 .stage{
   /* The controller belongs to the page flow on desktop. It scrolls away with the
      page and can never park above Library setup or the bank controls. */
@@ -906,7 +913,9 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .h-status-wrap{position:relative;display:flex;align-items:center;flex:0 0 auto}
 .h-status{
   appearance:none;display:flex;align-items:center;min-height:28px;padding:3px 7px;
-  border:1px solid transparent;border-radius:var(--r-pill);background:transparent;
+  border:1px solid var(--control-glass-border);border-radius:var(--r-pill);
+  background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);
+  backdrop-filter:blur(14px) saturate(155%);-webkit-backdrop-filter:blur(14px) saturate(155%);
   color:inherit;font:inherit;cursor:pointer;
   transition:background .22s,border-color .22s,box-shadow .22s;
 }
@@ -925,7 +934,7 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
   background:var(--green);
   box-shadow:0 0 0 2px rgba(52,199,89,.2);
 }
-.h-status-dot.err{background:var(--danger)}
+.h-status-dot.err{background:var(--red)}
 .h-status-dot.warn{background:var(--amber)}
 .h-status-text{
   font-size:11px;color:var(--t3);
@@ -974,6 +983,22 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .dark-toggle .theme-icon-moon{opacity:0;transform:rotate(-24deg) scale(.62)}
 html.dark .dark-toggle .theme-icon-sun{opacity:0;transform:rotate(45deg) scale(.62)}
 html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
+
+.controller-toggle{
+  position:relative;display:grid;place-items:center;width:30px;height:30px;padding:0;
+  color:var(--t2);overflow:hidden;flex:0 0 auto;
+  backdrop-filter:blur(14px) saturate(155%);-webkit-backdrop-filter:blur(14px) saturate(155%);
+}
+.controller-toggle:hover{color:var(--t1)}
+.controller-toggle .theme-icon{position:absolute;width:14px;height:14px;transition:opacity .28s ease,transform .34s ease}
+.controller-toggle .controller-icon-hidden{opacity:0;transform:rotate(-18deg) scale(.62)}
+.controller-toggle[aria-pressed="true"] .controller-icon-shown{opacity:0;transform:rotate(18deg) scale(.62)}
+.controller-toggle[aria-pressed="true"] .controller-icon-hidden{opacity:1;transform:rotate(0) scale(1)}
+.send-anchor-slot{display:flex;align-items:center}
+.send-anchor.in-header{min-height:0;width:auto;display:flex;align-items:center}
+.send-anchor.in-header .send-callout{margin:0;width:auto}
+.send-anchor.in-header .send-callout::before{display:none}
+.send-anchor.in-header .send-btn{width:auto;min-height:30px;padding:0 14px;font-size:12px}
 
 /* ── WELCOME SCREEN ── */
 #welcome-screen{
@@ -1570,6 +1595,18 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
   </div>
   <div class="h-right">
 
+    <button class="controller-toggle ui-control ui-pill ui-glass" onclick="toggleControllerVisibility()" title="Hide controller" aria-label="Hide controller" aria-pressed="false">
+      <svg class="theme-icon controller-icon-shown" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <rect x="1.5" y="2" width="11" height="10" rx="1.6" stroke="currentColor" stroke-width="1.3"/>
+        <path d="M4.5 4.5v5M9.5 4.5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <svg class="theme-icon controller-icon-hidden" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <rect x="1.5" y="2" width="11" height="10" rx="1.6" stroke="currentColor" stroke-width="1.3"/>
+        <path d="M2 2l10 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="send-anchor-slot" id="send-anchor-slot"></div>
+
     <button class="dark-toggle ui-control ui-pill ui-glass" onclick="toggleDark()" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">
       <svg class="theme-icon theme-icon-sun" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.4"/>
@@ -1612,6 +1649,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
   <div id="vbar" class="vbar" role="alert" aria-live="assertive"></div>
 
   <!-- STAGE -->
+  <div class="stage-collapse" id="stage-collapse">
   <div class="stage">
     <div id="live-note" class="live-note" hidden>Live positions unavailable — MIDI not connected.</div>
     <div id="onb-demo-badge" style="display:none" data-i18n="onb.demo_badge">Demo — no device</div>
@@ -1646,6 +1684,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       </div></div>
     </div>
     </div>
+  </div>
   </div>
 
   <!-- NVM DEGRADED WARNING (A3 — functional audit 2026-07-20) -->
@@ -4602,6 +4641,8 @@ function updateNvmDegradedNotice() {
   const connected = s === 'CONNECTED_LIVE' || s === 'CONNECTED_BLIND';
   el.hidden = !(connected && DEVICE_INFO.config_source === 'file');
 }
+let _statusCollapseTimer = null;
+let _lastConnState = null;
 function renderConnState(){
   const status = document.getElementById('h-status');
   const dot  = document.getElementById('h-status-dot');
@@ -4609,9 +4650,18 @@ function renderConnState(){
   const note = document.getElementById('live-note');
   if (!dot || !txt) return;
   const s = connState();
+  const entering = s !== _lastConnState;
+  _lastConnState = s;
+  if (entering) { clearTimeout(_statusCollapseTimer); _statusCollapseTimer = null; }
   if (s === 'CONNECTED_LIVE'){
     dot.className = 'h-status-dot on';
-    txt.classList.remove('hidden'); txt.textContent = t('status.connected');
+    // Give the "connected" text a moment to register, then collapse it back to
+    // just the dot so the header row has room (Frank 2026-07-21) — only on the
+    // DISCONNECTED->LIVE transition, not on every re-render while already live.
+    if (entering) {
+      txt.classList.remove('hidden'); txt.textContent = t('status.connected');
+      _statusCollapseTimer = setTimeout(() => txt.classList.add('hidden'), 3000);
+    }
   } else if (s === 'CONNECTED_BLIND'){
     dot.className = 'h-status-dot warn';
     txt.classList.remove('hidden'); txt.textContent = t('status.no_live_view');
@@ -4770,6 +4820,46 @@ function applyLang() {
 // Preference is stored globally AND per device serial number.
 // When a device connects, its saved theme preference is applied.
 // ════════════════════════════════════════════════════════════════
+let _controllerHidden = false;
+function applyControllerVisibility(hidden, animate = true) {
+  const wrap = document.getElementById('stage-collapse');
+  if (!wrap) return;
+  const inner = wrap.querySelector(':scope > .stage');
+  const slot = document.getElementById('send-anchor-slot');
+  const anchor = document.querySelector('.send-anchor');
+  const deviceWrap = document.getElementById('device-wrap');
+  const btn = document.querySelector('.controller-toggle');
+  if (!animate) {
+    wrap.style.transition = 'none';
+    if (inner) inner.style.transition = 'none';
+  }
+  wrap.classList.toggle('is-collapsed', hidden);
+  if (!animate) {
+    void wrap.offsetHeight;   // force reflow so the instant state commits before restoring the transition
+    wrap.style.transition = '';
+    if (inner) inner.style.transition = '';
+  }
+  if (anchor) {
+    anchor.classList.toggle('in-header', hidden);
+    if (hidden && slot && anchor.parentElement !== slot) slot.appendChild(anchor);
+    else if (!hidden && deviceWrap && anchor.parentElement !== deviceWrap) deviceWrap.appendChild(anchor);
+  }
+  if (btn) {
+    const label = hidden ? 'Show controller' : 'Hide controller';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+  }
+}
+function toggleControllerVisibility() {
+  _controllerHidden = !_controllerHidden;
+  localStorage.setItem('ff-controller-hidden', _controllerHidden ? '1' : '0');
+  applyControllerVisibility(_controllerHidden, true);
+}
+function initControllerVisibility() {
+  _controllerHidden = localStorage.getItem('ff-controller-hidden') === '1';
+  applyControllerVisibility(_controllerHidden, false);
+}
 let _themeTransition = null;
 function syncThemeToggle(isDark) {
   const btn = document.querySelector('.dark-toggle');
@@ -5892,6 +5982,7 @@ window.addEventListener('beforeunload', e => {   // audit S5 — druhá síť
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('load',()=>{
   initDark();
+  initControllerVisibility();
   // Language: English only
   // device-img has inline base64 src — always available immediately
   const deviceImg  = document.getElementById('device-img');
