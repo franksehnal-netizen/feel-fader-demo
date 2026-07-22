@@ -160,7 +160,7 @@ header{
 .live-hud-item:not(.live-hud-roller) .live-hud-meter{position:relative;width:4px;height:16px}
 .live-hud-meter-fill{display:block;width:var(--live-level,0%);height:100%;border-radius:inherit;background:linear-gradient(90deg,#8e8e93,#aeaeb2);transition:width .06s linear}
 .live-hud-item:not(.live-hud-roller) .live-hud-meter-fill{position:absolute;right:0;bottom:0;left:0;width:100%;height:var(--live-level,0%);background:linear-gradient(0deg,#8e8e93,#aeaeb2);transition:height .06s linear}
-.live-hud-value{min-width:3ch;text-align:center;color:var(--t1);font:600 9px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip}
+.live-hud-value{min-width:3ch;text-align:center;color:var(--t1);font:600 10px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip}
 .live-hud-tech{color:var(--t3);font:600 6.25px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1;white-space:nowrap}
 .live-hud-roller{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(16px,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:2px;padding-top:5px;border-top:1px solid var(--border)}
 .live-hud-roller .live-hud-tech{grid-column:1/-1;justify-self:center}
@@ -172,7 +172,7 @@ header{
 .live-hud.is-compact .live-hud-item+.live-hud-item{border-left:1px solid var(--border)}
 .live-hud.is-compact .live-hud-roller{grid-column:auto;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-items:center;justify-items:center;column-gap:4px;row-gap:3px;padding:0 7px;border-top:0}
 .live-hud.is-compact .live-hud-meter{display:none}
-.live-hud.is-compact .live-hud-value{min-width:0;font-size:9px}
+.live-hud.is-compact .live-hud-value{min-width:0;font-size:10px}
 html.dark .live-hud{
   background:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
   backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);
@@ -447,7 +447,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-key.is-edge{box-shadow:inset 0 -4px 0 var(--red)}
 .ks-key-black.is-edge{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--red) 55%,var(--piano-white)),0 2px 3px var(--border-s)}
 .ks-key:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;z-index:5}
-.ks-key-label{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);font-size:8px;font-weight:500;white-space:nowrap;pointer-events:none}
+.ks-key-label{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);font-size:10px;font-weight:600;white-space:nowrap;pointer-events:none}
 .ks-key-scroll-btn{width:28px;height:auto;min-height:78px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 86%,transparent);color:var(--t2);cursor:pointer;font-size:15px;transition:background-color .16s ease,color .16s ease,transform .10s ease}
 .ks-key-scroll-btn:hover{background:color-mix(in srgb,var(--bg-input) 68%,var(--glass-soft));color:var(--t1)}
 .ks-key-scroll-btn:active{transform:scale(.96)}
@@ -456,7 +456,14 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-bound-stepper .ks-stepval{min-width:66px;height:24px;padding:0 8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);color:var(--t1);box-shadow:var(--control-glass-shadow);transition:background-color .18s ease,box-shadow .18s ease}
 .ks-convention-stepper .step-btn{width:auto;min-width:44px;padding:0 9px;white-space:nowrap}
 .ks-convention-stepper .step-btn.active,.ks-convention-stepper .step-btn.active:hover{background:var(--control-glass-bg);border:1px solid var(--control-glass-border);color:var(--t1);box-shadow:var(--control-glass-shadow)}
-.ks-preset-sel{border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--bg-input);color:var(--t2);font-family:'Mulish',sans-serif;font-size:12px;padding:5px 8px;cursor:pointer;outline:none}
+/* Custom listbox for RANGE PRESET (UX audit 2026-07-22, V-4) — same pattern as
+   the Library setup picker's .quick-setup-menu/.quick-setup-option, just
+   without the search input: KEYSWITCH_PRESETS only has 2 static entries. */
+.ks-preset-picker{position:relative;flex:0 0 auto}
+.ks-preset-trigger{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;font-family:'Mulish',sans-serif;font-size:12px;color:var(--t2)}
+.ks-preset-chevron{font-size:10px;color:var(--t3);transition:transform .2s cubic-bezier(.16,1,.3,1)}
+.ks-preset-trigger[aria-expanded="true"] .ks-preset-chevron{transform:rotate(180deg)}
+.quick-setup-menu.ks-preset-menu{left:0;width:max(180px,100%);max-height:none}
 .ks-stepval{padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;min-width:66px;text-align:center;color:var(--t1)}
 
 /* TWO-ROW FIELD (label + controls stacked) */
@@ -539,7 +546,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 html.dark .icon-picker-trigger svg{opacity:.7;}
 .bank-name-input{
   flex:1;min-width:0;background:transparent;border:none;border-bottom:1px solid transparent;
-  font-family:'Mulish',sans-serif;font-size:15px;font-weight:600;color:var(--t1);
+  font-family:'Mulish',sans-serif;font-size:16px;font-weight:600;color:var(--t1);
   outline:none;padding:2px 0;transition:border-color .14s;
   text-align:left;letter-spacing:-.01em;
 }
@@ -594,7 +601,8 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   .center-col{padding:16px 12px 0;gap:12px;}
   .section-field-row{display:flex;flex-direction:row;align-items:flex-start;gap:16px;flex-wrap:wrap;}
   .field-block-value{min-width:0;width:100%;}
-  .bank-tab-add,.btn-remove-bank{right:-36px;width:28px;height:28px;font-size:14px;}
+  .bank-tab-add{right:-36px;width:28px;height:28px;font-size:14px;}
+  .btn-remove-bank{font-size:14px;}
   .device-home{width:min(55vw,clamp(120px,calc(44.24vh - 126px),196px));}
   .bank-tab{font-size:11px;padding:8px;}
   .panel{min-width:0;}
@@ -673,7 +681,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   transition:background .13s;text-align:left;letter-spacing:-.01em;
   -webkit-tap-highlight-color:transparent;
 }
-.device-info-toggle:focus{background:none;outline:none;}
+.device-info-toggle:focus{background:none;}
 .device-info-toggle:hover{background:rgba(128,128,128,.07);color:var(--t1)}
 
 /* DEVICE INFO */
@@ -687,7 +695,12 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .hid-switch input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .hid-switch-track{position:relative;width:34px;height:20px;border-radius:var(--r-pill);border:1px solid var(--control-glass-border);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);transition:background .22s,border-color .22s,box-shadow .22s}
 .hid-switch-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 6px rgba(34,34,40,.22),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .28s cubic-bezier(.16,1,.3,1)}
-.hid-switch input:checked + .hid-switch-track{background:rgba(var(--highlight-rgb),.44);border-color:rgba(var(--highlight-rgb),.72);box-shadow:0 0 12px rgba(var(--highlight-rgb),.25),inset 0 1px 2px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.24)}
+.hid-switch input:checked + .hid-switch-track{background:color-mix(in srgb,var(--green) 44%,transparent);border-color:color-mix(in srgb,var(--green) 72%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--green) 25%,transparent),inset 0 1px 2px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.24)}
+/* Header's "Show controller view" reuses .hid-switch styling via the shared
+   .controller-switch class, but it's a view preference, not a device/connect
+   state — giving it the same green as above would collide with the header's
+   connected-status semantics (UX audit 2026-07-22, I-3). Keep it neutral. */
+.controller-switch input:checked + .hid-switch-track{background:var(--control-glass-bg);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow)}
 .hid-switch input:checked + .hid-switch-track .hid-switch-thumb{transform:translateX(14px)}
 .hid-switch input:focus-visible + .hid-switch-track{outline:2px solid var(--focus);outline-offset:3px}
 .hid-switch input:disabled + .hid-switch-track{opacity:.42;cursor:not-allowed}
@@ -833,7 +846,7 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .toast.e .toast-icon{border-color:color-mix(in srgb,var(--danger) 30%,var(--glass-border));background:var(--danger-bg);color:var(--danger)}
 .toast-message{min-width:0;flex:1;color:var(--t2);overflow-wrap:anywhere}
 .toast.e .toast-message{color:color-mix(in srgb,var(--danger) 72%,var(--t1))}
-.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;opacity:.5;font:500 11px 'Mulish',sans-serif;transition:background-color .16s ease,color .16s ease,opacity .16s ease,transform .12s ease}
+.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 11px 'Mulish',sans-serif;transition:background-color .16s ease,color .16s ease,opacity .16s ease,transform .12s ease}
 .tx:hover,.tx:focus-visible{background:var(--control-glass-bg);color:var(--t1);opacity:1}.tx:active{transform:scale(.92)}
 .toast-action{min-height:26px;border:1px solid var(--control-glass-border);background:var(--control-glass-bg);color:var(--t1);border-radius:var(--r-pill);padding:4px 9px;font:600 10px 'Mulish',sans-serif;cursor:pointer;box-shadow:var(--control-glass-shadow)}
 @media(max-width:600px){#toasts{right:16px;bottom:calc(14px + env(safe-area-inset-bottom));left:16px;width:auto;align-items:center}.toast{max-width:min(100%,340px);transform-origin:center bottom}}
@@ -864,8 +877,9 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
   .btn-remove-bank,.bank-action-btn{width:44px;height:44px}
   .icon-picker-trigger{min-width:44px;min-height:44px}
   .dark-toggle{width:44px;height:44px}
-  .dark-toggle,.bank-block-tab,.bank-block-tab-add,.send-btn,.btn{min-height:44px}
-  .uacc-tag button,.tx{min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
+  .dark-toggle,.bank-block-tab,.bank-block-tab-add,.send-btn,.btn,.ks-preset-trigger{min-height:44px}
+  .uacc-tag button{min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
+  .tx{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .ks-keyboard-shell{grid-template-columns:44px minmax(0,1fr) 44px}
   .ks-key-scroll-btn{width:44px}
   .roller-mode-btn{min-height:44px}
@@ -1073,6 +1087,26 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
    floating; the normal in-app z-index (1 / 10) is untouched at every other time. */
 .stage:has(#send-btn.welcome-floating),
 .send-callout:has(>#send-btn.welcome-floating){z-index:auto}
+/* Same trap, different trigger: .change-popover (z-index:30) is a direct
+   child of .send-callout (z-index:10) inside .stage (z-index:1) — both
+   explicit stacking contexts confine the popover's own z-index to *inside*
+   .send-callout, so it can never out-rank .panels-row's .bank-card
+   (isolation:isolate) one level up. Undo/Restore last sent buttons were
+   unclickable underneath the bank card (UX audit 2026-07-22, I-1). Drop
+   both ancestors to z-index:auto only while the popover is open, exactly
+   like the welcome-floating case above. */
+.stage:has(.change-popover.is-open),
+.send-callout:has(>.change-popover.is-open){z-index:auto}
+/* z-index alone isn't enough: .stage-collapse>.stage{overflow:hidden}
+   (line 201, permanent — used for the bank-switch collapse animation) clips
+   .change-popover's box regardless of stacking order, since the popover is
+   position:absolute (not :fixed like the welcome-floating case) and its
+   dropdown extends below .stage's own border-box. Scope it off the same way,
+   only while the popover is open. Trade-off: if a bank-switch collapse
+   transition happens to run at the exact same moment the popover is open,
+   .stage briefly won't clip it — rare, cosmetic-only overlap, not a
+   functional break. */
+.stage-collapse:has(.change-popover.is-open)>.stage{overflow:visible}
 body.welcome-connecting #send-btn.welcome-floating{
   /* .send-btn's own base rule declares `transition:...,opacity .28s ease,...`
      — a transition on the SAME property the animation below drives fights it
@@ -1165,7 +1199,7 @@ body.welcome-connecting #send-btn.welcome-floating{
   .live-hud-item:not(.live-hud-roller){row-gap:2px}
   .live-hud-item:not(.live-hud-roller) .live-hud-meter{height:17px}
   .live-hud-roller{grid-template-columns:auto minmax(12px,1fr) auto;column-gap:3px;row-gap:1px;padding-top:3px}
-  .live-hud-roller .live-hud-value{font-size:8px}
+  .live-hud-roller .live-hud-value{font-size:10px}
   .live-hud.is-compact{width:190px;height:44px;padding:4px 5px;border-radius:var(--r-pill)}
   .live-hud.is-compact .live-hud-item,
   .live-hud.is-compact .live-hud-item:not(.live-hud-roller),
@@ -1217,7 +1251,7 @@ html.dark .lib-badge-sm{background:#555}
 .custom-preset-overlay{z-index:160}
 .confirm-modal{max-width:390px;padding:0;overflow:hidden}
 .confirm-body{padding:18px 20px 4px;color:var(--t2);font-size:13px;line-height:1.5}
-.confirm-body strong{display:block;color:var(--t1);font-size:15px;margin-bottom:6px}
+.confirm-body strong{display:block;color:var(--t1);font-size:16px;margin-bottom:6px}
 .confirm-actions{display:flex;justify-content:flex-end;gap:8px;padding:16px 20px 18px}
 .confirm-danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .confirm-danger:hover{filter:brightness(.92)}
@@ -1256,7 +1290,7 @@ html.dark .lib-badge-sm{background:#555}
 .section-summary{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:260px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;line-height:1.25}
 .section-summary-label{font:600 11px 'Mulish',sans-serif;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
 .section-summary-meta{font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
-.section-summary-sep{color:var(--t3);font:500 10px 'Mulish',sans-serif}
+.section-summary-sep{color:var(--t3);font:600 10px 'Mulish',sans-serif}
 .section-chevron{font-size:10px;color:var(--t3);transition:transform .25s cubic-bezier(.16,1,.3,1)}
 .bank-section.is-open .section-chevron{transform:rotate(180deg)}
 .bank-section.is-collapsed .section-head{padding-bottom:0;margin-bottom:0;border-bottom-color:transparent}
@@ -1419,7 +1453,7 @@ button:focus-visible{outline-offset:3px;}
   .bank-block-tab.active .bank-tab-name{max-width:68px;opacity:1;margin-left:4px}
   .bank-block-tab-add{padding:4px 7px}
 }
-.bank-tab-device{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--t2);opacity:.78}
+.bank-tab-device{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green-text)}
 .bank-tab-device svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.35;stroke-linecap:round}
 .bank-block-tab.is-live{box-shadow:none}
 .bank-block-tab-add{
@@ -1462,18 +1496,18 @@ button:focus-visible{outline-offset:3px;}
 }
 .quick-setup-menu{left:0;width:min(360px,calc(100vw - 40px));max-height:310px;overflow-y:auto}
 .quick-setup-menu[hidden]{display:none}
-.quick-setup-group+.quick-setup-group{margin-top:5px;padding-top:5px;border-top:1px solid var(--border)}
-.quick-setup-group-label{padding:4px 7px 3px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+.quick-setup-group+.quick-setup-group{margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
+.quick-setup-group-label{padding:4px 8px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
 .quick-setup-option{
-  width:100%;display:flex;align-items:center;gap:8px;padding:7px;border:0;border-radius:var(--r-sm);
+  width:100%;display:flex;align-items:center;gap:8px;padding:8px;border:0;border-radius:var(--r-sm);
   background:transparent;color:var(--t1);font:600 11px 'Mulish',sans-serif;text-align:left;cursor:pointer
 }
 .quick-setup-option:hover,.quick-setup-option:focus-visible{background:var(--bg-input)}
 .quick-setup-option-icon{width:20px;text-align:center;font-size:14px;flex-shrink:0}
 .quick-setup-option-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.quick-setup-option-kind{font-size:9px;font-weight:600;color:var(--t3);white-space:nowrap}
+.quick-setup-option-kind{font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap}
 .quick-setup-empty{padding:12px 8px;color:var(--t3);font-size:11px;text-align:center}
-.quick-preset-btn{min-height:28px;padding:4px 11px;font-size:11px;white-space:nowrap;color:var(--t1)}
+.quick-preset-btn{min-height:28px;padding:4px 12px;font-size:11px;white-space:nowrap;color:var(--t1)}
 .custom-preset-overlay[hidden]{display:none}
 .custom-preset-modal{max-width:520px;overflow:hidden}
 .custom-preset-head{padding:18px 20px 12px;border-bottom:1px solid var(--border)}
@@ -1498,7 +1532,7 @@ button:focus-visible{outline-offset:3px;}
 .library-preview-overlay[hidden]{display:none}
 .library-preview-modal{max-width:500px;overflow:hidden}
 .library-preview-head{padding:18px 20px 12px;border-bottom:1px solid var(--border)}
-.library-preview-head strong{display:block;font-size:15px;color:var(--t1);margin-bottom:4px}
+.library-preview-head strong{display:block;font-size:16px;color:var(--t1);margin-bottom:4px}
 .library-preview-head span{display:block;font-size:12px;line-height:1.45;color:var(--t2)}
 .library-preview-body{padding:14px 20px;display:grid;gap:8px}
 .library-preview-row{display:grid;grid-template-columns:108px minmax(0,1fr);gap:12px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 68%,transparent)}
@@ -2713,7 +2747,7 @@ function keyswitchBody(bi) {
   const ksN = b.ks_notes || [];
   const lo = ksN.length ? Math.min(...ksN) : 0;
   const hi = ksN.length ? Math.max(...ksN) : 0;
-  const presetOpts = KEYSWITCH_PRESETS.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
+  const presetOpts = KEYSWITCH_PRESETS.map((p, i) => `<button class="quick-setup-option" type="button" role="option" data-idx="${i}" onclick="applyKsPreset(${bi},this.dataset.idx);closeKsPresetMenu(${bi},true)" onkeydown="ksPresetOptionKey(event,${bi})">${escHtml(p.name)}</button>`).join('');
   return `
   <div class="enc-unified-body">
     <div class="ks-basic-actions" style="margin-top:10px">
@@ -2728,9 +2762,14 @@ function keyswitchBody(bi) {
       </div>
       <div class="field-block">
         <span class="field-label">RANGE PRESET</span>
-        <select class="ks-preset-sel" onchange="applyKsPreset(${bi},this.value);this.selectedIndex=0" aria-label="Keyswitch range preset">
-          <option value="">Choose range…</option>${presetOpts}
-        </select>
+        <div class="ks-preset-picker" id="ks-preset-picker-${bi}">
+          <button type="button" class="ks-preset-trigger ui-control ui-pill ui-glass" id="ks-preset-trigger-${bi}"
+            aria-haspopup="listbox" aria-expanded="false" aria-controls="ks-preset-menu-${bi}"
+            aria-label="Keyswitch range preset" onclick="toggleKsPresetMenu(${bi})">
+            <span>Choose range…</span><span class="ks-preset-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="quick-setup-menu ks-preset-menu" id="ks-preset-menu-${bi}" role="listbox" aria-label="Keyswitch range presets" hidden>${presetOpts}</div>
+        </div>
       </div>
       <button class="step-btn" style="width:auto;padding:0 12px;border:1px solid var(--border-s);border-radius:var(--r-sm)" onclick="resetKs(${bi})">Reset range</button>
     </div>
@@ -3657,6 +3696,42 @@ function applyKsPreset(bi, idx) {
   if (!p) return;
   cfg.banks[bi].ks_notes = p.notes ? p.notes.slice() : ksRange(p.lo, p.hi);
   dirty = true; ksLiveRefresh(bi, true, true); runValidation();
+}
+function toggleKsPresetMenu(bi) {
+  const menu = document.getElementById(`ks-preset-menu-${bi}`);
+  if (!menu) return;
+  if (menu.hidden) openKsPresetMenu(bi); else closeKsPresetMenu(bi);
+}
+function openKsPresetMenu(bi) {
+  const menu = document.getElementById(`ks-preset-menu-${bi}`);
+  const trigger = document.getElementById(`ks-preset-trigger-${bi}`);
+  if (!menu || !trigger) return;
+  menu.hidden = false;
+  trigger.setAttribute('aria-expanded','true');
+  refreshBankMenuLayer();
+  requestAnimationFrame(() => menu.querySelector('.quick-setup-option')?.focus());
+}
+function closeKsPresetMenu(bi, returnFocus = false) {
+  const menu = document.getElementById(`ks-preset-menu-${bi}`);
+  const trigger = document.getElementById(`ks-preset-trigger-${bi}`);
+  if (menu) menu.hidden = true;
+  if (trigger) {
+    trigger.setAttribute('aria-expanded','false');
+    if (returnFocus) trigger.focus();
+  }
+  refreshBankMenuLayer();
+}
+function ksPresetOptionKey(event, bi) {
+  const options = [...event.currentTarget.closest('.ks-preset-menu').querySelectorAll('.quick-setup-option')];
+  const index = options.indexOf(event.currentTarget);
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeKsPresetMenu(bi, true);
+  } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? options.length-1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+    options[next]?.focus();
+  }
 }
 
 function resetKs(bi) {
@@ -4593,7 +4668,6 @@ function updateNvmDegradedNotice() {
   const connected = s === 'CONNECTED_LIVE' || s === 'CONNECTED_BLIND';
   el.hidden = !(connected && DEVICE_INFO.config_source === 'file');
 }
-let _statusCollapseTimer = null;
 let _lastConnState = null;
 function renderConnState(){
   const status = document.getElementById('h-status');
@@ -4604,15 +4678,10 @@ function renderConnState(){
   const s = connState();
   const entering = s !== _lastConnState;
   _lastConnState = s;
-  if (entering) { clearTimeout(_statusCollapseTimer); _statusCollapseTimer = null; }
   if (s === 'CONNECTED_LIVE'){
     dot.className = 'h-status-dot on';
-    // Give the "connected" text a moment to register, then collapse it back to
-    // just the dot so the header row has room (Frank 2026-07-21) — only on the
-    // DISCONNECTED->LIVE transition, not on every re-render while already live.
     if (entering) {
       txt.classList.remove('hidden'); txt.textContent = t('status.connected');
-      _statusCollapseTimer = setTimeout(() => txt.classList.add('hidden'), 3000);
     }
   } else if (s === 'CONNECTED_BLIND'){
     dot.className = 'h-status-dot warn';
@@ -5340,7 +5409,6 @@ var iconPickerMode = 'icon'; // 'icon' | 'library'
 
 var ICON_ONLY_SECTIONS = [
   {
-    label: 'Instrument category',
     icons: [
       {icon:'🎻', label:'Strings'},
       {icon:'🎺', label:'Brass'},
@@ -5389,7 +5457,7 @@ function openIconPicker(bi, mode = 'icon') {
 
   let out = '';
   for (const section of sections) {
-    out += `<div class="icon-section-label">${section.label}</div>`;
+    if (section.label) out += `<div class="icon-section-label">${section.label}</div>`;
     if (section.icons) {
       out += `<div class="icon-section-row">`;
       out += section.icons.map(({icon, label}) => `
@@ -5697,7 +5765,7 @@ function quickSetupOptionKey(event) {
   }
 }
 function refreshLibraryPresetOptions() {
-  document.querySelectorAll('.quick-setup-menu').forEach(menu => {
+  document.querySelectorAll('.quick-setup-menu:not(.ks-preset-menu)').forEach(menu => {
     const bi = Number(menu.id.split('-').pop());
     const input = document.getElementById(`quick-setup-input-${bi}`);
     menu.innerHTML = quickSetupMenuHtml(input?.value || '');
@@ -5706,6 +5774,9 @@ function refreshLibraryPresetOptions() {
 document.addEventListener('pointerdown', event => {
   document.querySelectorAll('.quick-setup-picker').forEach(picker => {
     if (!picker.contains(event.target)) closeQuickSetupMenu(Number(picker.id.split('-').pop()));
+  });
+  document.querySelectorAll('.ks-preset-picker').forEach(picker => {
+    if (!picker.contains(event.target)) closeKsPresetMenu(Number(picker.id.split('-').pop()));
   });
   if (!event.target.closest('.send-callout')) closeChangePopover();
 });
