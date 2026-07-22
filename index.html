@@ -29,6 +29,10 @@
   --glass-dialog:rgba(255,255,255,.78);
   --glass-border:rgba(255,255,255,.72);
   --glass-shadow:0 14px 38px rgba(31,31,36,.09),inset 0 1px 0 rgba(255,255,255,.72);
+  --chrome-glass-bg:linear-gradient(180deg,rgba(255,255,255,.68),rgba(242,242,247,.48));
+  --chrome-glass-filter:blur(22px) saturate(170%);
+  --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.72),0 8px 28px rgba(31,31,36,.09);
+  --chrome-float-border:rgba(255,255,255,.38);
   --control-glass-bg:linear-gradient(145deg,rgba(255,255,255,.72),rgba(174,174,178,.34));
   --control-glass-border:rgba(255,255,255,.56);
   --control-glass-shadow:0 2px 7px rgba(34,34,40,.12),inset 0 1px 0 rgba(255,255,255,.76);
@@ -73,6 +77,9 @@ html.dark{
   --glass-dialog:rgba(32,32,38,.82);
   --glass-border:rgba(255,255,255,.12);
   --glass-shadow:0 18px 46px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08);
+  --chrome-glass-bg:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
+  --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18);
+  --chrome-float-border:rgba(255,255,255,.10);
   --control-glass-bg:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.06));
   --control-glass-border:rgba(255,255,255,.10);
   --control-glass-shadow:0 2px 8px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.10);
@@ -90,12 +97,6 @@ html.dark{
   --highlight-element-glow:rgba(var(--highlight-rgb),.38);
   --piano-white:#d8d8dc;
   --piano-black:#202024;
-}
-html.dark header{
-  background:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
-  backdrop-filter:blur(22px) saturate(170%);
-  -webkit-backdrop-filter:blur(22px) saturate(170%);
-  box-shadow:inset 0 -1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18);
 }
 html.dark .artic-display{background:#111115}
 html.dark select{color-scheme:dark}
@@ -132,23 +133,26 @@ main{display:flex;flex-direction:column;flex:1;width:100%}
 /* HEADER */
 header{
   display:flex;align-items:center;justify-content:space-between;padding:5px 28px;
-  background:linear-gradient(180deg,rgba(255,255,255,.68),rgba(242,242,247,.48));
-  backdrop-filter:blur(22px) saturate(170%);
-  -webkit-backdrop-filter:blur(22px) saturate(170%);
-  box-shadow:inset 0 -1px 0 rgba(255,255,255,.72),0 8px 28px rgba(31,31,36,.09);
+  background:var(--chrome-glass-bg);
+  backdrop-filter:var(--chrome-glass-filter);
+  -webkit-backdrop-filter:var(--chrome-glass-filter);
+  box-shadow:var(--chrome-glass-shadow);
 }
 .top-sticky{position:sticky;top:0;z-index:50;}
 .live-hud{
-  position:fixed;top:64px;left:28px;z-index:45;width:112px;height:112px;box-sizing:border-box;padding:9px;
-  border:1px solid var(--glass-border);border-radius:22px;
-  background:linear-gradient(180deg,rgba(255,255,255,.68),rgba(242,242,247,.48));
-  backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 8px 28px rgba(31,31,36,.09);
+  position:fixed;top:64px;z-index:45;width:112px;height:112px;box-sizing:border-box;padding:9px;
+  border:1px solid var(--chrome-float-border);border-radius:22px;
+  background:var(--chrome-glass-bg);
+  backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);
+  box-shadow:var(--chrome-glass-shadow);
   opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-5px) scale(.98);
   transition:opacity .28s ease,transform .36s cubic-bezier(.16,1,.3,1),top .36s cubic-bezier(.16,1,.3,1),width .38s cubic-bezier(.16,1,.3,1),height .38s cubic-bezier(.16,1,.3,1),padding .38s cubic-bezier(.16,1,.3,1),border-radius .38s cubic-bezier(.16,1,.3,1),visibility 0s linear .36s;
 }
+.live-hud[data-side="left"]{left:28px;right:auto}
+.live-hud[data-side="right"]{left:auto;right:28px}
 .live-hud.is-contextual-visible{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition-delay:0s}
 .live-hud.is-contextual-visible.is-idle{opacity:.68}
+.live-hud.is-dragging{cursor:grabbing!important;transform:scale(1.015)}
 .live-hud-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr) 31px;gap:7px 5px;height:100%}
 .live-hud-bank{display:none}
 .live-hud-item{min-width:0;color:var(--t2)}
@@ -162,22 +166,25 @@ header{
 .live-hud-item:not(.live-hud-roller) .live-hud-meter-fill{position:absolute;right:0;bottom:0;left:0;width:100%;height:var(--live-level,0%);background:linear-gradient(0deg,#8e8e93,#aeaeb2);transition:height .06s linear}
 .live-hud-value{min-width:3ch;text-align:center;color:var(--t1);font:600 10px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip}
 .live-hud-tech{color:var(--t3);font:600 6.25px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1;white-space:nowrap}
-.live-hud-roller{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(16px,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:2px;padding-top:5px;border-top:1px solid var(--border)}
+.live-hud-roller{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(16px,1fr) minmax(0,48px);grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:2px;padding-top:5px;border-top:1px solid var(--border)}
 .live-hud-roller .live-hud-tech{grid-column:1/-1;justify-self:center}
-.live-hud.is-compact{width:202px;height:46px;padding:5px 7px;border-radius:var(--r-pill)}
-.live-hud.is-compact .live-hud-inner{grid-template-columns:repeat(3,auto);grid-template-rows:1fr;align-items:center;justify-content:center;gap:0}
+.live-hud-roller .live-hud-value{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:9px;letter-spacing:-.02em}
+.live-hud-roller .live-hud-value.is-long{font-size:8.25px;letter-spacing:-.045em}
+.live-hud-roller .live-hud-value.is-very-long{font-size:7.5px;letter-spacing:-.06em}
+.live-hud.is-compact{width:min(252px,calc(100vw - 56px));height:46px;padding:5px 7px;border-radius:var(--r-pill)}
+.live-hud.is-compact .live-hud-inner{grid-template-columns:auto auto minmax(0,1fr);grid-template-rows:1fr;align-items:center;justify-content:stretch;gap:0}
 .live-hud.is-compact .live-hud-item,
 .live-hud.is-compact .live-hud-item:not(.live-hud-roller){display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-items:center;justify-items:center;column-gap:4px;row-gap:3px;padding:0 7px;border:0}
 .live-hud.is-compact .live-hud-item .live-hud-tech{grid-column:1/-1}
 .live-hud.is-compact .live-hud-item+.live-hud-item{border-left:1px solid var(--border)}
-.live-hud.is-compact .live-hud-roller{grid-column:auto;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-items:center;justify-items:center;column-gap:4px;row-gap:3px;padding:0 7px;border-top:0}
+.live-hud.is-compact .live-hud-roller{grid-column:auto;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-items:center;justify-items:center;column-gap:4px;row-gap:3px;padding:0 7px;border-top:0;min-width:0}
+.live-hud.is-compact .live-hud-roller:has(.live-hud-value.is-very-long){grid-template-columns:minmax(0,1fr)}
+.live-hud.is-compact .live-hud-roller:has(.live-hud-value.is-very-long) .live-hud-label{display:none}
 .live-hud.is-compact .live-hud-meter{display:none}
 .live-hud.is-compact .live-hud-value{min-width:0;font-size:10px}
-html.dark .live-hud{
-  background:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
-  backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18)
-}
+.live-hud.is-compact .live-hud-roller .live-hud-value.is-long{font-size:8.25px;letter-spacing:-.045em}
+.live-hud.is-compact .live-hud-roller .live-hud-value.is-very-long{font-size:7.5px;letter-spacing:-.06em}
+@media(min-width:981px){.live-hud.is-contextual-visible{cursor:grab}}
 .h-left{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0}
 .h-title{font-size:13px;font-weight:700;letter-spacing:-.01em;flex-shrink:0;white-space:nowrap}
 .h-ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)}
@@ -804,10 +811,6 @@ html.dark #device-settings-chevron{color:var(--t3)}
 .footer-links{
   display:flex;flex-direction:column;gap:8px;align-items:flex-end;
 }
-.footer-social{display:flex;gap:16px;margin-top:6px;}
-.social-icon{color:var(--t3);transition:color .15s;display:flex;align-items:center;}
-.social-icon:hover{color:var(--t1);}
-.social-icon:hover{color:var(--t1);}
 .footer-links a{
   font-size:12px;color:var(--t3);text-decoration:none;transition:color .13s;
 }
@@ -880,6 +883,9 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
   .dark-toggle,.bank-block-tab,.bank-block-tab-add,.send-btn,.btn,.ks-preset-trigger{min-height:44px}
   .uacc-tag button{min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
   .tx{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  /* Keep toast chrome compact while the close button retains a 44px hit area. */
+  .toast .tx{position:relative;width:26px;height:26px;min-width:26px;min-height:26px}
+  .toast .tx::before{content:'';position:absolute;inset:-9px;border-radius:50%}
   .ks-keyboard-shell{grid-template-columns:44px minmax(0,1fr) 44px}
   .ks-key-scroll-btn{width:44px}
   .roller-mode-btn{min-height:44px}
@@ -903,11 +909,6 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
   .send-callout.is-mobile-docked .send-change-note.is-visible.is-swapping{transform:translateX(-3px) scale(.985)}
   .send-callout.is-mobile-docked .change-popover{top:auto;bottom:calc(100% + 10px)}
   .panel{min-width:100%;max-width:100%}.info-grid{grid-template-columns:1fr}
-  #welcome-text-block.welcome-has-skip{padding-bottom:30px}
-  #welcome-text-block .welcome-skip{
-    position:fixed;left:50%;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:3;
-    width:max-content;transform:translateX(-50%);
-  }
   .welcome-action-slot,.welcome-start{height:44px;min-height:44px}
 }
 
@@ -981,6 +982,8 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
   overflow:hidden;
 }
 #welcome-screen.hidden{display:none !important;}
+html:has(#welcome-screen:not(.hidden)),
+body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .welcome-inner{
   display:flex;
   flex-direction:column;
@@ -1001,7 +1004,18 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
   position:relative;width:100%;height:50px;flex:0 0 50px;
 }
-#welcome-text-block.welcome-onboarding .welcome-copy-stage{height:142px;flex-basis:142px;justify-content:flex-start}
+#welcome-text-block.welcome-onboarding .welcome-copy-stage{
+  position:fixed;
+  top:var(--welcome-controller-center-y,50%);
+  left:var(--welcome-controller-center-x,50%);
+  z-index:2;
+  width:min(360px,calc(100vw - 40px));
+  height:auto;
+  min-height:0;
+  flex-basis:auto;
+  justify-content:flex-start;
+  transform:translate(-50%,-50%);
+}
 #onb-beats{width:100%}
 .welcome-wordmark{
   position:relative;display:grid;place-items:center;width:190px;height:32px;overflow:hidden;
@@ -1012,9 +1026,10 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
   font:700 24px/1 'Mulish',sans-serif;letter-spacing:-.035em;white-space:nowrap;
   color:var(--t1);
 }
-#welcome-text-block.welcome-onboarding .welcome-wordmark{position:absolute;top:0;left:50%;transform:translateX(-50%);visibility:hidden}
-#welcome-text-block.welcome-onboarding.welcome-wordmark-beat .welcome-wordmark{visibility:visible}
-#welcome-text-block.welcome-onboarding.welcome-wordmark-beat .onb-beat-title{visibility:hidden}
+#welcome-text-block.welcome-onboarding .welcome-wordmark{position:absolute;top:0;left:50%;transform:translateX(-50%)}
+#welcome-text-block.welcome-onboarding .welcome-wordmark-text{color:transparent}
+#welcome-text-block.welcome-onboarding.welcome-wordmark-beat .welcome-wordmark-text{color:var(--t1)}
+#welcome-text-block.welcome-onboarding.welcome-wordmark-beat .onb-beat-title{color:transparent}
 .welcome-action-slot{display:flex;align-items:center;justify-content:center;width:100%;height:38px;margin:4px 0 2px}
 @media(min-width:601px){
   .welcome-inner{gap:2px}
@@ -1037,6 +1052,8 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
 .welcome-start:disabled{opacity:.6;cursor:default;}
 .welcome-start-msg{width:100%;height:14px;min-height:14px;margin:6px 0 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;line-height:14px;color:var(--danger);}
 .welcome-skip{
+  position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:3;
+  width:max-content;transform:translateX(-50%);
   font-size:12px;color:var(--t3);background:none;border:none;
   cursor:pointer;font-family:'Mulish',sans-serif;padding:8px 16px;
   -webkit-tap-highlight-color:transparent;
@@ -1050,9 +1067,8 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1)}
 .onb-dot:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .onb-beats-fade{opacity:0;}
 @media(max-width:600px){
-  /* Reserve three lines for every intro description so longer slide copy cannot
-     push the dots down on narrow screens. */
-  .onb-beat-sub{height:59px;min-height:59px;overflow:hidden;}
+  #welcome-text-block.welcome-onboarding .welcome-copy-stage{width:min(320px,calc(100vw - 32px))}
+  .onb-beat-sub{min-height:59px}
 }
 /* ── SHARED CONTROLLER IN WELCOME MODE ── */
 .welcome-flash{
@@ -1195,12 +1211,13 @@ body.welcome-connecting #send-btn.welcome-floating{
 }
 @media(max-width:980px){
   .live-hud{left:16px;width:96px;height:96px;padding:7px;border-radius:19px}
+  .live-hud[data-side]{left:16px;right:auto}
   .live-hud-inner{grid-template-rows:minmax(0,1fr) 28px;gap:4px}
   .live-hud-item:not(.live-hud-roller){row-gap:2px}
   .live-hud-item:not(.live-hud-roller) .live-hud-meter{height:17px}
-  .live-hud-roller{grid-template-columns:auto minmax(12px,1fr) auto;column-gap:3px;row-gap:1px;padding-top:3px}
+  .live-hud-roller{grid-template-columns:auto minmax(12px,1fr) minmax(0,42px);column-gap:3px;row-gap:1px;padding-top:3px}
   .live-hud-roller .live-hud-value{font-size:10px}
-  .live-hud.is-compact{width:190px;height:44px;padding:4px 5px;border-radius:var(--r-pill)}
+  .live-hud.is-compact{width:min(228px,calc(100vw - 32px));height:44px;padding:4px 5px;border-radius:var(--r-pill)}
   .live-hud.is-compact .live-hud-item,
   .live-hud.is-compact .live-hud-item:not(.live-hud-roller),
   .live-hud.is-compact .live-hud-roller{padding:0 5px;column-gap:3px}
@@ -1301,6 +1318,13 @@ html.dark .lib-badge-sm{background:#555}
     position:relative;
     background:linear-gradient(90deg,color-mix(in srgb,var(--bg-input) 46%,transparent),transparent 62%);
     box-shadow:none;
+  }
+  /* Keep the controller-to-section hover link visible on an expanded section.
+     This state rule must follow .is-open because both selectors have equal
+     specificity and the open-section background otherwise wins the cascade. */
+  .bank-section.is-open.fader-linked{
+    background:var(--highlight-section-fill);
+    box-shadow:0 0 12px 0 var(--highlight-section-glow);
   }
   .bank-section.is-open::before{
     content:'';position:absolute;z-index:0;top:0;bottom:0;left:0;width:18px;pointer-events:none;
@@ -1561,7 +1585,6 @@ button:focus-visible{outline-offset:3px;}
 }
 
 
-#onb-demo-badge{position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:6;background:var(--bg-card);border:1px solid var(--border-s);color:var(--t2);border-radius:var(--r-pill);padding:3px 10px;font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
 .onb-replay-btn{margin:0 0 12px;}
 
 .uacc-tag[draggable="true"]{cursor:grab}
@@ -1639,7 +1662,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 </header>
 <div class="send-sticky-row" id="send-sticky-row" hidden></div>
 </div>
-<div class="live-hud" id="live-strip" data-state="DISCONNECTED" role="group" aria-label="Live device values" aria-hidden="true">
+<div class="live-hud is-compact" id="live-strip" data-state="DISCONNECTED" data-side="left" role="group" tabindex="0" aria-label="Live device values. Drag left or right to reposition." aria-hidden="true">
   <div class="live-hud-bank" id="live-hud-bank">B1 · Bank 1</div>
   <div class="live-hud-inner">
     <div class="live-hud-item">
@@ -1671,7 +1694,6 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
   <div class="stage-collapse" id="stage-collapse">
   <div class="stage">
     <div id="live-note" class="live-note" hidden>Live positions unavailable — MIDI not connected.</div>
-    <div id="onb-demo-badge" style="display:none" data-i18n="onb.demo_badge">Demo — no device</div>
     <div class="device-home" id="device-home">
     <div class="device-wrap" id="device-wrap">
       <div id="welcome-flash" class="welcome-flash"></div>
@@ -1828,29 +1850,13 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       </div>
       <div class="footer-links">
         <a href="https://acoustic-empire.cz" target="_blank" rel="noopener">acoustic-empire.cz</a>
-        <a href="/cdn-cgi/l/email-protection#1665636666796462567775796365627f753b737b667f647338756c" data-i18n="footer.support"><span class="__cf_email__" data-cfemail="9ae9efeaeaf5e8eedafbf9f5efe9eef3f9b7fff7eaf3e8ffb4f9e0">[email&#160;protected]</span></a>
-        <a href="#" data-i18n="footer.privacy">Privacy Policy</a>
-        <a href="#" data-i18n="footer.terms">Terms of Use</a>
-        <div class="footer-social">
-          <a href="#" class="social-icon" title="Facebook" target="_blank" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-          </a>
-          <a href="#" class="social-icon" title="Instagram" target="_blank" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          </a>
-          <a href="#" class="social-icon" title="LinkedIn" target="_blank" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-          </a>
-          <a href="#" class="social-icon" title="YouTube" target="_blank" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/></svg>
-          </a>
-        </div>
+        <a href="mailto:support@acoustic-empire.cz" data-i18n="footer.support">support@acoustic-empire.cz</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 Acoustic Empire s.r.o.</span>
-      <span>v 1.00</span>
-      <span data-i18n="footer.compat">Works with Chrome &amp; Edge · Web MIDI API required</span>
+      <span>© 2026 Acoustic Empire s.r.o.</span>
+      <span>v 1.0.0</span>
+      <span data-i18n="footer.compat">Works with Chrome &amp; Edge · Web Serial &amp; Web MIDI required</span>
       <span data-i18n="footer.made">Made in Czech Republic</span>
     </div>
   </footer>
@@ -2032,10 +2038,7 @@ function musicalCcName(cc, fallback = '') {
 }
 function defaultFaderName(key) { return key === 'fader1' ? 'Expression' : 'Dynamics'; }
 function faderDisplayName(ctrl, key) { return String(ctrl?.label || '').trim() || defaultFaderName(key); }
-function compactArticulationName(value) {
-  const name = uaccName(value).replace(/^(Long|Short|Accent|Trill)\s*[—-]\s*/,'');
-  return name.length > 9 ? name.slice(0,8) + '…' : name;
-}
+function liveArticulationName(value) { return uaccName(value); }
 
 const _openBankSections = new Map();
 function openBankSection(bi) { return _openBankSections.has(bi) ? _openBankSections.get(bi) : 'fader1'; }
@@ -4061,7 +4064,6 @@ function connectInputs(){
   renderMidiDiagnostics();
   if(found){
     if (!_ffConnected) {
-      onbOnConnect();
       _ffConnected = true;
       // Pre-open output port to avoid onstatechange → connectInputs() loop on first CC send.
       midiAccess.outputs.forEach(out => { if(isFeelFader(out.name)) out.open().catch(()=>{}); });
@@ -4597,9 +4599,63 @@ function connState(){
   if (_midiState === 'denied' || _midiState === 'unsupported') return 'MIDI_BLOCKED';
   return 'DISCONNECTED';
 }
+const LIVE_HUD_SIDE_KEY = 'ff_live_hud_side';
+let _liveHudSide = 'left';
+let _liveHudDrag = null;
+function liveHudDesktop(){ return window.matchMedia('(min-width:981px)').matches; }
+function applyLiveHudSide(side, persist=false){
+  const strip = document.getElementById('live-strip');
+  if (!strip) return;
+  _liveHudSide = side === 'right' ? 'right' : 'left';
+  strip.dataset.side = _liveHudSide;
+  strip.setAttribute('aria-label', liveHudDesktop()
+    ? `Live device values. Positioned ${_liveHudSide}. Drag or use Left and Right arrow keys to reposition.`
+    : 'Live device values.');
+  if (persist) {
+    try { localStorage.setItem(LIVE_HUD_SIDE_KEY, _liveHudSide); } catch (_) {}
+  }
+}
+function initLiveHudPositioning(){
+  const strip = document.getElementById('live-strip');
+  if (!strip) return;
+  try { applyLiveHudSide(localStorage.getItem(LIVE_HUD_SIDE_KEY) || 'left'); }
+  catch (_) { applyLiveHudSide('left'); }
+  strip.addEventListener('pointerdown', event => {
+    if (!liveHudDesktop() || event.button !== 0) return;
+    const rect = strip.getBoundingClientRect();
+    _liveHudDrag = { pointerId:event.pointerId, offsetX:event.clientX-rect.left };
+    strip.setPointerCapture(event.pointerId);
+    strip.classList.add('is-dragging');
+    strip.style.transition = 'none';
+    event.preventDefault();
+  });
+  strip.addEventListener('pointermove', event => {
+    if (!_liveHudDrag || event.pointerId !== _liveHudDrag.pointerId) return;
+    const maxLeft = Math.max(16, window.innerWidth - strip.offsetWidth - 16);
+    const left = Math.max(16, Math.min(maxLeft, event.clientX - _liveHudDrag.offsetX));
+    strip.style.left = `${left}px`;
+    strip.style.right = 'auto';
+  });
+  const finishDrag = event => {
+    if (!_liveHudDrag || event.pointerId !== _liveHudDrag.pointerId) return;
+    const center = strip.getBoundingClientRect().left + strip.offsetWidth / 2;
+    _liveHudDrag = null;
+    strip.classList.remove('is-dragging');
+    strip.style.removeProperty('left');
+    strip.style.removeProperty('right');
+    strip.style.removeProperty('transition');
+    applyLiveHudSide(center < window.innerWidth / 2 ? 'left' : 'right', true);
+  };
+  strip.addEventListener('pointerup', finishDrag);
+  strip.addEventListener('pointercancel', finishDrag);
+  strip.addEventListener('keydown', event => {
+    if (!liveHudDesktop() || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+    event.preventDefault();
+    applyLiveHudSide(event.key === 'ArrowLeft' || event.key === 'Home' ? 'left' : 'right', true);
+  });
+}
 function updateContextualLiveStrip(){
   const strip = document.getElementById('live-strip');
-  const controller = document.getElementById('device-img');
   const welcome = document.getElementById('welcome-screen');
   if (!strip) return;
   const headerBottom = document.querySelector('.top-sticky')?.getBoundingClientRect().bottom || 0;
@@ -4607,11 +4663,10 @@ function updateContextualLiveStrip(){
   const hasLiveData = !!(liveSeen.f1 || liveSeen.f2 || encLiveVal !== null || ksLiveNote !== null);
   const live = strip.dataset.state === 'CONNECTED_LIVE' && hasLiveData;
   const visible = welcomeClosed;
-  const compact = welcomeClosed && !!controller && controller.getBoundingClientRect().bottom <= headerBottom + 8;
   strip.style.top = `${Math.round(headerBottom + 12)}px`;
   strip.classList.toggle('is-contextual-visible',visible);
   strip.classList.toggle('is-idle',!live);
-  strip.classList.toggle('is-compact',compact);
+  strip.classList.add('is-compact');
   strip.setAttribute('aria-hidden',String(!visible));
 }
 function renderLiveStrip(){
@@ -4620,7 +4675,9 @@ function renderLiveStrip(){
   const state = connState();
   const allowed = state === 'CONNECTED_LIVE';
   strip.dataset.state = state;
-  strip.title = 'Live values received from the device';
+  strip.title = liveHudDesktop()
+    ? 'Live values received from the device · drag left or right to reposition'
+    : 'Live values received from the device';
 
   const setLiveValue = (id, meterId, value, seen) => {
     const valid = allowed && seen && Number.isFinite(value);
@@ -4643,7 +4700,7 @@ function renderLiveStrip(){
   const mode = bank?.roller_mode || 'cc';
   let rollerValue = '—', rollerMeter = 0;
   if (allowed && mode === 'cc' && encLiveVal !== null) {
-    rollerValue = compactArticulationName(encLiveVal); rollerMeter = encLiveVal;
+    rollerValue = liveArticulationName(encLiveVal); rollerMeter = encLiveVal;
   } else if (allowed && mode === 'keyswitch' && ksLiveNote !== null) {
     rollerValue = noteName(ksLiveNote); rollerMeter = ksLiveNote;
   }
@@ -4656,7 +4713,13 @@ function renderLiveStrip(){
     : mode === 'track_nav' ? 'HID·keys' : `Ch${bank.encoder.channel+1}·CC${bank.encoder.cc}`);
   setTxt('live-roller-value', rollerValue);
   const rollerValueEl = document.getElementById('live-roller-value');
-  if (rollerValueEl) rollerValueEl.title = mode === 'cc' && encLiveVal !== null ? `${uaccName(encLiveVal)} · CC ${encLiveVal}` : rollerValue;
+  if (rollerValueEl) {
+    const readableValue = mode === 'cc' && encLiveVal !== null ? uaccName(encLiveVal) : rollerValue;
+    rollerValueEl.classList.toggle('is-long', readableValue.length > 12);
+    rollerValueEl.classList.toggle('is-very-long', readableValue.length > 20);
+    rollerValueEl.title = mode === 'cc' && encLiveVal !== null ? `${readableValue} · CC ${encLiveVal}` : readableValue;
+    rollerValueEl.setAttribute('aria-label', readableValue);
+  }
   const rollerBar = document.getElementById('live-roller-meter');
   if (rollerBar) rollerBar.style.setProperty('--live-level', rollerValue === '—' ? '0%' : (rollerMeter / 127 * 100) + '%');
   updateContextualLiveStrip();
@@ -4813,9 +4876,7 @@ var TRANSLATIONS = {
     'icon.no_icon': 'No icon',
     'icon.close': 'Close',
     'footer.support': 'support@acoustic-empire.cz',
-    'footer.privacy': 'Privacy Policy',
-    'footer.terms': 'Terms of Use',
-    'footer.compat': 'Works with Chrome & Edge · Web MIDI API required',
+    'footer.compat': 'Works with Chrome & Edge · Web Serial & Web MIDI required',
     'footer.made': 'Made in Czech Republic',
   }
 };
@@ -5085,6 +5146,11 @@ function positionWelcomeAnchor() {
   const slot = document.getElementById('welcome-action-slot');
   const btn = document.getElementById('send-btn');
   if (!ws || !slot || !btn) return;
+  const controllerRect = document.getElementById('device-img')?.getBoundingClientRect();
+  if (controllerRect?.width && controllerRect?.height) {
+    ws.style.setProperty('--welcome-controller-center-x', (controllerRect.left + controllerRect.width / 2) + 'px');
+    ws.style.setProperty('--welcome-controller-center-y', (controllerRect.top + controllerRect.height / 2) + 'px');
+  }
   const hadFloating = btn.classList.contains('welcome-floating');
   if (hadFloating) {
     btn.style.transition = 'none';   // see positionWelcomeFloatingButton() — same instant-toggle need
@@ -5312,6 +5378,9 @@ function onbBeatGo(i, instant) {
     tEl.textContent = t(_ONB_BEATS[_onbBeat].t);
     sEl.textContent = t(_ONB_BEATS[_onbBeat].s);
     textBlock?.classList.toggle('welcome-wordmark-beat', _onbBeat === 0);
+    const wordmarkBeat = _onbBeat === 0;
+    wEl?.setAttribute('aria-hidden', wordmarkBeat ? 'false' : 'true');
+    tEl.setAttribute('aria-hidden', wordmarkBeat ? 'true' : 'false');
   };
   if (instant) {
     applyBeat();
@@ -5326,14 +5395,8 @@ function onbBeatGo(i, instant) {
     wEl?.classList.add('onb-beats-fade');
     setTimeout(() => {
       applyBeat();
-      // tEl's visibility flip (hidden->visible when leaving beat 0) and its
-      // opacity-transition restart land in the same tick — Chrome sometimes
-      // needs a full extra paint before it treats a freshly-visible
-      // element's transition as already in flight, so tEl's fade-in starts
-      // ~1 frame behind sEl/wEl (which are never visibility-hidden) even
-      // after forcing a synchronous reflow. Removing the fade class one
-      // rAF later (after the visibility flip has actually painted) closes
-      // that gap.
+      // The inactive heading uses transparent text rather than visibility or
+      // clipping, so all three opacity transitions stay painted and in sync.
       requestAnimationFrame(() => {
         tEl.classList.remove('onb-beats-fade'); sEl.classList.remove('onb-beats-fade');
         wEl?.classList.remove('onb-beats-fade');
@@ -5378,21 +5441,7 @@ function armLibrarySetupCue() {
 }
 function onbAfterWelcome() {
   try { localStorage.setItem('ff-onboarded', '1'); } catch (_) {}
-  if (liveAllowed()) onbDemoStop(); else onbDemoStart();
   requestAnimationFrame(() => requestAnimationFrame(armLibrarySetupCue));
-}
-
-function onbDemoStart() {
-  const badge = document.getElementById('onb-demo-badge');
-  if (badge) badge.style.display = 'block';
-}
-
-function onbDemoStop() {
-  const badge = document.getElementById('onb-demo-badge');
-  if (badge) badge.style.display = 'none';
-}
-function onbOnConnect() {
-  onbDemoStop();
 }
 function onbReplay() {
   showWelcome();
@@ -5789,6 +5838,7 @@ window.addEventListener('scroll', updateStickySectionHeads, {passive:true});
 window.addEventListener('resize', updateMobileSendDock, {passive:true});
 window.addEventListener('resize', updateContextualLiveStrip, {passive:true});
 window.addEventListener('resize', updateStickySectionHeads, {passive:true});
+window.addEventListener('resize', () => applyLiveHudSide(_liveHudSide), {passive:true});
 window.addEventListener('resize', () => { positionWelcomeAnchor(); positionWelcomeFloatingButton(); }, {passive:true});
 
 function customPresetFromBank(bank) {
@@ -6058,6 +6108,7 @@ window.addEventListener('beforeunload', e => {   // audit S5 — druhá síť
 window.addEventListener('load',()=>{
   initDark();
   initControllerVisibility();
+  initLiveHudPositioning();
   // Language: English only
   // device-img has inline base64 src — always available immediately
   const deviceImg  = document.getElementById('device-img');
