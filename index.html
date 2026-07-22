@@ -216,7 +216,7 @@ main{width:100%;}
 }
 .device-home{position:relative;width:min(65vw,clamp(120px,calc(44.24vh - 126px),220px));aspect-ratio:380/859;flex-shrink:0}
 .device-wrap{position:relative;width:100%;user-select:none;flex-shrink:0}
-.device-img{width:100%;display:block;border-radius:var(--r-lg);box-shadow:0 18px 44px rgba(0,0,0,.18),0 6px 16px rgba(0,0,0,.12);pointer-events:none}
+.device-img{width:100%;display:block;border-radius:var(--r-lg);box-shadow:0 18px 44px rgba(0,0,0,.18),0 6px 16px rgba(0,0,0,.12);pointer-events:none;transition:box-shadow .6s ease}
 .fader-tracks{position:absolute;top:0;left:0;right:0;bottom:0}
 .fader-track{position:absolute;user-select:none}
 .fader-thumb{position:absolute;left:50%;top:0;transform:translate3d(-50%,0,0);pointer-events:none;transition:transform .06s linear;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
@@ -4892,7 +4892,22 @@ function sharedController() { return document.getElementById('device-wrap'); }
 function finalizeWelcomeExit() {
   const controller = sharedController();
   if (controller) {
+    // .welcome-mode's box-shadow:none and the connect-success glow
+    // (welcome-device-glow, fill-mode:both) both target #device-img's own
+    // box-shadow — removing both classes here would otherwise let it snap
+    // straight to its full resting shadow, well before the button's own
+    // delayed reveal (Frank, 2026-07-22: "muzes spolecne se zobrazenim
+    // tlacitka send to device zobrazit i ten stin za controllerem"). Hold it
+    // hidden instantly (same transition:none technique as #send-btn below);
+    // revealPostConnectUI() brings it back in sync with the button.
+    const deviceImg = document.getElementById('device-img');
+    if (deviceImg) deviceImg.style.transition = 'none';
     controller.classList.remove('welcome-mode','connect-success');
+    if (deviceImg) {
+      deviceImg.style.boxShadow = 'none';
+      void deviceImg.offsetWidth;
+      deviceImg.style.transition = '';
+    }
     controller.querySelectorAll('.fader-thumb').forEach(thumb => {
       thumb.style.removeProperty('animation');
       thumb.style.removeProperty('transition');
@@ -4944,15 +4959,21 @@ function finalizeWelcomeExit() {
 // keyframe animation sidesteps this cleanly. Skipped under
 // prefers-reduced-motion, matching every other motion-guarded spot in this
 // file.
-function revealSendBtn() {
+function revealPostConnectUI() {
   const btn = document.getElementById('send-btn');
-  if (!btn) return;
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-    btn.style.opacity = '1';
-  } else {
-    btn.style.animation = 'welcome-btn-reveal .6s ease';
-    btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
+  const deviceImg = document.getElementById('device-img');
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (btn) {
+    if (reduced) {
+      btn.style.opacity = '1';
+    } else {
+      btn.style.animation = 'welcome-btn-reveal .6s ease';
+      btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
+    }
   }
+  // Bring the controller's shadow back at the same moment, so it doesn't
+  // read as a separate, earlier event (Frank, 2026-07-22).
+  if (deviceImg) deviceImg.style.removeProperty('box-shadow');
 }
 // The button must sit at the EXACT same on-screen spot it will occupy once
 // welcome closes (Frank, 2026-07-21 — "to tlačítko musí být ve stejné pozici
@@ -5138,7 +5159,7 @@ function connectTransitionWelcome() {
   // 6. Reveal the button once the app has actually finished opening, as its
   // own distinct beat — not bundled into the moment above (Frank, 2026-07-21:
   // "at se tam to send to device objevi az plynule po otevreni te appky").
-  setTimeout(revealSendBtn, 1450);
+  setTimeout(revealPostConnectUI, 1450);
 }
 
 function hideWelcome() {
@@ -5175,6 +5196,7 @@ function skipWelcome() {
   resetAppScrollTop();
   finalizeWelcomeExit();
   document.getElementById('send-btn')?.style.setProperty('opacity', '1');   // instant — no fade-in here, matching this whole path's "no animation" intent
+  document.getElementById('device-img')?.style.removeProperty('box-shadow');   // instant too — finalizeWelcomeExit() holds it hidden for the animated connect path, which doesn't apply here
   // render()/loadDefaultDemoConfig() above ran while #send-btn still had
   // .welcome-floating, so runValidation()'s own button text/class update was
   // guarded off (see runValidation()'s comment — protects the still-visible
