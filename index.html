@@ -203,13 +203,33 @@ main{width:100%;}
 
 @keyframes pg{0%,100%{transform:scale(1);opacity:0}50%{transform:scale(2.2);opacity:.18}}
 
-/* STAGE */
-.stage-collapse{display:grid;grid-template-rows:minmax(0,1fr);transition:grid-template-rows .9s cubic-bezier(.16,1,.3,1)}
-.stage-collapse>.stage{overflow:hidden;min-height:0;transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
-.stage-collapse.is-collapsed{grid-template-rows:minmax(0,0fr)}
-.stage-collapse.is-collapsed>.stage{opacity:0;transform:scale(.96) translateY(-8px)}
+/* STAGE
+   Two strictly sequential phases, never overlapping, so the box never clips
+   still-visible content into a flattened rectangle (Frank 2026-07-23):
+   HIDE  — content fades/settles first (.4s, no delay) while the box is still
+           full height, THEN (once invisible) the box collapses (.5s, delayed
+           .4s) onto empty space.
+   SHOW  — the box grows first (.5s, no delay) while content is still
+           invisible, THEN (once there's room) content fades/settles in
+           (.4s, delayed .5s).
+   Each direction's transition-delay lives on whichever rule is the "after"
+   style for that direction — CSS picks a transition's timing from the style
+   being transitioned TO, so grid delay + stage delay differ between the
+   base rule (used when un-collapsing) and the .is-collapsed rule (used when
+   collapsing) below. Total is .9s either way, matching the duration Frank
+   picked via the companion A/B/C comparison. */
+.stage-collapse{display:grid;grid-template-rows:minmax(0,1fr);transition:grid-template-rows .5s cubic-bezier(.16,1,.3,1)}
+.stage-collapse>.stage{overflow:hidden;min-height:0;transition:opacity .4s ease .5s,transform .4s ease .5s}
+.stage-collapse.is-collapsed{grid-template-rows:minmax(0,0fr);transition:grid-template-rows .5s cubic-bezier(.16,1,.3,1) .4s}
+.stage-collapse.is-collapsed>.stage{opacity:0;transform:scale(.94) translateY(-8px);transition:opacity .4s ease,transform .4s ease}
 @media(prefers-reduced-motion:reduce){
-  .stage-collapse,.stage-collapse>.stage{transition:none}
+  /* .is-collapsed variants repeated here at matching specificity — the
+     phased-sequence rules above now declare `transition` at 2-class
+     specificity (.stage-collapse.is-collapsed), which would otherwise beat
+     this 1-class override regardless of source order and silently re-enable
+     motion for reduced-motion users. */
+  .stage-collapse,.stage-collapse>.stage,
+  .stage-collapse.is-collapsed,.stage-collapse.is-collapsed>.stage{transition:none}
 }
 .stage{
   position:relative;
