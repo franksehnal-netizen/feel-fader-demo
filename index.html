@@ -4951,18 +4951,91 @@ function applyStageCollapse(hidden, animate = true) {
   }
   if (input) input.checked = !hidden;   // switch ON = controller visible (Frank 2026-07-21)
 }
+let _sendAnchorHomeOffset = null; // {dx,dy}: anchor's offset from #device-wrap's rect, captured while genuinely, statically parented there
+let _sendAnchorTrackCancel = null; // cancels/finishes an in-flight SHOW track if the toggle is hit again mid-glide
+
 function applySendAnchorDock(hidden, animate = true) {
   const row = document.getElementById('send-sticky-row');
   const anchor = document.querySelector('.send-anchor');
   const deviceWrap = document.getElementById('device-wrap');
   if (!anchor) { if (row) row.hidden = !hidden; return; }
+  if (_sendAnchorTrackCancel) { _sendAnchorTrackCancel(); _sendAnchorTrackCancel = null; }
+  if (anchor.parentElement === deviceWrap) {
+    const a = anchor.getBoundingClientRect(), d = deviceWrap.getBoundingClientRect();
+    _sendAnchorHomeOffset = { dx: a.left - d.left, dy: a.top - d.top };
+  }
   const target = hidden ? row : deviceWrap;
   const willMove = target && anchor.parentElement !== target;
-  // FLIP (First/Last/Invert/Play): reparenting is an instant DOM move — the
-  // browser has nothing to transition, so #send-btn used to teleport to its
-  // new spot in one frame. Measure position before the move, let it happen,
-  // measure after, then animate away the resulting delta with a transform so
-  // it reads as one continuous glide instead of a jump.
+
+  if (!hidden && animate && willMove && _sendAnchorHomeOffset) {
+    // SHOW: Send never leaves the (always-visible) sticky row until the box
+    // is done growing — it just tracks #device-wrap's live position every
+    // frame, so it moves "rovnou se sekcí banks" (immediately, together
+    // with the panels below) and is never invisible even for a moment
+    // (Frank 2026-07-23: "tlačítko nemusí zmizet ... jen hezky plynule se
+    // sekcí banks vyjede"). A before/after FLIP can't target this — #device-
+    // wrap keeps moving for the whole .5s box-growth transition, not just
+    // at the two endpoints — so track it continuously instead. Nested
+    // inside the fading/clipped .stage, it couldn't stay visible anyway
+    // (an ancestor's opacity/overflow bounds every descendant, regardless
+    // of the descendant's own styling), so this also sidesteps that.
+    const stageWrap = document.getElementById('stage-collapse');
+    const baseRect = anchor.getBoundingClientRect();
+    let raf, done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      cancelAnimationFrame(raf);
+      stageWrap.removeEventListener('transitionend', onEnd);
+      clearTimeout(safety);
+      // The tracked transform targets #device-wrap's outer rect + a cached
+      // offset, which drifts slightly from the anchor's real natural spot
+      // once it's genuinely docked (layout while "virtually there" via
+      // transform isn't identical to actually being there) — smooth over
+      // whatever residual gap remains instead of assuming it's zero, so the
+      // handoff never reads as a snap.
+      const lastRect = anchor.getBoundingClientRect();
+      anchor.style.transition = 'none';
+      anchor.style.transform = '';
+      anchor.classList.remove('docked');
+      deviceWrap.appendChild(anchor);
+      row.hidden = true;
+      const newRect = anchor.getBoundingClientRect();
+      const ddx = lastRect.left - newRect.left, ddy = lastRect.top - newRect.top;
+      void anchor.offsetHeight;
+      if (ddx || ddy) {
+        anchor.style.transform = `translate(${ddx}px,${ddy}px)`;
+        void anchor.offsetHeight;
+        anchor.style.transition = 'transform .15s ease';
+        anchor.style.transform = '';
+        anchor.addEventListener('transitionend', () => { anchor.style.transition = ''; }, { once: true });
+      } else {
+        anchor.style.transition = '';
+      }
+      _sendAnchorTrackCancel = null;
+    };
+    const onEnd = (e) => { if (e.target === stageWrap && e.propertyName === 'grid-template-rows') finish(); };
+    stageWrap.addEventListener('transitionend', onEnd);
+    const safety = setTimeout(finish, 700); // in case transitionend never fires (e.g. tab backgrounded)
+    const tick = () => {
+      if (done) return;
+      const d = deviceWrap.getBoundingClientRect();
+      anchor.style.transition = 'none';
+      anchor.style.transform = `translate(${d.left + _sendAnchorHomeOffset.dx - baseRect.left}px, ${d.top + _sendAnchorHomeOffset.dy - baseRect.top}px)`;
+      raf = requestAnimationFrame(tick);
+    };
+    anchor.classList.add('docked');
+    row.hidden = false;
+    raf = requestAnimationFrame(tick);
+    _sendAnchorTrackCancel = finish;
+    return;
+  }
+
+  // HIDE (and any instant / no-cached-offset fallback move): FLIP glide with
+  // a fade, delayed so Send only departs once its own content-fade phase
+  // has finished — the panels below already glide up for free as
+  // .stage-collapse's grid row shrinks, and Send joins that same motion
+  // rather than running on its own separate clock (Frank 2026-07-23).
   const move = () => {
     const first = (animate && willMove) ? anchor.getBoundingClientRect() : null;
     anchor.classList.toggle('docked', hidden);
@@ -4972,31 +5045,18 @@ function applySendAnchorDock(hidden, animate = true) {
     if (first) {
       const last = anchor.getBoundingClientRect();
       const dx = first.left - last.left, dy = first.top - last.top;
-      const dur = hidden ? '.5s' : '.4s';
       anchor.style.transition = 'none';
       anchor.style.opacity = '0';
       anchor.style.transform = (dx || dy) ? `translate(${dx}px,${dy}px)` : '';
       void anchor.offsetHeight;   // force reflow so the start position commits before animating
-      anchor.style.transition = `transform ${dur} cubic-bezier(.16,1,.3,1), opacity ${dur} ease`;
+      anchor.style.transition = 'transform .5s cubic-bezier(.16,1,.3,1), opacity .5s ease';
       anchor.style.transform = '';
       anchor.style.opacity = '';
       anchor.addEventListener('transitionend', () => { anchor.style.transition = ''; anchor.style.opacity = ''; }, { once: true });
     }
   };
-  // Don't move Send the instant the toggle fires — it used to glide to its
-  // new spot while the controller was still visibly fading/collapsing, which
-  // read as two unrelated things happening at once (Frank 2026-07-23 —
-  // "posune nahoru a cukne", then again "nechme zmizet controller a potom
-  // ať se tlačítko posune nahoru společně se sekcemi podtím"). The panels
-  // below already glide up for free as .stage-collapse's grid row shrinks —
-  // Send should join that same motion, not run its own on a separate clock.
-  // HIDE: content fades out first (.4s, Send rides along invisibly inside
-  //       device-wrap), THEN Send departs together with the .5s box collapse
-  //       that's also what's pulling the panels upward.
-  // SHOW: box grows first (.5s, Send stays put in the sticky row, already
-  //       visible), THEN Send arrives together with the .4s content fade-in.
-  if (animate && willMove) {
-    setTimeout(move, hidden ? 400 : 500);
+  if (animate && willMove && hidden) {
+    setTimeout(move, 400);
   } else {
     move();
   }
