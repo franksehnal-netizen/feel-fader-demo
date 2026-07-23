@@ -4951,20 +4951,40 @@ function applyStageCollapse(hidden, animate = true) {
   }
   if (input) input.checked = !hidden;   // switch ON = controller visible (Frank 2026-07-21)
 }
-function applySendAnchorDock(hidden) {
+function applySendAnchorDock(hidden, animate = true) {
   const row = document.getElementById('send-sticky-row');
   const anchor = document.querySelector('.send-anchor');
   const deviceWrap = document.getElementById('device-wrap');
-  if (anchor) {
-    anchor.classList.toggle('docked', hidden);
-    if (hidden && row && anchor.parentElement !== row) row.appendChild(anchor);
-    else if (!hidden && deviceWrap && anchor.parentElement !== deviceWrap) deviceWrap.appendChild(anchor);
-  }
+  if (!anchor) { if (row) row.hidden = !hidden; return; }
+  const target = hidden ? row : deviceWrap;
+  const willMove = target && anchor.parentElement !== target;
+  // FLIP (First/Last/Invert/Play): reparenting is an instant DOM move — the
+  // browser has nothing to transition, so #send-btn used to teleport to its
+  // new spot in one frame while the stage was still visibly fading/collapsing
+  // (Frank 2026-07-23 — "posune nahoru a cukne"). Measure position before the
+  // move, let it happen, measure after, then animate away the resulting delta
+  // with a transform so it reads as one continuous glide instead of a jump.
+  const first = (animate && willMove) ? anchor.getBoundingClientRect() : null;
+  anchor.classList.toggle('docked', hidden);
+  if (hidden && row) row.appendChild(anchor);
+  else if (!hidden && deviceWrap) deviceWrap.appendChild(anchor);
   if (row) row.hidden = !hidden;
+  if (first) {
+    const last = anchor.getBoundingClientRect();
+    const dx = first.left - last.left, dy = first.top - last.top;
+    if (dx || dy) {
+      anchor.style.transition = 'none';
+      anchor.style.transform = `translate(${dx}px,${dy}px)`;
+      void anchor.offsetHeight;   // force reflow so the start position commits before animating
+      anchor.style.transition = 'transform .4s cubic-bezier(.16,1,.3,1)';
+      anchor.style.transform = '';
+      anchor.addEventListener('transitionend', () => { anchor.style.transition = ''; }, { once: true });
+    }
+  }
 }
 function applyControllerVisibility(hidden, animate = true) {
   applyStageCollapse(hidden, animate);
-  applySendAnchorDock(hidden);
+  applySendAnchorDock(hidden, animate);
 }
 function toggleControllerVisibility(visible) {
   const hidden = !visible;   // switch ON = visible
@@ -5106,7 +5126,7 @@ function finalizeWelcomeExit() {
   }
   document.body.classList.remove('welcome-connecting');
   applyStageCollapse(_controllerHidden, false);
-  applySendAnchorDock(_controllerHidden);
+  applySendAnchorDock(_controllerHidden, false);
   layoutFaders();
   positionThumbs();
 }
