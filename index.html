@@ -4951,8 +4951,9 @@ function applyStageCollapse(hidden, animate = true) {
   }
   if (input) input.checked = !hidden;   // switch ON = controller visible (Frank 2026-07-21)
 }
-let _sendAnchorHomeOffset = null; // {dx,dy}: anchor's offset from #device-wrap's rect, captured while genuinely, statically parented there
-let _sendAnchorTrackCancel = null; // cancels/finishes an in-flight SHOW track if the toggle is hit again mid-glide
+let _sendAnchorHomeSize = null; // {width,height} captured while the anchor is genuinely, statically parented in #device-wrap — sizes the SHOW-direction placeholder
+let _sendAnchorStageOffset = null; // {dx,dy} from #stage-collapse's rect (bottom edge) to the anchor's rect, captured the same time
+let _sendAnchorTrackCancel = null; // cancels/finishes an in-flight track if the toggle is hit again mid-glide
 
 function applySendAnchorDock(hidden, animate = true) {
   const row = document.getElementById('send-sticky-row');
@@ -4961,105 +4962,153 @@ function applySendAnchorDock(hidden, animate = true) {
   if (!anchor) { if (row) row.hidden = !hidden; return; }
   if (_sendAnchorTrackCancel) { _sendAnchorTrackCancel(); _sendAnchorTrackCancel = null; }
   if (anchor.parentElement === deviceWrap) {
-    const a = anchor.getBoundingClientRect(), d = deviceWrap.getBoundingClientRect();
-    _sendAnchorHomeOffset = { dx: a.left - d.left, dy: a.top - d.top };
+    const r = anchor.getBoundingClientRect();
+    _sendAnchorHomeSize = { width: r.width, height: r.height };
+    const s = document.getElementById('stage-collapse').getBoundingClientRect();
+    _sendAnchorStageOffset = { dx: r.left - s.left, dy: r.top - s.bottom };
   }
   const target = hidden ? row : deviceWrap;
   const willMove = target && anchor.parentElement !== target;
 
-  if (!hidden && animate && willMove && _sendAnchorHomeOffset) {
-    // SHOW: Send never leaves the (always-visible) sticky row until the box
-    // is done growing — it just tracks #device-wrap's live position every
-    // frame, so it moves "rovnou se sekcí banks" (immediately, together
-    // with the panels below) and is never invisible even for a moment
-    // (Frank 2026-07-23: "tlačítko nemusí zmizet ... jen hezky plynule se
-    // sekcí banks vyjede"). A before/after FLIP can't target this — #device-
-    // wrap keeps moving for the whole .5s box-growth transition, not just
-    // at the two endpoints — so track it continuously instead. Nested
-    // inside the fading/clipped .stage, it couldn't stay visible anyway
-    // (an ancestor's opacity/overflow bounds every descendant, regardless
-    // of the descendant's own styling), so this also sidesteps that.
-    const stageWrap = document.getElementById('stage-collapse');
-    const baseRect = anchor.getBoundingClientRect();
-    let raf, done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      cancelAnimationFrame(raf);
-      stageWrap.removeEventListener('transitionend', onEnd);
-      clearTimeout(safety);
-      // The tracked transform targets #device-wrap's outer rect + a cached
-      // offset, which drifts slightly from the anchor's real natural spot
-      // once it's genuinely docked (layout while "virtually there" via
-      // transform isn't identical to actually being there) — smooth over
-      // whatever residual gap remains instead of assuming it's zero, so the
-      // handoff never reads as a snap.
-      const lastRect = anchor.getBoundingClientRect();
-      anchor.style.transition = 'none';
-      anchor.style.transform = '';
-      anchor.classList.remove('docked');
-      deviceWrap.appendChild(anchor);
-      row.hidden = true;
-      const newRect = anchor.getBoundingClientRect();
-      const ddx = lastRect.left - newRect.left, ddy = lastRect.top - newRect.top;
-      void anchor.offsetHeight;
-      if (ddx || ddy) {
-        anchor.style.transform = `translate(${ddx}px,${ddy}px)`;
-        void anchor.offsetHeight;
-        anchor.style.transition = 'transform .15s ease';
-        anchor.style.transform = '';
-        anchor.addEventListener('transitionend', () => { anchor.style.transition = ''; }, { once: true });
-      } else {
-        anchor.style.transition = '';
-      }
-      _sendAnchorTrackCancel = null;
-    };
-    const onEnd = (e) => { if (e.target === stageWrap && e.propertyName === 'grid-template-rows') finish(); };
-    stageWrap.addEventListener('transitionend', onEnd);
-    const safety = setTimeout(finish, 700); // in case transitionend never fires (e.g. tab backgrounded)
-    const tick = () => {
-      if (done) return;
-      const d = deviceWrap.getBoundingClientRect();
-      anchor.style.transition = 'none';
-      anchor.style.transform = `translate(${d.left + _sendAnchorHomeOffset.dx - baseRect.left}px, ${d.top + _sendAnchorHomeOffset.dy - baseRect.top}px)`;
-      raf = requestAnimationFrame(tick);
-    };
-    anchor.classList.add('docked');
-    row.hidden = false;
-    raf = requestAnimationFrame(tick);
-    _sendAnchorTrackCancel = finish;
+  if (animate && willMove) {
+    trackSendAnchorDock(hidden, anchor, row, deviceWrap);
     return;
   }
 
-  // HIDE (and any instant / no-cached-offset fallback move): FLIP glide with
-  // a fade, delayed so Send only departs once its own content-fade phase
-  // has finished — the panels below already glide up for free as
-  // .stage-collapse's grid row shrinks, and Send joins that same motion
-  // rather than running on its own separate clock (Frank 2026-07-23).
-  const move = () => {
-    const first = (animate && willMove) ? anchor.getBoundingClientRect() : null;
+  // Instant (animate=false): just place it, no animation.
+  anchor.classList.toggle('docked', hidden);
+  if (hidden && row) row.appendChild(anchor);
+  else if (!hidden && deviceWrap) deviceWrap.appendChild(anchor);
+  if (row) row.hidden = !hidden;
+}
+
+// Send never fades and never causes a page reflow of its own — an
+// ancestor's opacity/overflow (.stage, mid content-fade or box-clip)
+// bounds every descendant regardless of the descendant's own styling, and
+// revealing/emptying #send-sticky-row mid-glide reflows <main> (confirmed
+// live: an ~118px jump — .top-sticky reserves real page space for the
+// row). So Send leaves the document flow entirely for the glide:
+// position:fixed on <body>, tracking a placeholder's LIVE position every
+// frame (#device-wrap keeps moving for the whole box collapse/growth
+// transition, not just at the two endpoints, so a plain before/after FLIP
+// can't target it), and only rejoins the real DOM at settle(), once
+// .stage's own opacity/height transition has fully finished (~900ms),
+// never mid-fade — reparenting into (or out of) a still-transitioning
+// .stage is what caused the earlier disappear/reappear (Frank 2026-07-23:
+// "to ale zmizí a znovu se objeví, to je cuknutí, které tam nechci" /
+// "chtěl bych aby nezmizelo, ale vyjelo nahoru s bank sekcí").
+function trackSendAnchorDock(hidden, anchor, row, deviceWrap) {
+  const stageWrap = document.getElementById('stage-collapse');
+  const stageInner = stageWrap.querySelector(':scope > .stage');
+  // HIDE's box collapse is the outer grid row, delayed until content fades
+  // out first (~.9s total). SHOW's content fade-in is delayed until the
+  // box finishes growing (~.9s total). Either way, wait for whichever
+  // transition is the LAST to settle, not the first.
+  const listenEl = hidden ? stageWrap : stageInner;
+  const listenProp = hidden ? 'grid-template-rows' : 'opacity';
+  let raf, done = false;
+
+  // A placeholder holds Send's slot inside #device-wrap for the whole
+  // glide (still there for HIDE, freshly reserved for SHOW) so removing/
+  // inserting the real anchor doesn't visibly reflow #device-wrap's
+  // flex-centered content on its own (confirmed live: removing Send alone
+  // shifted the whole stack ~86px).
+  const r0 = anchor.getBoundingClientRect();
+  const ph = document.createElement('div');
+  if (hidden) {
+    ph.style.cssText = `width:${r0.width}px;height:${r0.height}px;visibility:hidden;flex-shrink:0;`;
+    anchor.replaceWith(ph);
+  } else {
+    const s = _sendAnchorHomeSize || r0;
+    ph.style.cssText = `width:${s.width}px;height:${s.height}px;visibility:hidden;flex-shrink:0;`;
+    deviceWrap.appendChild(ph);
+  }
+
+  document.body.appendChild(anchor);
+  anchor.classList.remove('docked');
+  anchor.style.transition = 'none';
+  anchor.style.position = 'fixed';
+  anchor.style.margin = '0';
+  anchor.style.zIndex = '999';
+  anchor.style.width = `${r0.width}px`;
+  anchor.style.left = `${r0.left}px`;
+  anchor.style.top = `${r0.top}px`;
+  // Track #stage-collapse's own rect (bottom edge), not a placeholder
+  // nested inside .stage's flex-centered content — .stage uses
+  // justify-content:center, and once its content (615px) overflows the
+  // shrinking box, "safe center" alignment kicks in and PINS it to the
+  // top instead of continuing to recenter it: confirmed live, a
+  // placeholder nested in #device-wrap froze mid-glide while the grid row
+  // kept shrinking underneath it. #stage-collapse's own height is the
+  // grid-template-rows value directly, with no such fallback.
+  const offset = _sendAnchorStageOffset || { dx: 0, dy: 0 };
+  const applyFrame = () => {
+    const s = stageWrap.getBoundingClientRect();
+    anchor.style.left = `${s.left + offset.dx}px`;
+    anchor.style.top = `${s.bottom + offset.dy}px`;
+  };
+  applyFrame(); // synchronous, before the first paint
+  const tick = () => { if (done) return; applyFrame(); raf = requestAnimationFrame(tick); };
+  raf = requestAnimationFrame(tick);
+
+  const settle = () => {
+    // The tracked position approximates the anchor's real natural spot via
+    // a fixed offset from #stage-collapse, which can drift slightly once
+    // genuinely docked there — smooth over whatever residual gap remains
+    // instead of assuming it's zero.
+    const lastRect = anchor.getBoundingClientRect();
+    anchor.style.transition = 'none';
+    anchor.style.position = '';
+    anchor.style.left = '';
+    anchor.style.top = '';
+    anchor.style.margin = '';
+    anchor.style.zIndex = '';
+    anchor.style.width = '';
     anchor.classList.toggle('docked', hidden);
-    if (hidden && row) row.appendChild(anchor);
-    else if (!hidden && deviceWrap) deviceWrap.appendChild(anchor);
-    if (row) row.hidden = !hidden;
-    if (first) {
-      const last = anchor.getBoundingClientRect();
-      const dx = first.left - last.left, dy = first.top - last.top;
-      anchor.style.transition = 'none';
-      anchor.style.opacity = '0';
-      anchor.style.transform = (dx || dy) ? `translate(${dx}px,${dy}px)` : '';
-      void anchor.offsetHeight;   // force reflow so the start position commits before animating
-      anchor.style.transition = 'transform .5s cubic-bezier(.16,1,.3,1), opacity .5s ease';
+    if (hidden) {
+      if (ph.parentElement) ph.remove();
+      row.appendChild(anchor);
+      row.hidden = false;
+    } else {
+      if (ph.parentElement) ph.replaceWith(anchor);
+      else deviceWrap.appendChild(anchor);
+      row.hidden = true;
+    }
+    const newRect = anchor.getBoundingClientRect();
+    const ddx = lastRect.left - newRect.left, ddy = lastRect.top - newRect.top;
+    void anchor.offsetHeight;
+    if (ddx || ddy) {
+      // HIDE's residual gap is usually larger than SHOW's: #send-sticky-row
+      // stays hidden (kept out of the reflow) for the whole glide, so
+      // revealing it here — right when the row genuinely gains height —
+      // also pushes #stage-collapse down by however much the row reserves.
+      // A longer glide for bigger gaps keeps that settle from reading as a
+      // snap.
+      const dist = Math.hypot(ddx, ddy);
+      const dur = dist > 60 ? '.3s' : '.15s';
+      anchor.style.transform = `translate(${ddx}px,${ddy}px)`;
+      void anchor.offsetHeight;
+      anchor.style.transition = `transform ${dur} ease`;
       anchor.style.transform = '';
-      anchor.style.opacity = '';
-      anchor.addEventListener('transitionend', () => { anchor.style.transition = ''; anchor.style.opacity = ''; }, { once: true });
+      anchor.addEventListener('transitionend', () => { anchor.style.transition = ''; }, { once: true });
+    } else {
+      anchor.style.transition = '';
     }
   };
-  if (animate && willMove && hidden) {
-    setTimeout(move, 400);
-  } else {
-    move();
-  }
+
+  const finish = () => {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(raf);
+    listenEl.removeEventListener('transitionend', onEnd);
+    clearTimeout(safety);
+    settle();
+    _sendAnchorTrackCancel = null;
+  };
+  const onEnd = (e) => { if (e.target === listenEl && e.propertyName === listenProp) finish(); };
+  listenEl.addEventListener('transitionend', onEnd);
+  const safety = setTimeout(finish, 1000); // in case transitionend never fires (e.g. tab backgrounded)
+  _sendAnchorTrackCancel = finish;
 }
 function applyControllerVisibility(hidden, animate = true) {
   applyStageCollapse(hidden, animate);
