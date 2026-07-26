@@ -413,6 +413,14 @@ html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.the
   box-shadow:var(--glass-shadow);backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
 }
 .panel-wide{width:100%;max-width:none;box-sizing:border-box;}
+/* .panel carries flex:1 for the side-by-side config panels inside .panels-row
+   (equal widths in that flex ROW). But the standalone wide panels (Device &
+   Settings, Help & Guide) are direct children of .center-col, a flex COLUMN
+   with flex:1 — there flex:1 makes them GROW vertically and balloon into the
+   reclaimed space when the controller is hidden on a tall window (Frank
+   2026-07-26). Pin them to their natural (collapsed) height; the footer still
+   sits at the bottom via its own margin-top:auto. */
+.center-col>.panel-wide{flex:0 0 auto;}
 .panel-head{display:flex;align-items:center;gap:8px;padding-bottom:10px;margin-bottom:11px;border-bottom:1px solid var(--border)}
 .panel-dot{display:none;}
 
