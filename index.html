@@ -141,18 +141,36 @@ header{
 .top-sticky{position:sticky;top:0;z-index:50;}
 .live-hud{
   position:fixed;top:64px;z-index:45;width:112px;height:112px;box-sizing:border-box;padding:9px;
+  --hud-scale:1;transform-origin:top left;
   border:1px solid var(--chrome-float-border);border-radius:22px;
   background:var(--chrome-glass-bg);
   backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);
   box-shadow:var(--chrome-glass-shadow);
-  opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-5px) scale(.98);
-  transition:opacity .28s ease,transform .36s cubic-bezier(.16,1,.3,1),top .36s cubic-bezier(.16,1,.3,1),width .38s cubic-bezier(.16,1,.3,1),height .38s cubic-bezier(.16,1,.3,1),padding .38s cubic-bezier(.16,1,.3,1),border-radius .38s cubic-bezier(.16,1,.3,1),visibility 0s linear .36s;
+  opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-5px) scale(calc(.98 * var(--hud-scale)));
+  transition:opacity .28s ease,transform .36s cubic-bezier(.16,1,.3,1),left .36s cubic-bezier(.16,1,.3,1),top .36s cubic-bezier(.16,1,.3,1),width .38s cubic-bezier(.16,1,.3,1),height .38s cubic-bezier(.16,1,.3,1),padding .38s cubic-bezier(.16,1,.3,1),border-radius .38s cubic-bezier(.16,1,.3,1),visibility 0s linear .36s;
 }
 .live-hud[data-side="left"]{left:28px;right:auto}
 .live-hud[data-side="right"]{left:auto;right:28px}
-.live-hud.is-contextual-visible{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition-delay:0s}
-.live-hud.is-contextual-visible.is-idle{opacity:.68}
-.live-hud.is-dragging{cursor:grabbing!important;transform:scale(1.015)}
+/* --hud-scale drives the whole HUD's size via transform (1 = normal, 2 =
+   enlarged): everything — box, border, fonts, meters — scales together and
+   stays crisp, no internal-CSS rework. transform-origin:top left so it grows
+   from its positioned top-left corner (the anchor the drag/clamp uses). The
+   .36s transform transition makes the 1x<->2x toggle glide; move-drag sets
+   transition:none and moves via left/top so scale is untouched. */
+.live-hud.is-contextual-visible{opacity:1;visibility:visible;pointer-events:auto;transform:scale(var(--hud-scale));transition-delay:0s}
+/* No idle dimming — the HUD's glass matches the header's translucency exactly
+   (same --chrome-glass-bg + backdrop), so it reads as one surface with the top
+   bar rather than a fainter floating panel (Frank 2026-07-26). Live vs not-live
+   is still conveyed by the content (values vs "—"). The .is-idle class stays as
+   a state hook but no longer changes opacity. */
+.live-hud.is-dragging{cursor:grabbing!important;transform:scale(calc(1.015 * var(--hud-scale)))}
+.live-hud-size-btn{
+  position:absolute;right:3px;bottom:3px;width:19px;height:19px;padding:0;
+  display:grid;place-items:center;border:0;border-radius:7px;background:transparent;
+  color:var(--t3);opacity:.45;cursor:pointer;transition:opacity .15s ease,background .15s ease,color .15s ease;
+}
+.live-hud-size-btn:hover,.live-hud-size-btn:focus-visible{opacity:1;background:rgba(127,127,135,.16);color:var(--t1)}
+.live-hud-size-btn svg{width:12px;height:12px;display:block}
 .live-hud-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr) 31px;gap:7px 5px;height:100%}
 .live-hud-bank{display:none}
 .live-hud-item{min-width:0;color:var(--t2)}
@@ -1264,6 +1282,7 @@ body.welcome-connecting #send-btn.welcome-floating{
 @media(max-width:980px){
   .live-hud{left:16px;width:96px;height:96px;padding:7px;border-radius:19px}
   .live-hud[data-side]{left:16px;right:auto}
+  .live-hud-size-btn{display:none} /* free manipulation is desktop-only */
   .live-hud-inner{grid-template-rows:minmax(0,1fr) 28px;gap:4px}
   .live-hud-item:not(.live-hud-roller){row-gap:2px}
   .live-hud-item:not(.live-hud-roller) .live-hud-meter{height:17px}
@@ -1735,6 +1754,9 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <span class="live-hud-tech" id="live-roller-tech">Ch1·CC32</span>
     </div>
   </div>
+  <button class="live-hud-size-btn" id="live-hud-size-btn" type="button" aria-label="Enlarge live values" title="Enlarge (2×)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+  </button>
 </div>
 <main>
 <div class="center-col">
@@ -4650,31 +4672,90 @@ function connState(){
   if (_midiState === 'denied' || _midiState === 'unsupported') return 'MIDI_BLOCKED';
   return 'DISCONNECTED';
 }
-const LIVE_HUD_SIDE_KEY = 'ff_live_hud_side';
-let _liveHudSide = 'left';
+// Live HUD free manipulation (Frank + Sláv 2026-07-26): drag the body to
+// place it anywhere, a corner button toggles 1x<->2x size. Position + size
+// persist per-browser (so each person keeps their own layout). Desktop only —
+// mobile keeps its fixed placement.
+const LIVE_HUD_POS_KEY = 'ff_live_hud_pos';
+const LIVE_HUD_BASE = 112;   // desktop base square side (px); --hud-scale multiplies it
+const LIVE_HUD_MARGIN = 12;  // min gap kept from every viewport edge
+let _liveHudState = { x: null, y: null, large: false }; // x/y null = default (data-side) position
 let _liveHudDrag = null;
 function liveHudDesktop(){ return window.matchMedia('(min-width:981px)').matches; }
-function applyLiveHudSide(side, persist=false){
+function liveHudScale(){ return _liveHudState.large ? 2 : 1; }
+function liveHudSize(){ return LIVE_HUD_BASE * liveHudScale(); }
+function clampLiveHudPos(x, y){
+  const size = liveHudSize();
+  // Top limit sits below the header bar with the same gap as the side margins,
+  // so the HUD can't be dragged up under the top bar (Frank 2026-07-26).
+  const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom || 0;
+  const minY = headerBottom + LIVE_HUD_MARGIN;
+  const maxX = Math.max(LIVE_HUD_MARGIN, window.innerWidth - size - LIVE_HUD_MARGIN);
+  const maxY = Math.max(minY, window.innerHeight - size - LIVE_HUD_MARGIN);
+  return { x: Math.max(LIVE_HUD_MARGIN, Math.min(maxX, x)), y: Math.max(minY, Math.min(maxY, y)) };
+}
+function persistLiveHud(){
+  try { localStorage.setItem(LIVE_HUD_POS_KEY, JSON.stringify(_liveHudState)); } catch (_) {}
+}
+function liveHudHasCustomPos(){ return _liveHudState.x != null && _liveHudState.y != null && liveHudDesktop(); }
+function applyLiveHudState(persist=false){
   const strip = document.getElementById('live-strip');
   if (!strip) return;
-  _liveHudSide = side === 'right' ? 'right' : 'left';
-  strip.dataset.side = _liveHudSide;
-  strip.setAttribute('aria-label', liveHudDesktop()
-    ? `Live device values. Positioned ${_liveHudSide}. Drag or use Left and Right arrow keys to reposition.`
-    : 'Live device values.');
-  if (persist) {
-    try { localStorage.setItem(LIVE_HUD_SIDE_KEY, _liveHudSide); } catch (_) {}
+  // Force 1x on mobile (mobile keeps its own fixed small size).
+  strip.style.setProperty('--hud-scale', String(liveHudDesktop() ? liveHudScale() : 1));
+  if (liveHudHasCustomPos()){
+    const { x, y } = clampLiveHudPos(_liveHudState.x, _liveHudState.y); // re-clamp in case size/viewport changed
+    _liveHudState.x = x; _liveHudState.y = y;
+    strip.style.left = `${x}px`; strip.style.top = `${y}px`; strip.style.right = 'auto';
+    strip.removeAttribute('data-side'); // inline pos overrides the side default
+  } else {
+    strip.style.removeProperty('left'); strip.style.removeProperty('top'); strip.style.removeProperty('right');
+    strip.dataset.side = 'left'; // default: CSS left + contextual top (set by updateContextualLiveStrip)
   }
+  const sizeBtn = document.getElementById('live-hud-size-btn');
+  if (sizeBtn){
+    sizeBtn.setAttribute('aria-label', _liveHudState.large ? 'Shrink live values' : 'Enlarge live values');
+    sizeBtn.setAttribute('title', _liveHudState.large ? 'Shrink (1×)' : 'Enlarge (2×)');
+  }
+  strip.setAttribute('aria-label', liveHudDesktop()
+    ? `Live device values.${_liveHudState.large ? ' Enlarged.' : ''} Drag to move, arrow keys to nudge, Home to reset, corner button to resize.`
+    : 'Live device values.');
+  if (persist) persistLiveHud();
+  updateContextualLiveStrip();
+}
+function toggleLiveHudSize(){
+  if (!liveHudDesktop()) return;
+  _liveHudState.large = !_liveHudState.large;
+  applyLiveHudState(true); // re-clamps a custom position so the bigger box still fits
+}
+function resetLiveHud(){
+  _liveHudState = { x: null, y: null, large: false };
+  applyLiveHudState(true);
 }
 function initLiveHudPositioning(){
   const strip = document.getElementById('live-strip');
   if (!strip) return;
-  try { applyLiveHudSide(localStorage.getItem(LIVE_HUD_SIDE_KEY) || 'left'); }
-  catch (_) { applyLiveHudSide('left'); }
+  try {
+    const saved = JSON.parse(localStorage.getItem(LIVE_HUD_POS_KEY) || 'null');
+    if (saved && typeof saved === 'object') _liveHudState = {
+      x: Number.isFinite(saved.x) ? saved.x : null,
+      y: Number.isFinite(saved.y) ? saved.y : null,
+      large: !!saved.large,
+    };
+  } catch (_) {}
+  applyLiveHudState();
+
+  const sizeBtn = document.getElementById('live-hud-size-btn');
+  if (sizeBtn){
+    sizeBtn.addEventListener('pointerdown', e => e.stopPropagation()); // don't let it start a move-drag
+    sizeBtn.addEventListener('click', e => { e.stopPropagation(); toggleLiveHudSize(); });
+  }
+
   strip.addEventListener('pointerdown', event => {
     if (!liveHudDesktop() || event.button !== 0) return;
+    if (event.target.closest('.live-hud-size-btn')) return;
     const rect = strip.getBoundingClientRect();
-    _liveHudDrag = { pointerId:event.pointerId, offsetX:event.clientX-rect.left };
+    _liveHudDrag = { pointerId:event.pointerId, offsetX:event.clientX-rect.left, offsetY:event.clientY-rect.top, moved:false };
     strip.setPointerCapture(event.pointerId);
     strip.classList.add('is-dragging');
     strip.style.transition = 'none';
@@ -4682,27 +4763,43 @@ function initLiveHudPositioning(){
   });
   strip.addEventListener('pointermove', event => {
     if (!_liveHudDrag || event.pointerId !== _liveHudDrag.pointerId) return;
-    const maxLeft = Math.max(16, window.innerWidth - strip.offsetWidth - 16);
-    const left = Math.max(16, Math.min(maxLeft, event.clientX - _liveHudDrag.offsetX));
-    strip.style.left = `${left}px`;
-    strip.style.right = 'auto';
+    const { x, y } = clampLiveHudPos(event.clientX - _liveHudDrag.offsetX, event.clientY - _liveHudDrag.offsetY);
+    _liveHudDrag.moved = true;
+    _liveHudState.x = x; _liveHudState.y = y;
+    strip.style.left = `${x}px`; strip.style.top = `${y}px`; strip.style.right = 'auto';
+    strip.removeAttribute('data-side');
   });
   const finishDrag = event => {
     if (!_liveHudDrag || event.pointerId !== _liveHudDrag.pointerId) return;
-    const center = strip.getBoundingClientRect().left + strip.offsetWidth / 2;
+    const moved = _liveHudDrag.moved;
     _liveHudDrag = null;
     strip.classList.remove('is-dragging');
-    strip.style.removeProperty('left');
-    strip.style.removeProperty('right');
     strip.style.removeProperty('transition');
-    applyLiveHudSide(center < window.innerWidth / 2 ? 'left' : 'right', true);
+    if (moved) persistLiveHud();
   };
   strip.addEventListener('pointerup', finishDrag);
   strip.addEventListener('pointercancel', finishDrag);
+  strip.addEventListener('dblclick', event => {
+    if (!liveHudDesktop() || event.target.closest('.live-hud-size-btn')) return;
+    resetLiveHud();
+  });
   strip.addEventListener('keydown', event => {
-    if (!liveHudDesktop() || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
-    event.preventDefault();
-    applyLiveHudSide(event.key === 'ArrowLeft' || event.key === 'Home' ? 'left' : 'right', true);
+    if (!liveHudDesktop()) return;
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){
+      event.preventDefault();
+      const step = event.shiftKey ? 1 : 10;
+      const rect = strip.getBoundingClientRect();
+      const baseX = _liveHudState.x != null ? _liveHudState.x : rect.left;
+      const baseY = _liveHudState.y != null ? _liveHudState.y : rect.top;
+      const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
+      const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
+      const { x, y } = clampLiveHudPos(baseX + dx, baseY + dy);
+      _liveHudState.x = x; _liveHudState.y = y;
+      applyLiveHudState(true);
+    } else if (event.key === 'Home'){
+      event.preventDefault();
+      resetLiveHud();
+    }
   });
 }
 function updateContextualLiveStrip(){
@@ -4714,7 +4811,10 @@ function updateContextualLiveStrip(){
   const hasLiveData = !!(liveSeen.f1 || liveSeen.f2 || encLiveVal !== null || ksLiveNote !== null);
   const live = strip.dataset.state === 'CONNECTED_LIVE' && hasLiveData;
   const visible = welcomeClosed;
-  strip.style.top = `${Math.round(headerBottom + 12)}px`;
+  // Only drive the default vertical position — a user's custom drag position
+  // (inline top, set by applyLiveHudState) must not be overwritten on every
+  // live-data render (Frank 2026-07-26).
+  if (!liveHudHasCustomPos()) strip.style.top = `${Math.round(headerBottom + 12)}px`;
   strip.classList.toggle('is-contextual-visible',visible);
   strip.classList.toggle('is-idle',!live);
   strip.setAttribute('aria-hidden',String(!visible));
@@ -4726,7 +4826,7 @@ function renderLiveStrip(){
   const allowed = state === 'CONNECTED_LIVE';
   strip.dataset.state = state;
   strip.title = liveHudDesktop()
-    ? 'Live values received from the device · drag left or right to reposition'
+    ? 'Live values received from the device · drag to move · corner button to resize'
     : 'Live values received from the device';
 
   const setLiveValue = (id, meterId, value, seen) => {
@@ -6150,7 +6250,7 @@ window.addEventListener('scroll', updateStickySectionHeads, {passive:true});
 window.addEventListener('resize', updateMobileSendDock, {passive:true});
 window.addEventListener('resize', updateContextualLiveStrip, {passive:true});
 window.addEventListener('resize', updateStickySectionHeads, {passive:true});
-window.addEventListener('resize', () => applyLiveHudSide(_liveHudSide), {passive:true});
+window.addEventListener('resize', () => applyLiveHudState(), {passive:true}); // re-clamp custom pos to the new viewport
 window.addEventListener('resize', () => { positionWelcomeAnchor(); positionWelcomeFloatingButton(); }, {passive:true});
 
 function customPresetFromBank(bank) {
