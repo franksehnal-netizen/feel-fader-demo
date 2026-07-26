@@ -5112,10 +5112,24 @@ function applySendAnchorDock(hidden, animate = true) {
   }
   if (_sendAnchorTrackCancel) { _sendAnchorTrackCancel(); _sendAnchorTrackCancel = null; }
   const sendBtnEl = document.getElementById('send-btn');
-  if (anchor.parentElement === deviceWrap) {
+  const stageWrapEl = document.getElementById('stage-collapse');
+  if (anchor.parentElement === deviceWrap && stageWrapEl.getBoundingClientRect().height > 100) {
+    // Only trust these home measurements while the stage is actually rendered
+    // at (near) full height. Check the live height, NOT the is-collapsed
+    // class: a normal hide adds that class before this runs, yet the button's
+    // rect is still at the valid home position because the collapse
+    // transition hasn't advanced in this same tick — so a class check would
+    // wrongly skip every hide's capture. An instant hidden LOAD, by contrast,
+    // collapses the stage to 0 height immediately (animate=false), where the
+    // button's "home" top reads a garbage mid-screen value (~330 instead of
+    // ~601) — capturing that parked the button in the middle of the
+    // controller for the whole first show, jumping to the bottom only at the
+    // end (Frank 2026-07-26). Height>100 captures the valid cases (visible
+    // load, any hide) and skips only the collapsed-load case; that first show
+    // then tracks the live growing device slot, which glides smoothly.
     const r = anchor.getBoundingClientRect();
     _sendAnchorHomeSize = { width: r.width, height: r.height };
-    _sendAnchorStageFullH = document.getElementById('stage-collapse').getBoundingClientRect().height;
+    _sendAnchorStageFullH = stageWrapEl.getBoundingClientRect().height;
     // Offset of the pill (#send-btn) below the anchor's top in the home
     // state — undocked .send-callout has margin-top:32px, so the pill sits
     // well below the anchor top. Captured so the glide can position by the
@@ -5281,7 +5295,12 @@ function trackSendAnchorDock(hidden, anchor, row, rowInner, deviceWrap) {
   // (the old way) overshot the docked row slot by ~32px and had to jump
   // back ("skočí kousek mimo a vrátí se").
   const destPh = hidden ? phRow : ph;
-  const fullH = _sendAnchorStageFullH || stageWrap.getBoundingClientRect().height || 1;
+  // Full (expanded) stage height for the progress denominator. When it wasn't
+  // captured (controller loaded hidden → first show has no valid home
+  // metrics), fall back to the stage's content height (scrollHeight is the
+  // un-clipped content even while the grid row is collapsed), then the live
+  // box height, then 1.
+  const fullH = _sendAnchorStageFullH || stageWrap.scrollHeight || stageWrap.getBoundingClientRect().height || 1;
   const applyFrame = () => {
     const s = stageWrap.getBoundingClientRect();
     const p = Math.max(0, Math.min(1, hidden ? 1 - s.height / fullH : s.height / fullH));
