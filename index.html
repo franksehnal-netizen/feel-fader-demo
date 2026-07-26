@@ -110,7 +110,13 @@ html.dark .uacc-preset-dropdown{background:#1a1a1e}
 .ui-control.ui-glass:hover{background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow-hover)}
 .ui-danger{color:#fff!important;border:1px solid var(--red)!important;background:linear-gradient(145deg,color-mix(in srgb,var(--red) 82%,white),var(--red))!important;box-shadow:0 3px 10px color-mix(in srgb,var(--red) 28%,transparent),inset 0 1px 0 rgba(255,255,255,.24)!important}
 .ui-danger:hover{filter:brightness(.96)}
-html{-webkit-font-smoothing:antialiased}
+/* Reserve the scrollbar gutter always, so the viewport width never changes
+   when page height crosses the scrollbar threshold — hiding the controller
+   shortens the page, and without this the vertical scrollbar would vanish,
+   widen the viewport ~6px, and jerk the horizontally-centred controller
+   sideways (Frank 2026-07-26, seen on the deployed demo at a window height
+   right at that threshold; localhost happened not to cross it). */
+html{-webkit-font-smoothing:antialiased;scrollbar-gutter:stable}
 body{
   background:
     radial-gradient(circle at 84% 12%,var(--ambient-accent),transparent 30rem),
