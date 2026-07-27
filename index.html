@@ -177,6 +177,8 @@ header{
 }
 .live-hud-size-btn:hover,.live-hud-size-btn:focus-visible{opacity:1;background:rgba(127,127,135,.16);color:var(--t1)}
 .live-hud-size-btn svg{width:12px;height:12px;display:block}
+/* Enlarge/drag are mouse-gated, not width-gated: a half-screen desktop window keeps the button; touch-only devices hide it (Frank 2026-07-27). */
+@media not all and (any-pointer:fine){.live-hud-size-btn{display:none}}
 .live-hud-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr) 31px;gap:7px 5px;height:100%}
 .live-hud-bank{display:none}
 .live-hud-item{min-width:0;color:var(--t2)}
@@ -208,7 +210,7 @@ header{
 .live-hud.is-compact .live-hud-value{min-width:0;font-size:10px}
 .live-hud.is-compact .live-hud-roller .live-hud-value.is-long{font-size:8.25px;letter-spacing:-.045em}
 .live-hud.is-compact .live-hud-roller .live-hud-value.is-very-long{font-size:7.5px;letter-spacing:-.06em}
-@media(min-width:981px){.live-hud.is-contextual-visible{cursor:grab}}
+@media(any-pointer:fine){.live-hud.is-contextual-visible{cursor:grab}}
 .h-left{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0}
 .h-title{font-size:13px;font-weight:700;letter-spacing:-.01em;flex-shrink:0;white-space:nowrap}
 .h-ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)}
@@ -1138,7 +1140,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .welcome-skip{
   position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:3;
   width:max-content;transform:translateX(-50%);
-  font-size:12px;color:var(--t3);background:none;border:none;
+  font-size:12px;color:var(--t2);background:none;border:none;
   cursor:pointer;font-family:'Mulish',sans-serif;padding:8px 16px;
   -webkit-tap-highlight-color:transparent;
 }
@@ -1296,7 +1298,6 @@ body.welcome-connecting #send-btn.welcome-floating{
 @media(max-width:980px){
   .live-hud{left:16px;width:96px;height:96px;padding:7px;border-radius:19px}
   .live-hud[data-side]{left:16px;right:auto}
-  .live-hud-size-btn{display:none} /* free manipulation is desktop-only */
   .live-hud-inner{grid-template-rows:minmax(0,1fr) 28px;gap:4px}
   .live-hud-item:not(.live-hud-roller){row-gap:2px}
   .live-hud-item:not(.live-hud-roller) .live-hud-meter{height:17px}
@@ -4695,7 +4696,7 @@ const LIVE_HUD_BASE = 112;   // desktop base square side (px); --hud-scale multi
 const LIVE_HUD_MARGIN = 12;  // min gap kept from every viewport edge
 let _liveHudState = { x: null, y: null, large: false }; // x/y null = default (data-side) position
 let _liveHudDrag = null;
-function liveHudDesktop(){ return window.matchMedia('(min-width:981px)').matches; }
+function liveHudManipulable(){ return window.matchMedia('(any-pointer:fine)').matches; } // enlarge/drag need a mouse, not a wide window (Frank 2026-07-27)
 function liveHudScale(){ return _liveHudState.large ? 2 : 1; }
 function liveHudSize(){ return LIVE_HUD_BASE * liveHudScale(); }
 function clampLiveHudPos(x, y){
@@ -4711,12 +4712,12 @@ function clampLiveHudPos(x, y){
 function persistLiveHud(){
   try { localStorage.setItem(LIVE_HUD_POS_KEY, JSON.stringify(_liveHudState)); } catch (_) {}
 }
-function liveHudHasCustomPos(){ return _liveHudState.x != null && _liveHudState.y != null && liveHudDesktop(); }
+function liveHudHasCustomPos(){ return _liveHudState.x != null && _liveHudState.y != null && liveHudManipulable(); }
 function applyLiveHudState(persist=false){
   const strip = document.getElementById('live-strip');
   if (!strip) return;
   // Force 1x on mobile (mobile keeps its own fixed small size).
-  strip.style.setProperty('--hud-scale', String(liveHudDesktop() ? liveHudScale() : 1));
+  strip.style.setProperty('--hud-scale', String(liveHudManipulable() ? liveHudScale() : 1));
   if (liveHudHasCustomPos()){
     const { x, y } = clampLiveHudPos(_liveHudState.x, _liveHudState.y); // re-clamp in case size/viewport changed
     _liveHudState.x = x; _liveHudState.y = y;
@@ -4731,14 +4732,14 @@ function applyLiveHudState(persist=false){
     sizeBtn.setAttribute('aria-label', _liveHudState.large ? 'Shrink live values' : 'Enlarge live values');
     sizeBtn.setAttribute('title', _liveHudState.large ? 'Shrink (1×)' : 'Enlarge (2×)');
   }
-  strip.setAttribute('aria-label', liveHudDesktop()
+  strip.setAttribute('aria-label', liveHudManipulable()
     ? `Live device values.${_liveHudState.large ? ' Enlarged.' : ''} Drag to move, arrow keys to nudge, Home to reset, corner button to resize.`
     : 'Live device values.');
   if (persist) persistLiveHud();
   updateContextualLiveStrip();
 }
 function toggleLiveHudSize(){
-  if (!liveHudDesktop()) return;
+  if (!liveHudManipulable()) return;
   _liveHudState.large = !_liveHudState.large;
   applyLiveHudState(true); // re-clamps a custom position so the bigger box still fits
 }
@@ -4766,7 +4767,7 @@ function initLiveHudPositioning(){
   }
 
   strip.addEventListener('pointerdown', event => {
-    if (!liveHudDesktop() || event.button !== 0) return;
+    if (!liveHudManipulable() || event.button !== 0) return;
     if (event.target.closest('.live-hud-size-btn')) return;
     const rect = strip.getBoundingClientRect();
     _liveHudDrag = { pointerId:event.pointerId, offsetX:event.clientX-rect.left, offsetY:event.clientY-rect.top, moved:false };
@@ -4794,11 +4795,11 @@ function initLiveHudPositioning(){
   strip.addEventListener('pointerup', finishDrag);
   strip.addEventListener('pointercancel', finishDrag);
   strip.addEventListener('dblclick', event => {
-    if (!liveHudDesktop() || event.target.closest('.live-hud-size-btn')) return;
+    if (!liveHudManipulable() || event.target.closest('.live-hud-size-btn')) return;
     resetLiveHud();
   });
   strip.addEventListener('keydown', event => {
-    if (!liveHudDesktop()) return;
+    if (!liveHudManipulable()) return;
     if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){
       event.preventDefault();
       const step = event.shiftKey ? 1 : 10;
@@ -4846,7 +4847,7 @@ function renderLiveStrip(){
   const state = connState();
   const allowed = state === 'CONNECTED_LIVE';
   strip.dataset.state = state;
-  strip.title = liveHudDesktop()
+  strip.title = liveHudManipulable()
     ? 'Live values received from the device · drag to move · corner button to resize'
     : 'Live values received from the device';
 
