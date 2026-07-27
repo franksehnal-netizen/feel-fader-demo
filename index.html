@@ -4820,7 +4820,14 @@ function updateContextualLiveStrip(){
   const strip = document.getElementById('live-strip');
   const welcome = document.getElementById('welcome-screen');
   if (!strip) return;
-  const headerBottom = document.querySelector('.top-sticky')?.getBoundingClientRect().bottom || 0;
+  // Anchor to the header itself, NOT .top-sticky: when the controller view is
+  // hidden the Send button docks into #send-sticky-row (part of .top-sticky),
+  // which would push the default HUD position ~80px down over the card. The
+  // docked Send pill is always centered (.send-sticky-row-inner is
+  // justify-content:center) while the HUD sits at the far left, so keying off
+  // the header keeps the HUD in the top-left corner without colliding with it.
+  // Matches clampLiveHudPos()'s own header-based min-Y (Frank 2026-07-27).
+  const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom || 0;
   const welcomeClosed = !!welcome?.classList.contains('hidden');
   const hasLiveData = !!(liveSeen.f1 || liveSeen.f2 || encLiveVal !== null || ksLiveNote !== null);
   const live = strip.dataset.state === 'CONNECTED_LIVE' && hasLiveData;
@@ -5730,6 +5737,11 @@ function connectTransitionWelcome() {
     runValidation();
     onbAfterWelcome();
     ws.classList.add('hidden');
+    // Welcome is now closed — reveal the live HUD immediately. Its
+    // .is-contextual-visible toggle keys off welcomeClosed, and without this
+    // call nothing re-runs it until the first scroll, so the HUD only appeared
+    // after the user scrolled down (Frank 2026-07-27).
+    updateContextualLiveStrip();
   }, 1100);
   // 6. Reveal the button once the app has actually finished opening, as its
   // own distinct beat — not bundled into the moment above (Frank, 2026-07-21:
@@ -5781,6 +5793,7 @@ function skipWelcome() {
   runValidation();
   if (ws) ws.classList.add('hidden');
   onbAfterWelcome();
+  updateContextualLiveStrip();   // reveal the live HUD now, not on first scroll (Frank 2026-07-27)
   requestAnimationFrame(() => {
     resetAppScrollTop();
     positionThumbs();
