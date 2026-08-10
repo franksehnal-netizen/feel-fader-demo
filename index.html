@@ -2121,8 +2121,8 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 
 <script>
 // ── Global safety net (P2-2): surface uncaught errors instead of failing silently ──
-window.addEventListener('error', e => { try{ toast('e','Něco se pokazilo — zkuste to prosím znovu'); }catch(_){} console.error('[ff] uncaught error', (e && (e.error||e.message))||e); });
-window.addEventListener('unhandledrejection', e => { try{ toast('e','Něco se pokazilo — zkuste to prosím znovu'); }catch(_){} console.error('[ff] unhandled rejection', e && e.reason); });
+window.addEventListener('error', e => { try{ toast('e','Something went wrong — please try again'); }catch(_){} console.error('[ff] uncaught error', (e && (e.error||e.message))||e); });
+window.addEventListener('unhandledrejection', e => { try{ toast('e','Something went wrong — please try again'); }catch(_){} console.error('[ff] unhandled rejection', e && e.reason); });
 
 // ═══════════════════════════════════════════════════════════
 // NEW CONFIG STRUCTURE — per-element MIDI channel
