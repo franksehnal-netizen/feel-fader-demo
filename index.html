@@ -6654,6 +6654,18 @@ function finishWelcomeInstant() {
   updateContextualLiveStrip();   // reveal the live HUD now, not on first scroll (Frank 2026-07-27)
   requestAnimationFrame(() => {
     resetAppScrollTop();
+    // Re-measure, not just re-position: finalizeWelcomeExit() above already called
+    // layoutFaders()+positionThumbs() synchronously, mid-transition — before the
+    // onboarding-forced sizing has necessarily settled into its final normal-app
+    // layout. Re-running positionThumbs() alone here just re-applies the SAME
+    // (possibly stale) cached _faderTravel from that early measurement; nothing
+    // upstream forces a fresh one until an incidental resize event happens to fire
+    // (real devices commonly fire one from the browser's own toolbar collapsing on
+    // scroll) — Frank, real-device report 2026-08-17: faders appear oversized and
+    // mispositioned right after "Continue without device", then visibly snap to
+    // the correct size/position on the first scroll. layoutFaders() here removes
+    // the dependency on that incidental trigger.
+    layoutFaders();
     positionThumbs();
   });
 }
