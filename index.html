@@ -6226,14 +6226,51 @@ function positionWelcomeFloatingButton() {
   if (!btn || !btn.classList.contains('welcome-floating')) return;
   const onboarding = document.getElementById('welcome-text-block')?.classList.contains('welcome-onboarding');
   const onboardingScrollTop = welcomeOnboardingScrollTop();
+  // A parallel CSS block (~feel-fader.html:1401-1420) pins the onboarding
+  // controller/button position to hardcoded per-width-breakpoint pixel
+  // constants (--onb-controller-top/height etc.) via !important, so it
+  // never reacted to viewport HEIGHT at all — the values computed below
+  // used to be silently discarded during onboarding (Frank, real-device
+  // screenshot 2026-08-17: browser-unsupported notice overlapping "Connect
+  // & load" on tall phones, beats carousel rendering entirely below the
+  // fold on short ones, identically on every viewport height because the
+  // CSS constants never moved). Inline !important on the same properties
+  // outranks stylesheet !important (author-origin cascade: inline wins
+  // ties within the !important tier), so the onboarding branch below sets
+  // `top` with 'important' priority to actually take effect. Always clear
+  // it first: this inline override must not leak into the non-onboarding
+  // branch after the user finishes the intro, which positions via the
+  // (non-important) --welcome-float-top custom property instead.
+  btn.style.removeProperty('top');
   if (onboarding) {
     const controllerRect = document.getElementById('device-img')?.getBoundingClientRect();
     if (!controllerRect?.height) return;
     const buttonHeight = btn.offsetHeight || 38;
     const floatTop = controllerRect.bottom + onboardingScrollTop + 18 + buttonHeight / 2;
-    btn.style.setProperty('--welcome-float-top', floatTop + 'px');
+    let ctaBottom = floatTop + buttonHeight / 2;
+    // Clamp the floating cluster (button on top, beats box 20px below it) into the
+    // visible viewport on both edges — neither bound is guaranteed by the anchor-to-
+    // device-image math above, which knows nothing about viewport height or the
+    // browser-support notice's flow-layout height. The button is the topmost element
+    // in the cluster, so notice-clearance is checked against *its* top edge, not the
+    // beats box's. Viewport-bottom is the hard bound (off-screen content is
+    // undiscoverable); notice-clearance is best-effort within whatever room that leaves.
+    const beatsEl = document.getElementById('onb-beats');
+    const beatsHeight = beatsEl?.offsetHeight || 176;
+    const notice = document.getElementById('welcome-browser-notice');
+    const noticeBottom = notice?.classList.contains('show') ? notice.getBoundingClientRect().bottom : 0;
+    const margin = 12;
+    const maxCtaBottom = window.innerHeight - margin - 20 - beatsHeight;
+    if (noticeBottom > 0) {
+      const minCtaBottom = noticeBottom + margin + buttonHeight;
+      if (ctaBottom < minCtaBottom) ctaBottom = minCtaBottom;
+    }
+    if (ctaBottom > maxCtaBottom) ctaBottom = maxCtaBottom;
+    const clampedFloatTop = ctaBottom - buttonHeight / 2;
+    btn.style.setProperty('--welcome-float-top', clampedFloatTop + 'px');
     btn.style.setProperty('--welcome-float-left', (controllerRect.left + controllerRect.width / 2) + 'px');
-    document.getElementById('welcome-screen')?.style.setProperty('--welcome-cta-bottom', (floatTop + buttonHeight / 2) + 'px');
+    btn.style.setProperty('top', clampedFloatTop + 'px', 'important');
+    document.getElementById('welcome-screen')?.style.setProperty('--welcome-cta-bottom', ctaBottom + 'px', 'important');
     updateWelcomeOverflowState();
     return;
   }
