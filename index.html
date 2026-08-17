@@ -1294,6 +1294,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   .device-wrap.welcome-mode[data-onb-feature] #zone-roller,
   .device-wrap.welcome-mode[data-onb-feature] #zone-macro{
     transform:translateY(var(--welcome-onb-scroll-offset,0px));
+    will-change:transform;
   }
   .device-wrap.welcome-mode[data-onb-feature] #send-btn.welcome-floating{
     top:calc(var(--welcome-float-top,50%) + var(--welcome-onb-scroll-offset,0px));
@@ -1322,6 +1323,21 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 }
 #welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .onb-nav{
   position:relative;left:auto;right:auto;bottom:auto;margin:14px 0 0;
+}
+/* The one rule this mirror block was missing: without it, the controller doesn't
+   move AT ALL while scrolling under the dynamic fallback (confirmed: transform
+   stayed 'none', device-img's own top didn't shift a single px across a 150px
+   scroll) — everything else (beats, dots, button) moved and left it behind,
+   which is likely what actually read as "the controller and button feel tied to
+   something else" (Frank 2026-08-17) even independent of the button's own
+   native-scroll fix below. will-change hints the compositor to keep this on its
+   own GPU layer continuously rather than promoting/demoting it as scrolling
+   starts and stops, which was part of the same jank complaint. */
+body:has(#welcome-screen.welcome-scroll-fallback) .device-wrap.welcome-mode[data-onb-feature] .device-visual,
+body:has(#welcome-screen.welcome-scroll-fallback) .device-wrap.welcome-mode[data-onb-feature] #zone-roller,
+body:has(#welcome-screen.welcome-scroll-fallback) .device-wrap.welcome-mode[data-onb-feature] #zone-macro{
+  transform:translateY(var(--welcome-onb-scroll-offset,0px));
+  will-change:transform;
 }
 @media(max-width:600px){
   #welcome-text-block.welcome-onboarding #onb-beats{height:212px}
@@ -1490,6 +1506,22 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
 }
 .device-wrap.welcome-mode[data-onb-feature="configure"] #send-btn.welcome-floating{
   box-shadow:0 0 4px 1px rgba(52,199,89,.6),0 0 14px 5px rgba(52,199,89,.28);
+}
+/* floatSendBtnNative() moves the button here (see its own comment) whenever
+   #welcome-screen is actually scrollable — position:absolute inside it, native
+   scroll handles vertical movement, no --welcome-onb-scroll-offset tracking
+   needed at all. --onb-cta-bottom/--onb-cta-height are already computed
+   (positionWelcomeFloatingButton()) for the transform-tracking button; this
+   rest-frame top is the exact same reference, just consumed differently.
+   Must out-rank the transform-tracking rule above (same !important tier, so
+   source order + the extra .onb-native-scroll class specificity both apply
+   here as belt-and-suspenders). */
+#send-btn.welcome-floating.onb-native-scroll{
+  position:absolute!important;
+  left:50%!important;
+  top:calc(var(--onb-cta-bottom) - var(--onb-cta-height))!important;
+  transform:translateX(-50%)!important;
+  transition:background-color .46s cubic-bezier(.22,1,.36,1),color .3s ease,border-color .3s ease,box-shadow .46s cubic-bezier(.22,1,.36,1),opacity .28s ease!important;
 }
 @media(max-width:600px){
   body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
@@ -6205,8 +6237,41 @@ function restoreWelcomeSkip() {
   skip.classList.remove('welcome-skip-floating');
   _welcomeSkipHome = null;
 }
+// #send-btn normally rides --welcome-onb-scroll-offset via a JS-polled transform
+// (see startOnbScrollSync()) — an approximation of scroll, not real scroll, still
+// subject to main-thread timing even when polled every frame. #onb-beats sits
+// right next to it and never has this problem: it's position:absolute genuinely
+// inside #welcome-screen's scrollable content, so the browser moves it on the
+// compositor thread with zero JS involvement, perfectly smooth. When
+// #welcome-screen is actually scrollable, reparent the button in alongside it —
+// same DOM-surgery pattern as floatWelcomeSkip() above, different destination —
+// so it gets the exact same free ride instead of chasing scroll position in JS.
+let _sendBtnScrollHome = null;
+function floatSendBtnNative() {
+  const btn = document.getElementById('send-btn');
+  const beats = document.getElementById('onb-beats');
+  // beats' own parent (.welcome-copy-stage), not #welcome-text-block — #onb-beats
+  // is nested a level deeper, not a direct child of the text block.
+  if (!btn || !beats?.parentElement || _sendBtnScrollHome) return;
+  _sendBtnScrollHome = { parent: btn.parentNode, next: btn.nextSibling };
+  beats.parentElement.insertBefore(btn, beats);
+  btn.classList.add('onb-native-scroll');
+}
+function restoreSendBtnNative() {
+  const btn = document.getElementById('send-btn');
+  if (!btn || !_sendBtnScrollHome) return;
+  btn.classList.remove('onb-native-scroll');
+  _sendBtnScrollHome.parent.insertBefore(btn, _sendBtnScrollHome.next);
+  _sendBtnScrollHome = null;
+}
 function finalizeWelcomeExit() {
   stopOnbScrollSync();
+  // Must run unconditionally here, not rely on positionWelcomeFloatingButton()
+  // reaching its own !onboarding branch — that function returns immediately if
+  // #send-btn has already lost .welcome-floating by the time anything calls it
+  // again post-exit, which left the button stuck reparented (0x0, invisible,
+  // still inside #welcome-screen — caught by skip-welcome-send-btn-probe.mjs).
+  restoreSendBtnNative();
   const controller = sharedController();
   if (controller) {
     delete controller.dataset.onbFeature;
@@ -6342,6 +6407,7 @@ function positionWelcomeFloatingButton() {
     body.style.removeProperty('--onb-cta-height');
     body.style.removeProperty('--onb-cta-half');
     document.getElementById('welcome-screen')?.classList.remove('welcome-scroll-fallback');
+    restoreSendBtnNative();
   } else {
     const controllerRect = document.getElementById('device-img')?.getBoundingClientRect();
     if (!controllerRect?.height) return;
@@ -6407,6 +6473,19 @@ function positionWelcomeFloatingButton() {
     body.style.setProperty('--onb-cta-height', buttonHeight + 'px', 'important');
     body.style.setProperty('--onb-cta-half', (buttonHeight / 2) + 'px', 'important');
     updateWelcomeOverflowState();
+    // Whenever #welcome-screen actually scrolls (media query OR the dynamic
+    // fallback above), move the button into native-scroll mode — see
+    // floatSendBtnNative()'s own comment for why the rAF-polled transform
+    // approach, while no longer laggy (startOnbScrollSync()) or reflow-janky
+    // (transform not top), still can't match genuinely native compositor
+    // scrolling on a real device (Frank 2026-08-17: "controller a tlačítko se
+    // skubou" — jerk/judder — while the natively-scrolled beats text and dots
+    // stay perfectly smooth beside them).
+    if (mediaScrollable || ws?.classList.contains('welcome-scroll-fallback')) {
+      floatSendBtnNative();
+    } else {
+      restoreSendBtnNative();
+    }
     return;
   }
   // .send-btn has `transition:...,transform .18s ease`. Toggling the class
