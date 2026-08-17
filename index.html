@@ -6714,6 +6714,18 @@ function onbStartWelcome() {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     positionWelcomeAnchor();
     positionWelcomeFloatingButton();
+    // Same class of race as finishWelcomeInstant() (see its comment) — layoutFaders()
+    // is otherwise only ever called from onImgLoad(), which can fire before the
+    // onboarding-forced .device-home width (and its aspect-ratio-driven height) has
+    // settled, since it's bound to the <img>'s own load event, independent of when
+    // this function's DOM/class changes actually apply. Re-measuring here once
+    // onboarding's own layout is guaranteed settled (same double-rAF already used
+    // for the welcome anchor above) — Frank, real-device report 2026-08-17: faders
+    // rendered oversized/off their track slots specifically during onboarding
+    // (already fixed for the post-skip normal-app view; this covers onboarding
+    // itself, the other end of the same class of bug).
+    layoutFaders();
+    positionThumbs();
   }));
   setTimeout(() => {
     if (textBlock?.classList.contains('welcome-onboarding')) positionWelcomeAnchor();
