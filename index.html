@@ -84,6 +84,26 @@
   --r:12px;
   --r-lg:18px;
   --r-pill:999px;
+  /* Motion — shared timing tokens. Added after finding the onboarding
+     Next-button/glow mismatch (Frank 2026-08-17: the button snapped away
+     instantly while the send button's glow next to it faded in over .46s) —
+     audited the whole file for the same class of bug and found several more
+     places where elements change at the same moment on different curves.
+     Not every transition uses these: one-off decorative rhythms (idle fader
+     breathing, status-dot pulse, key-capture pulse, first-run setup cue) are
+     deliberately distinct single-use durations, not part of any simultaneous
+     group, so they're left as literals. Anywhere two+ elements visibly change
+     together, though, they should share one of these. */
+  --ease-out:cubic-bezier(.16,1,.3,1);      /* house ease-out — panel/structural motion */
+  --ease-hero:cubic-bezier(.22,1,.36,1);    /* success/glow moments */
+  --ease-settle:cubic-bezier(.22,.8,.2,1);  /* snap-into-place settle */
+  --dur-press:.1s;    /* press-down scale feedback */
+  --dur-fast:.16s;    /* small state/visibility toggles */
+  --dur-base:.3s;     /* default cross-fade */
+  --dur-glow:.46s;    /* hero glow/success */
+  --dur-settle:.72s;  /* settle/shimmer */
+  --dur-stage:1.1s;   /* major panel choreography */
+  --dur-reveal:.6s;   /* post-connect Send button + live HUD reveal, must land together */
 }
 html.dark{
   color-scheme:dark;
@@ -127,7 +147,7 @@ html.dark{
 html.dark .artic-display{background:#111115}
 html.dark select{color-scheme:dark}
 html.dark .uacc-preset-dropdown{background:#1a1a1e}
-.ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:pointer;transition:color .14s ease,filter .14s ease,transform .12s ease,box-shadow .14s ease,background-color .14s ease}
+.ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:pointer;transition:color .14s ease,filter .14s ease,transform var(--dur-press) ease,box-shadow .14s ease,background-color .14s ease}
 .ui-control:hover{color:var(--t1);filter:brightness(.98)}
 .ui-control:active{transform:scale(.96)}
 .ui-control:disabled{opacity:.35;cursor:default;filter:none;transform:none;box-shadow:none}
@@ -192,7 +212,7 @@ header{
   backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);
   box-shadow:var(--chrome-glass-shadow);
   opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-5px) scale(calc(.98 * var(--hud-scale)));
-  transition:opacity .28s ease,transform .36s cubic-bezier(.16,1,.3,1),left .36s cubic-bezier(.16,1,.3,1),top .36s cubic-bezier(.16,1,.3,1),width .38s cubic-bezier(.16,1,.3,1),height .38s cubic-bezier(.16,1,.3,1),padding .38s cubic-bezier(.16,1,.3,1),border-radius .38s cubic-bezier(.16,1,.3,1),visibility 0s linear .36s;
+  transition:opacity .28s ease,transform .36s var(--ease-out),left .36s var(--ease-out),top .36s var(--ease-out),width .38s var(--ease-out),height .38s var(--ease-out),padding .38s var(--ease-out),border-radius .38s var(--ease-out),visibility 0s linear .36s;
 }
 .live-hud[data-side="left"]{left:28px;right:auto}
 .live-hud[data-side="right"]{left:auto;right:28px}
@@ -221,16 +241,35 @@ header{
 .live-hud-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr) 31px;gap:7px 5px;height:100%}
 .live-hud-bank{display:none}
 .live-hud-item{min-width:0;color:var(--t2)}
-.live-hud-item:not(.live-hud-roller){display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;align-items:center;justify-items:center;row-gap:2px}
+.live-hud-item:not(.live-hud-roller){position:relative;overflow:hidden;border-radius:var(--r);padding:4px 2px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;align-items:center;justify-items:center;row-gap:2px}
+/* Fader level as a background wash instead of a separate meter bar — the
+   fill sits behind the label/value/tech so it reads as the cell's own
+   state, not a decoration next to it. The wash (::before) and the text
+   (direct children) both get z-index so painting order is explicit —
+   z-index:-1 on the wash alone rendered blank under this ancestor's
+   backdrop-filter (headless-Chrome-verified render bug, 2026-08-17); this
+   positive-z-index-on-both-layers form is more robust. Driven by
+   scaleY(--live-level-frac) rather than a percentage height: percentage
+   height on an absolutely positioned pseudo needs its containing block's
+   height to be "specified", which a grid-item's stretch-derived height
+   isn't reliably treated as — scaleY sidesteps that and is compositor-only
+   (cheaper than animating height). --live-level-frac is a unitless 0..1
+   fraction set on the item itself (Frank 2026-08-17, option D of 4). */
+.live-hud-item:not(.live-hud-roller)>*{position:relative;z-index:1}
+.live-hud-item:not(.live-hud-roller)::before{
+  content:'';position:absolute;z-index:0;inset:0;
+  transform:scaleY(var(--live-level-frac,0));transform-origin:bottom;
+  background:color-mix(in srgb,var(--t2) 14%,transparent);
+  transition:transform .06s linear,background-color .15s ease;
+}
+.live-hud-item:not(.live-hud-roller):has(.live-hud-tech.has-issue)::before{
+  background:color-mix(in srgb,var(--danger) 20%,transparent);
+}
 .live-hud-label{font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
 .live-hud-label-long{display:none}
 .live-hud-label-short{display:inline}
-.live-hud-meter{height:3px;border-radius:var(--r-pill);background:rgba(127,127,135,.16);overflow:hidden}
-.live-hud-item:not(.live-hud-roller) .live-hud-meter{position:relative;width:4px;height:16px}
-.live-hud-meter-fill{display:block;width:var(--live-level,0%);height:100%;border-radius:inherit;background:linear-gradient(90deg,#8e8e93,#aeaeb2);transition:width .06s linear}
-.live-hud-item:not(.live-hud-roller) .live-hud-meter-fill{position:absolute;right:0;bottom:0;left:0;width:100%;height:var(--live-level,0%);background:linear-gradient(0deg,#8e8e93,#aeaeb2);transition:height .06s linear}
 .live-hud-value{min-width:3ch;text-align:center;color:var(--t1);font:600 10px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip}
-.live-hud-tech{color:var(--t3);font:600 6.25px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1;white-space:nowrap}
+.live-hud-tech{color:var(--t3);font:600 7px 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1;white-space:nowrap}
 .live-hud-tech.has-issue{color:var(--danger)}
 .live-hud-roller{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:2px;padding-top:5px;border-top:1px solid var(--border)}
 .live-hud-roller .live-hud-tech{grid-column:1/-1;justify-self:start}
@@ -267,7 +306,7 @@ main{width:100%;}
    AS the button and panels move — one unified motion that all settles at
    once, instead of the earlier box-then-content two-step that read as "the
    button arrives, then the controller catches up" (Frank felt the pause).
-   The box uses the SAME fast ease-out (cubic-bezier(.16,1,.3,1)) in BOTH
+   The box uses the SAME fast ease-out (var(--ease-out)) in BOTH
    directions, so the collapse feels as quick and snappy as the grow, and the
    button + panels (which track the box) move on an identical curve either
    way — no "hide feels slower / moves at a different speed than the button"
@@ -277,10 +316,10 @@ main{width:100%;}
    already faint by the time the clip bites — no sequential dead-time, no
    easing mismatch. Show keeps the base opacity (.55s) so its fade-in is
    unchanged (Frank called show "perfect"). */
-.stage-collapse{display:grid;grid-template-rows:minmax(0,1fr);transition:grid-template-rows 1.1s cubic-bezier(.16,1,.3,1)}
-.stage-collapse>.stage{overflow:hidden;min-height:0;transition:opacity 1.1s ease,transform 1.1s cubic-bezier(.16,1,.3,1)}
+.stage-collapse{display:grid;grid-template-rows:minmax(0,1fr);transition:grid-template-rows var(--dur-stage) var(--ease-out)}
+.stage-collapse>.stage{overflow:hidden;min-height:0;transition:opacity var(--dur-stage) ease,transform var(--dur-stage) var(--ease-out)}
 .stage-collapse.is-collapsed{grid-template-rows:minmax(0,0fr)}
-.stage-collapse.is-collapsed>.stage{opacity:0;transform:scale(.94) translateY(-8px);transition:opacity .64s cubic-bezier(.16,1,.3,1),transform 1.1s cubic-bezier(.16,1,.3,1)}
+.stage-collapse.is-collapsed>.stage{opacity:0;transform:scale(.94) translateY(-8px);transition:opacity .64s var(--ease-out),transform var(--dur-stage) var(--ease-out)}
 @media(prefers-reduced-motion:reduce){
   /* .is-collapsed repeated at matching 2-class specificity so it can't beat
      this 1-class override and silently re-enable motion. */
@@ -341,7 +380,7 @@ main{width:100%;}
   background:var(--red);color:#fff;border:none;border-radius:var(--r-pill);
   font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;
   width:166px;min-height:38px;padding:9px 16px;cursor:pointer;white-space:nowrap;
-  transition:background-color .46s cubic-bezier(.22,1,.36,1),color .3s ease,border-color .3s ease,box-shadow .46s cubic-bezier(.22,1,.36,1),opacity .28s ease,transform .18s ease;
+  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease,transform .18s ease;
   will-change:background-color,box-shadow;
   box-shadow:0 3px 12px rgba(228,87,69,.24);
   letter-spacing:.01em;
@@ -365,7 +404,12 @@ main{width:100%;}
   border:0;background:transparent;padding:3px 0;font-family:'Mulish',sans-serif;cursor:pointer;
   font-size:11px;font-weight:600;opacity:0;visibility:hidden;filter:blur(3px);
   transform:translate(10px,-50%) scale(.975);transform-origin:right center;
-  transition:transform .48s cubic-bezier(.16,1,.3,1),opacity .32s ease,filter .38s ease,color .3s ease,visibility 0s linear .48s;
+  /* Matches .send-btn's own glow transition (--dur-glow/--ease-hero) — both
+     fire on the same "config sent" moment right next to each other, and used
+     to run on four different values (.48s/.32s/.38s/.3s, house ease-out
+     instead of the glow curve) before this pass (Frank 2026-08-17: "všude,
+     kde jsou automatizace zároveň, ať jsou navázané na společný parametr"). */
+  transition:transform var(--dur-glow) var(--ease-hero),opacity var(--dur-glow) var(--ease-hero),filter var(--dur-glow) var(--ease-hero),color var(--dur-glow) var(--ease-hero),visibility 0s linear var(--dur-glow);
   will-change:transform,opacity,filter;
 }
 .send-change-note.is-visible{
@@ -398,7 +442,7 @@ main{width:100%;}
   transform:translate(-50%,-4px);border:1px solid var(--glass-border);border-radius:var(--r);
   background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));box-shadow:var(--glass-shadow);
   backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
-  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,transform .24s cubic-bezier(.16,1,.3,1),visibility 0s linear .24s;
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,transform .24s var(--ease-out),visibility 0s linear .24s;
 }
 .change-popover.is-open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);transition-delay:0s}
 .change-popover strong{display:block;font-size:11px;color:var(--t1);margin-bottom:6px}
@@ -441,7 +485,7 @@ main{width:100%;}
   from{opacity:0}
   to{opacity:1}
 }
-.bank-card.bank-anim{animation:bankFade .14s ease-out;}   /* T3: opacity fade celé karty vč. name-row */
+.bank-card.bank-anim{animation:bankFade .18s ease-out;}   /* T3: opacity fade celé karty vč. name-row — matches .bank-name-row below so the child's slide-in doesn't outlast its own parent's fade */
 /* Theme changes are captured as two complete frames. The incoming frame fades over
    the old one, so gradients, glass panels and solid colors all move at one tempo. */
 html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.theme-snapshot *::after{transition:none!important}
@@ -485,27 +529,27 @@ html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.the
   width:calc((100% - 10px)/3);border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);
   transform:translateX(calc(var(--roller-index) * (100% + 2px)));
   box-shadow:var(--control-glass-shadow);
-  transition:transform .46s cubic-bezier(.16,1,.3,1),background-color .22s ease,box-shadow .22s ease;
+  transition:transform .46s var(--ease-out),background-color .22s ease,box-shadow .22s ease;
 }
 .roller-mode-btn{
   position:relative;z-index:1;min-width:0;padding:7px 10px;border:0;border-radius:var(--r-pill);touch-action:manipulation;
   background:transparent;color:var(--t2);cursor:pointer;font:600 11px 'Mulish',sans-serif;
   line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:color .15s ease,transform .10s ease;
+  transition:color .15s ease,transform var(--dur-press) ease;
 }
 .roller-mode-btn:hover{color:var(--t1)}
 .roller-mode-btn:active{transform:scale(.98)}
 .roller-mode-btn.active,.roller-mode-btn.active:hover{color:var(--t1)}
 html.dark .roller-mode-row{background:color-mix(in srgb,var(--bg-input) 80%,transparent)}
 html.dark .roller-mode-row::before{background:var(--control-glass-bg);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow)}
-.roller-mode-content{opacity:1;transform:translateY(0);transition:opacity .16s ease,transform .22s cubic-bezier(.16,1,.3,1)}
+.roller-mode-content{opacity:1;transform:translateY(0);transition:opacity var(--dur-fast) ease,transform .22s var(--ease-out)}
 .roller-mode-content.is-leaving{opacity:0;transform:translateY(3px)}
-.roller-mode-content.is-entering{animation:rollerContentIn .30s cubic-bezier(.16,1,.3,1)}
+.roller-mode-content.is-entering{animation:rollerContentIn .30s var(--ease-out)}
 .ks-basic-actions{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .roller-advanced{margin-top:2px;border-top:1px solid var(--border);padding-top:9px}
 .roller-advanced>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;cursor:pointer;color:var(--t2);font-size:11px;font-weight:600;padding:5px 2px}
 .roller-advanced>summary::-webkit-details-marker{display:none}
-.roller-advanced>summary::after{content:'⌄';color:var(--t3);transition:transform .22s cubic-bezier(.16,1,.3,1)}
+.roller-advanced>summary::after{content:'⌄';color:var(--t3);transition:transform .22s var(--ease-out)}
 .roller-advanced[open]>summary::after{transform:rotate(180deg)}
 .roller-advanced-summary{font-size:10px;font-weight:400;color:var(--t3);margin-left:auto}
 .roller-advanced-body{padding-top:8px}
@@ -521,7 +565,7 @@ html.dark .roller-mode-row::before{background:var(--control-glass-bg);border-col
 .stepper input{width:34px;height:24px;text-align:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--t1);padding:0;outline:none;-moz-appearance:textfield;font-weight:600;}
 .stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none}
 .stepper input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 20%,transparent),inset 0 1px 0 rgba(255,255,255,.78)}
-.step-btn{width:28px;height:32px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:14px;line-height:1;transition:color .18s ease,background-color .18s ease,transform .12s ease;font-weight:400;font-family:'Mulish',sans-serif;}
+.step-btn{width:28px;height:32px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:14px;line-height:1;transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease;font-weight:400;font-family:'Mulish',sans-serif;}
 .stepper .step-btn{width:24px;height:24px;border-radius:var(--r-pill)}
 .step-btn:hover{background:rgba(127,127,135,.12);color:var(--t1);}
 /* Was --red — read as an error flash on plain +/- taps, which aren't an
@@ -540,7 +584,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-keyboard-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 88%,transparent);box-shadow:inset 0 1px 2px var(--border);scrollbar-width:thin;overscroll-behavior-x:contain}
 .ks-keyboard{--white-w:26px;position:relative;width:1950px;height:78px;user-select:none;touch-action:none}
 .ks-white-keys{display:flex;height:100%}
-.ks-key{appearance:none;padding:0;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,transform .10s ease}
+.ks-key{appearance:none;padding:0;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,transform var(--dur-press) ease}
 .ks-key-white{position:relative;flex:0 0 var(--white-w);height:100%;border:0;border-right:1px solid var(--border-s);background:var(--piano-white);color:var(--piano-black);z-index:1}
 .ks-key-white:last-child{border-right:0}
 .ks-key-black{position:absolute;top:0;width:16px;height:48px;border:1px solid color-mix(in srgb,var(--piano-black) 78%,transparent);border-radius:0 0 4px 4px;background:var(--piano-black);color:var(--piano-white);z-index:3;box-shadow:0 2px 3px var(--border-s)}
@@ -552,7 +596,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-key-black.is-edge{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--red) 55%,var(--piano-white)),0 2px 3px var(--border-s)}
 .ks-key:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;z-index:5}
 .ks-key-label{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);font-size:10px;font-weight:600;white-space:nowrap;pointer-events:none}
-.ks-key-scroll-btn{width:28px;height:auto;min-height:78px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 86%,transparent);color:var(--t2);cursor:pointer;font-size:15px;transition:background-color .16s ease,color .16s ease,transform .10s ease}
+.ks-key-scroll-btn{width:28px;height:auto;min-height:78px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 86%,transparent);color:var(--t2);cursor:pointer;font-size:15px;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,transform var(--dur-press) ease}
 .ks-key-scroll-btn:hover{background:color-mix(in srgb,var(--bg-input) 68%,var(--glass-soft));color:var(--t1)}
 .ks-key-scroll-btn:active{transform:scale(.96)}
 .ks-key-scroll-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -565,7 +609,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
    without the search input: KEYSWITCH_PRESETS only has 2 static entries. */
 .ks-preset-picker{position:relative;flex:0 0 auto}
 .ks-preset-trigger{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;font-family:'Mulish',sans-serif;font-size:12px;color:var(--t2)}
-.ks-preset-chevron{font-size:10px;color:var(--t3);transition:transform .2s cubic-bezier(.16,1,.3,1)}
+.ks-preset-chevron{font-size:10px;color:var(--t3);transition:transform .2s var(--ease-out)}
 .ks-preset-trigger[aria-expanded="true"] .ks-preset-chevron{transform:rotate(180deg)}
 .quick-setup-menu.ks-preset-menu{left:0;width:max(180px,100%);max-height:none}
 .ks-stepval{padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;min-width:66px;text-align:center;color:var(--t1)}
@@ -588,7 +632,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 
 /* UACC */
 .uacc-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
-.uacc-tag{display:flex;align-items:center;gap:4px;background:var(--control-glass-bg);border:1px solid var(--control-glass-border);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:11px;color:var(--t1);box-shadow:var(--control-glass-shadow);transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease}
+.uacc-tag{display:flex;align-items:center;gap:4px;background:var(--control-glass-bg);border:1px solid var(--control-glass-border);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:11px;color:var(--t1);box-shadow:var(--control-glass-shadow);transition:border-color var(--dur-fast) ease,background-color var(--dur-fast) ease,box-shadow var(--dur-fast) ease}
 .uacc-tag button{background:none;border:none;cursor:pointer;color:var(--t3);font-size:11px;padding:0 0 0 2px;line-height:1;transition:color .12s}
 .uacc-tag button:hover{color:var(--danger)}
 .uacc-tag .tag-order-btn{padding:0 1px;color:var(--t3);font-size:12px}
@@ -768,7 +812,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .ks-note-chip:hover{border-color:var(--border-s)}
 .ks-note-name{font-size:11px;font-weight:600;color:var(--t1);white-space:nowrap}
 .ks-midi-number{min-width:22px;margin-left:6px;padding:2px 5px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--bg-input) 86%,transparent);font:500 9px 'IBM Plex Mono',monospace;color:var(--t3);text-align:center}
-.ks-note-actions{display:flex;align-items:center;gap:1px;margin-left:5px;padding-left:4px;border-left:1px solid var(--border);opacity:.58;transition:opacity .16s ease}
+.ks-note-actions{display:flex;align-items:center;gap:1px;margin-left:5px;padding-left:4px;border-left:1px solid var(--border);opacity:.58;transition:opacity var(--dur-fast) ease}
 .ks-note-chip:hover .ks-note-actions,.ks-note-chip:focus-within .ks-note-actions{opacity:1}
 .ks-note-chip .ks-note-actions button{display:inline-flex;align-items:center;justify-content:center;width:18px;height:20px;padding:0;border-radius:var(--r-pill);font-size:12px}
 .ks-note-chip .ks-note-actions .tag-order-btn:hover{background:color-mix(in srgb,var(--bg-input) 76%,transparent);color:var(--t1)}
@@ -797,8 +841,8 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .info-row.info-row-action .info-lbl{min-width:100px;}
 .hid-switch{display:inline-flex;align-items:center;cursor:pointer;position:relative}
 .hid-switch input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
-.hid-switch-track{position:relative;width:34px;height:20px;border-radius:var(--r-pill);border:1px solid var(--control-glass-border);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);transition:background .22s,border-color .22s,box-shadow .22s}
-.hid-switch-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 6px rgba(34,34,40,.22),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .28s cubic-bezier(.16,1,.3,1)}
+.hid-switch-track{position:relative;width:34px;height:20px;border-radius:var(--r-pill);border:1px solid var(--control-glass-border);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);transition:background .22s var(--ease-out),border-color .22s var(--ease-out),box-shadow .22s var(--ease-out)}
+.hid-switch-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 6px rgba(34,34,40,.22),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .22s var(--ease-out)}
 .hid-switch input:checked + .hid-switch-track{background:color-mix(in srgb,var(--green) 44%,transparent);border-color:color-mix(in srgb,var(--green) 72%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--green) 25%,transparent),inset 0 1px 2px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.24)}
 /* Header's "Show controller view" reuses .hid-switch styling via the shared
    .controller-switch class, but it's a view preference, not a device/connect
@@ -821,7 +865,7 @@ html.dark #device-settings-chevron{color:var(--t3)}
 /* BOTTOM */
 .bottom-row{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:600px;flex-wrap:wrap;gap:8px}
 .btn-group{display:flex;gap:8px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;transition:color .13s ease,background-color .13s ease,border-color .13s ease,transform .12s ease,box-shadow .13s ease;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;transition:color .13s ease,background-color .13s ease,border-color .13s ease,transform var(--dur-press) ease,box-shadow .13s ease;white-space:nowrap}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
 .btn-ghost{background:var(--control-glass-bg);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow);color:var(--t2)}
@@ -934,7 +978,7 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 }
 
 /* MODAL */
-.overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.28);backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi .16s ease}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.28);backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi .18s ease}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 .modal{background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.28);backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su .18s ease}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -946,7 +990,7 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
   color:var(--t1);font:600 11px/1.35 'Mulish',sans-serif;pointer-events:auto;
   box-shadow:0 10px 30px rgba(34,34,40,.13),inset 0 1px 0 rgba(255,255,255,.34);
   backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
-  animation:toast-in .32s cubic-bezier(.16,1,.3,1) both;transform-origin:right bottom;
+  animation:toast-in .32s var(--ease-out) both;transform-origin:right bottom;
   transition:opacity .22s ease,transform .28s cubic-bezier(.4,0,1,1),filter .22s ease
 }
 @keyframes toast-in{from{opacity:0;transform:translate3d(10px,4px,0) scale(.97);filter:blur(4px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
@@ -956,7 +1000,7 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .toast.e .toast-icon{border-color:color-mix(in srgb,var(--danger) 30%,var(--glass-border));background:var(--danger-bg);color:var(--danger)}
 .toast-message{min-width:0;flex:1;color:var(--t2);overflow-wrap:anywhere}
 .toast.e .toast-message{color:color-mix(in srgb,var(--danger) 72%,var(--t1))}
-.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 11px 'Mulish',sans-serif;transition:background-color .16s ease,color .16s ease,opacity .16s ease,transform .12s ease}
+.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 11px 'Mulish',sans-serif;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
 .tx:hover,.tx:focus-visible{background:var(--control-glass-bg);color:var(--t1);opacity:1}.tx:active{transform:scale(.92)}
 .hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:8px;font:12px/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--chrome-glass-bg);backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);border:1px solid var(--chrome-float-border);box-shadow:var(--chrome-glass-shadow);opacity:0;pointer-events:none;transition:opacity .15s ease;}
 .hover-tip.show{opacity:1;}
@@ -1095,7 +1139,7 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1) t
    transition keeps that reflow smooth. */
 .send-sticky-row{
   height:0;overflow:hidden;
-  transition:height 1.1s cubic-bezier(.16,1,.3,1);
+  transition:height var(--dur-stage) var(--ease-out);
 }
 .send-sticky-row-inner{
   display:flex;align-items:center;justify-content:center;padding:32px 0 16px;
@@ -1107,7 +1151,7 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1) t
    must open in step or the button lags behind everything else on hide
    (Frank 2026-07-26 — "controller odjíždí jinou rychlostí než tlačítko"). */
 .send-sticky-row.is-open{
-  transition:height 1.1s cubic-bezier(.16,1,.3,1);
+  transition:height var(--dur-stage) var(--ease-out);
 }
 /* [hidden] is only ever applied once truly at rest (0 height, transition
    long finished) — display:none would otherwise freeze the transition
@@ -1192,7 +1236,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   display:none;
   position:relative;place-items:center;width:190px;height:32px;overflow:hidden;
   color:var(--t1);isolation:isolate;pointer-events:none;
-  transition:opacity .3s ease;
+  transition:opacity var(--dur-base) ease;
 }
 .welcome-wordmark-text{
   font:700 24px/1 'Mulish',sans-serif;letter-spacing:-.035em;white-space:nowrap;
@@ -1281,13 +1325,13 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   }
 }
 .welcome-skip.welcome-skip-floating{display:block!important}
-.onb-beat-title{font-size:22px;font-weight:700;color:var(--t1);letter-spacing:-.02em;line-height:1.2;transition:opacity .3s ease;}
-.onb-beat-sub{font-size:13px;color:var(--t2);line-height:1.5;margin:7px auto 0;max-width:420px;min-height:40px;transition:opacity .3s ease;}
-.onb-beat-details{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;min-height:29px;margin-top:10px;transition:opacity .3s ease;}
+.onb-beat-title{font-size:22px;font-weight:700;color:var(--t1);letter-spacing:-.02em;line-height:1.2;transition:opacity var(--dur-base) ease;}
+.onb-beat-sub{font-size:13px;color:var(--t2);line-height:1.5;margin:7px auto 0;max-width:420px;min-height:40px;transition:opacity var(--dur-base) ease;}
+.onb-beat-details{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;min-height:29px;margin-top:10px;transition:opacity var(--dur-base) ease;}
 .onb-detail-pill{display:inline-flex;align-items:center;min-height:27px;padding:0 10px;border:1px solid var(--border-s);border-radius:var(--r-pill);background:color-mix(in srgb,var(--glass-card) 82%,transparent);color:var(--t2);font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,.04)}
 .onb-detail-pill strong{margin-right:4px;color:var(--t1);font-weight:700}
 .onb-nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:7px;margin:0 0 8px;}
-.onb-nav-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font:600 11px/1 'Mulish',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:color .16s,border-color .16s,background .16s,opacity .16s,transform .1s}
+.onb-nav-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font:600 11px/1 'Mulish',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:color var(--dur-fast) ease,border-color var(--dur-fast) ease,background var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
 .onb-nav-btn:hover:not(:disabled){color:var(--t1);border-color:var(--t3);background:var(--bg)}
 .onb-nav-btn:active:not(:disabled){transform:scale(.96)}
 .onb-nav-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -1296,7 +1340,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .onb-next{min-width:72px;padding:0 12px;border-radius:var(--r-pill);gap:5px;color:var(--t1)}
 .onb-next.is-final{
   /* Match the send button's own green "configure" glow fade-in (feel-fader.html
-     ~1579, box-shadow transition .46s cubic-bezier(.22,1,.36,1)) — both changes
+     ~1579, box-shadow transition var(--dur-glow) var(--ease-hero)) — both changes
      land on the same beat (feature:'configure' is the last of _ONB_BEATS), and
      the snap-to-invisible here (visibility:hidden with no matching transition)
      read as inconsistent next to that button's smooth fade (Frank 2026-08-17:
@@ -1307,11 +1351,11 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   opacity:0;
   visibility:hidden;
   pointer-events:none;
-  transition:opacity .46s cubic-bezier(.22,1,.36,1),visibility 0s linear .46s,color .16s,border-color .16s,background .16s,transform .1s;
+  transition:opacity var(--dur-glow) var(--ease-hero),visibility 0s linear var(--dur-glow),color var(--dur-fast) ease,border-color var(--dur-fast) ease,background var(--dur-fast) ease,transform var(--dur-press) ease;
 }
 .onb-dots{display:flex;gap:4px;justify-content:center;margin:0;}
 .onb-dot{display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;background:transparent;border-radius:var(--r-pill);cursor:pointer}
-.onb-dot::before{content:'';width:6px;height:6px;border-radius:var(--r-pill);background:var(--border-s);transition:width .25s cubic-bezier(.16,1,.3,1),background .2s ease;}
+.onb-dot::before{content:'';width:6px;height:6px;border-radius:var(--r-pill);background:var(--border-s);transition:width var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);}
 .onb-dot.on::before{width:14px;background:var(--red);}
 .onb-dot:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .onb-beats-fade{opacity:0;}
@@ -1474,7 +1518,7 @@ body.welcome-connecting #send-btn.welcome-floating{
 .device-wrap.welcome-mode #thumb-r{animation:welcome-fader-slave 5.5s ease-in-out .5s infinite}
 .device-wrap.welcome-mode[data-onb-feature] .device-img,
 .device-wrap.welcome-mode[data-onb-feature] .fader-tracks,
-.device-wrap.welcome-mode[data-onb-feature] .ctrl-zone{transition:opacity .3s ease,filter .3s ease,background .3s ease,box-shadow .3s ease,outline-color .3s ease}
+.device-wrap.welcome-mode[data-onb-feature] .ctrl-zone{transition:opacity var(--dur-base) ease,filter var(--dur-base) ease,background var(--dur-base) ease,box-shadow var(--dur-base) ease,outline-color var(--dur-base) ease}
 .device-wrap.welcome-mode[data-onb-feature] .fader-thumb{animation:none!important}
 .device-wrap.welcome-mode[data-onb-feature="faders"] .fader-thumb{
   filter:drop-shadow(0 0 3px rgba(52,199,89,.95)) drop-shadow(0 0 13px rgba(52,199,89,.72)) drop-shadow(0 0 27px rgba(52,199,89,.38));
@@ -1588,7 +1632,7 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
      Everything else from the base rule (feel-fader.html:324) is repeated here
      minus transform, not dropped outright — the opacity/color/etc. transitions
      still matter for this button's normal reveal/feedback animations. */
-  transition:background-color .46s cubic-bezier(.22,1,.36,1),color .3s ease,border-color .3s ease,box-shadow .46s cubic-bezier(.22,1,.36,1),opacity .28s ease!important;
+  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease!important;
 }
 .device-wrap.welcome-mode[data-onb-feature="configure"] #send-btn.welcome-floating{
   box-shadow:0 0 4px 1px rgba(52,199,89,.6),0 0 14px 5px rgba(52,199,89,.28);
@@ -1607,7 +1651,7 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   left:50%!important;
   top:calc(var(--onb-cta-bottom) - var(--onb-cta-height))!important;
   transform:translateX(-50%)!important;
-  transition:background-color .46s cubic-bezier(.22,1,.36,1),color .3s ease,border-color .3s ease,box-shadow .46s cubic-bezier(.22,1,.36,1),opacity .28s ease!important;
+  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease!important;
 }
 /* floatDeviceHomeNative() moves #device-home here (see its own comment) — same
    native-scroll treatment as the button above, for the controller. --onb-
@@ -1682,9 +1726,15 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   background-size:260% 100%;background-position:145% 0;
   mix-blend-mode:screen;
 }
-.device-wrap.connect-success .device-img{animation:welcome-device-glow 1.15s cubic-bezier(.16,1,.3,1) both}
-.device-wrap.connect-success .welcome-flash{animation:welcome-device-halo 1.05s cubic-bezier(.16,1,.3,1) both}
-.device-wrap.connect-success::after{animation:welcome-device-shimmer .72s cubic-bezier(.22,.7,.2,1) .05s both}
+.device-wrap.connect-success .device-img{animation:welcome-device-glow 1.15s var(--ease-out) both}
+.device-wrap.connect-success .welcome-flash{animation:welcome-device-halo 1.05s var(--ease-out) both}
+/* --dur-settle/--ease-settle: shared with the JS-driven fader-settle transition
+   (welcomeConnectFaders(), ~line 6840) — both fire in the same connect-success
+   moment and used to run on two near-identical but not-quite-matching custom
+   curves (.22,.7,.2,1 here vs .22,.8,.2,1 there), likely an accidental drift
+   rather than a deliberate difference (Frank 2026-08-17 timing-consistency
+   pass). */
+.device-wrap.connect-success::after{animation:welcome-device-shimmer var(--dur-settle) var(--ease-settle) .05s both}
 @keyframes welcome-device-glow{
   0%  {box-shadow:0 0 0 0 rgba(var(--highlight-rgb),0),0 8px 20px rgba(var(--highlight-rgb),0)}
   24% {box-shadow:0 0 0 1px rgba(var(--highlight-rgb),.42),0 8px 25px rgba(var(--highlight-rgb),.12),0 0 26px rgba(var(--highlight-rgb),.07)}
@@ -1740,14 +1790,13 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   position:fixed;inset:0;z-index:150;background:rgba(12,12,16,.30);
   backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);
   display:flex;align-items:center;justify-content:center;padding:20px;
-  animation:fi .16s ease;
+  animation:fi var(--dur-fast) ease;
 }
 @media(max-width:980px){
   .live-hud{left:16px;width:96px;height:96px;padding:7px;border-radius:var(--r-lg)}
   .live-hud[data-side]{left:16px;right:auto}
   .live-hud-inner{grid-template-rows:minmax(0,1fr) 28px;gap:4px}
   .live-hud-item:not(.live-hud-roller){row-gap:2px}
-  .live-hud-item:not(.live-hud-roller) .live-hud-meter{height:17px}
   .live-hud-roller{grid-template-columns:auto minmax(0,1fr);column-gap:3px;row-gap:1px;padding-top:3px}
   .live-hud-roller .live-hud-value{font-size:10px}
 }
@@ -1853,7 +1902,7 @@ html.dark .lib-badge-sm{background:#555}
 .section-summary-label{font:600 11px 'Mulish',sans-serif;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
 .section-summary-meta{font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .section-summary-sep{color:var(--t3);font:600 10px 'Mulish',sans-serif}
-.section-chevron{font-size:10px;color:var(--t3);transition:transform .25s cubic-bezier(.16,1,.3,1)}
+.section-chevron{font-size:10px;color:var(--t3);transition:transform .25s var(--ease-out)}
 .bank-section.is-open .section-chevron{transform:rotate(180deg)}
 .bank-section.is-collapsed .section-head{padding-bottom:0;margin-bottom:0;border-bottom-color:transparent}
 .section-collapse-body[hidden]{display:none}
@@ -2050,7 +2099,7 @@ button:focus-visible{outline-offset:3px;}
 .quick-setup-picker{position:relative;flex:1;min-width:150px;max-width:300px}
 .library-quick-input{width:100%;border:1px solid var(--border-s);border-radius:var(--r-pill);background:color-mix(in srgb,var(--bg-input) 88%,transparent);color:var(--t1);padding:6px 10px;font:12px 'Mulish',sans-serif;outline:none}
 .library-quick-input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
-.bank-quick-setup.is-first-run-highlight .library-quick-input{animation:library-setup-cue 1.65s cubic-bezier(.16,1,.3,1)}
+.bank-quick-setup.is-first-run-highlight .library-quick-input{animation:library-setup-cue 1.65s var(--ease-out)}
 @keyframes library-setup-cue{
   0%,100%{border-color:var(--border-s);box-shadow:0 0 0 0 transparent}
   28%{border-color:color-mix(in srgb,var(--red) 52%,var(--border-s));box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 14%,transparent),0 8px 24px color-mix(in srgb,var(--red) 9%,transparent)}
@@ -2209,15 +2258,13 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 <div class="live-hud" id="live-strip" data-state="DISCONNECTED" data-side="left" role="group" tabindex="0" aria-label="Live device values. Drag left or right to reposition." aria-hidden="true">
   <div class="live-hud-bank" id="live-hud-bank">B1 · Bank 1</div>
   <div class="live-hud-inner">
-    <div class="live-hud-item">
+    <div class="live-hud-item" id="live-f1-item">
       <span class="live-hud-label"><span class="live-hud-label-long" id="live-f1-label-long">L</span><span class="live-hud-label-short" id="live-f1-label-short">L</span></span>
-      <span class="live-hud-meter" aria-hidden="true"><span class="live-hud-meter-fill" id="live-f1-meter"></span></span>
       <span class="live-hud-value" id="live-f1-value">—</span>
       <span class="live-hud-tech" id="live-f1-tech">Ch1·CC11</span>
     </div>
-    <div class="live-hud-item">
+    <div class="live-hud-item" id="live-f2-item">
       <span class="live-hud-label"><span class="live-hud-label-long" id="live-f2-label-long">R</span><span class="live-hud-label-short" id="live-f2-label-short">R</span></span>
-      <span class="live-hud-meter" aria-hidden="true"><span class="live-hud-meter-fill" id="live-f2-meter"></span></span>
       <span class="live-hud-value" id="live-f2-value">—</span>
       <span class="live-hud-tech" id="live-f2-tech">Ch1·CC1</span>
     </div>
@@ -5670,14 +5717,14 @@ function updateContextualLiveStrip(){
 }
 function renderLiveFaderValues(){
   const allowed = connState() === 'CONNECTED_LIVE';
-  const setLiveValue = (id, meterId, value, seen) => {
+  const setLiveValue = (id, itemId, value, seen) => {
     const valid = allowed && seen && Number.isFinite(value);
     setTxt(id, valid ? value : '—');
-    const meter = document.getElementById(meterId);
-    if (meter) meter.style.setProperty('--live-level', valid ? (Math.max(0, Math.min(127, value)) / 127 * 100) + '%' : '0%');
+    const item = document.getElementById(itemId);
+    if (item) item.style.setProperty('--live-level-frac', valid ? String(Math.max(0, Math.min(127, value)) / 127) : '0');
   };
-  setLiveValue('live-f1-value', 'live-f1-meter', liveValues.f1, liveSeen.f1);
-  setLiveValue('live-f2-value', 'live-f2-meter', liveValues.f2, liveSeen.f2);
+  setLiveValue('live-f1-value', 'live-f1-item', liveValues.f1, liveSeen.f1);
+  setLiveValue('live-f2-value', 'live-f2-item', liveValues.f2, liveSeen.f2);
 }
 
 function renderLiveStrip(){
@@ -6490,10 +6537,12 @@ function revealPostConnectUI() {
     if (reduced) {
       btn.style.opacity = '1';
     } else {
-      // .6s = 2x the original .3s (Frank, 2026-08-10 HW test: "udělej to
-      // pomalejší, dvojnásobně"); the live HUD's reveal above is doubled to
-      // match, .28s -> .56s, so the two still land together.
-      btn.style.animation = 'welcome-btn-reveal .6s ease';
+      // --dur-reveal (.6s) = 2x the original .3s (Frank, 2026-08-10 HW test:
+      // "udělej to pomalejší, dvojnásobně"); shared with the live HUD reveal
+      // below so the two land together exactly, not just approximately (they
+      // used to be .6s/.56s, a 40ms gap left over from doubling both
+      // independently -- Frank 2026-08-17 timing-consistency pass).
+      btn.style.animation = 'welcome-btn-reveal var(--dur-reveal) ease';
       btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
     }
   }
@@ -6821,11 +6870,11 @@ function connectTransitionWelcome() {
   //    the same 0–127 -> travel mapping as pF(), including the real rendered thumb height.
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (thumbL && railL) {
-      thumbL.style.transition = 'transform .72s cubic-bezier(.22,.8,.2,1)';
+      thumbL.style.transition = 'transform var(--dur-settle) var(--ease-settle)';
       pF('track-l','thumb-l',liveValues.f1);
     }
     if (thumbR && railR) {
-      thumbR.style.transition = 'transform .72s cubic-bezier(.22,.8,.2,1)';
+      thumbR.style.transition = 'transform var(--dur-settle) var(--ease-settle)';
       pF('track-r','thumb-r',liveValues.f2);
     }
   }));
@@ -6885,7 +6934,7 @@ function connectTransitionWelcome() {
     // then clears itself once the opacity transition finishes.
     const liveStrip = document.getElementById('live-strip');
     if (liveStrip) {
-      liveStrip.style.transitionDuration = '.56s';
+      liveStrip.style.transitionDuration = 'var(--dur-reveal)';
       liveStrip.addEventListener('transitionend', e => {
         if (e.propertyName === 'opacity') liveStrip.style.transitionDuration = '';
       }, { once: true });
