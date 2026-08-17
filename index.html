@@ -1227,6 +1227,20 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   position:fixed;top:var(--onb-notice-top,50%);left:50%;
   width:min(560px,calc(100vw - 40px));margin:0;transform:translateX(-50%);
 }
+/* Plain (returning-user, non-onboarding) welcome screen — Frank 2026-08-17:
+   "upravit cervenou notifikaci na welcome screenu bez onboardingu, aby byla
+   taky nahore, a pridej tam taky napis Feel Fader". Same top-anchored idea as
+   onboarding above, without the controller/beats cascade this screen doesn't
+   have — no scroll tracking, no JS-computed offsets needed, just a fixed
+   top position clear of .welcome-inner's own centered button/skip-link group. */
+#welcome-text-block:not(.welcome-onboarding) .welcome-wordmark{
+  display:grid;
+  position:fixed;top:24px;left:50%;transform:translateX(-50%);
+}
+#welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice{
+  position:fixed;top:72px;left:50%;
+  width:min(340px,calc(100vw - 40px));margin:0;transform:translateX(-50%);
+}
 .welcome-action-slot{display:flex;align-items:center;justify-content:center;width:100%;height:38px;margin:4px 0 2px}
 @media(min-width:601px){
   .welcome-inner{gap:2px}
@@ -1515,6 +1529,16 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .s
      land the controller lower than intended. --onb-stage-pad-top is the same
      target pre-corrected for .stage's own offset. */
   padding-top:var(--onb-stage-pad-top,32px);
+}
+/* Plain (non-onboarding) welcome + notice shown: the notice sits fixed right
+   below the new top-anchored wordmark (see .welcome-wordmark/.welcome-browser-
+   notice rules above), which only leaves ~32px before the controller's default
+   centered position — not enough room for the notice (measured ~54px tall) to
+   clear it. No JS cascade needed here (this screen never scrolls/reflows), so
+   a static padding-top increase is enough — purely reactive via :has(), so it
+   stops applying the instant onboarding starts or the notice hides. */
+body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice.show) .stage{
+  padding-top:84px;
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   --onb-controller-top:72px;
