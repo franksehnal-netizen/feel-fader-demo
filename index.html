@@ -1200,11 +1200,32 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 }
 #welcome-text-block.welcome-onboarding .welcome-wordmark{
   display:grid;
-  position:fixed;top:calc(var(--welcome-controller-top,50%) - 30px);left:50%;
+  /* --onb-wordmark-bottom is a deliberate, JS-chosen anchor near the top of the
+     viewport (positionWelcomeFloatingButton()) — everything else (notice,
+     controller, button, beats) cascades below it. Previously this read
+     --welcome-controller-top instead, meaning the wordmark's position was
+     DERIVED from wherever the shared controller happened to sit in the main
+     app's pre-reparenting layout — a leftover of the old z-index-poke-through
+     render path, never tuned for onboarding's own vertical rhythm. Left ~54px
+     of unused space above "FEEL FADER" on a real device (Frank 2026-08-17:
+     "posunout controller i Feel Fader víc nahoru"). */
+  position:fixed;top:var(--onb-wordmark-bottom,50%);left:50%;
   width:auto;height:18px;margin:0;overflow:visible;transform:translate(-50%,-100%);
 }
 #welcome-text-block.welcome-onboarding .welcome-wordmark-text{
   color:var(--t2);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+}
+/* The browser-unsupported notice used to be positioned by plain document flow
+   (margin-top, centered by .welcome-inner's flexbox) — independent of the
+   JS-computed rest-frame system everything else in onboarding now uses, and
+   provably unstable because of it: two runs of an identical script measured
+   it landing at two different spots (once overlapping the controller's top
+   edge, once its bottom), varying with layout-settling timing rather than
+   anything about the actual content. Now it's just another cascade step —
+   position:fixed by default, same as the wordmark. */
+#welcome-text-block.welcome-onboarding .welcome-browser-notice{
+  position:fixed;top:var(--onb-notice-top,50%);left:50%;
+  width:min(560px,calc(100vw - 40px));margin:0;transform:translateX(-50%);
 }
 .welcome-action-slot{display:flex;align-items:center;justify-content:center;width:100%;height:38px;margin:4px 0 2px}
 @media(min-width:601px){
@@ -1278,6 +1299,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
     height:calc(var(--welcome-controller-bottom,500px) + 520px);min-height:calc(100vh + 1px);
   }
   #welcome-text-block.welcome-onboarding .welcome-wordmark{position:absolute}
+  #welcome-text-block.welcome-onboarding .welcome-browser-notice{position:absolute}
   #welcome-text-block.welcome-onboarding #onb-beats{
     position:absolute;top:calc(var(--welcome-cta-bottom,50%) + 20px);bottom:auto;
     height:auto;max-height:none;padding-bottom:196px;
@@ -1316,6 +1338,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   height:calc(var(--welcome-controller-bottom,500px) + 520px);min-height:calc(100vh + 1px);
 }
 #welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .welcome-wordmark{position:absolute}
+#welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .welcome-browser-notice{position:absolute}
 #welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding #onb-beats{
   position:absolute;top:calc(var(--welcome-cta-bottom,50%) + 20px);bottom:auto;
   height:auto;max-height:none;padding-bottom:196px;
@@ -1467,6 +1490,31 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .s
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .device-home{
   width:220px!important;
+}
+/* .stage's own layout (feel-fader.html:290) centers its flex children
+   vertically (justify-content:center) — fine for the main app, but during
+   onboarding .device-home is effectively the only visible child, so
+   centering just let it settle wherever the leftover slack put it,
+   independent of --onb-controller-top (which nothing was actually reading
+   to PLACE the controller — everything downstream of it, incl. the old
+   wordmark formula, was built by MEASURING wherever centering happened to
+   land, not by deliberately positioning it). Anchoring to flex-start with
+   padding-top:var(--onb-controller-top) makes the variable authoritative
+   instead of descriptive, so the wordmark→notice→controller cascade in
+   positionWelcomeFloatingButton() actually moves the controller, not just
+   the elements measuring it (Frank 2026-08-17: "posunout controller...
+   vice nahoru"). */
+body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .stage{
+  justify-content:flex-start;
+  /* --onb-stage-pad-top, NOT --onb-controller-top directly: .stage sits ~56px
+     below the viewport top (the app's own header, hidden behind the welcome
+     overlay but still occupying flow above .stage), while --onb-controller-top
+     is expressed in VIEWPORT space (it's shared with #send-btn.welcome-floating,
+     which is position:fixed). Padding-top is relative to .stage's OWN box, so
+     using --onb-controller-top here directly would double-count that 56px and
+     land the controller lower than intended. --onb-stage-pad-top is the same
+     target pre-corrected for .stage's own offset. */
+  padding-top:var(--onb-stage-pad-top,32px);
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   --onb-controller-top:72px;
@@ -6433,6 +6481,8 @@ function positionWelcomeFloatingButton() {
   const btn = document.getElementById('send-btn');
   if (!btn || !btn.classList.contains('welcome-floating')) return;
   const onboarding = document.getElementById('welcome-text-block')?.classList.contains('welcome-onboarding');
+  // Only the non-onboarding tail below (after the if/else block) still needs
+  // this — the onboarding branch computes its own rest-frame values instead.
   const onboardingScrollTop = welcomeOnboardingScrollTop();
   const body = document.body;
   // A parallel CSS block (~feel-fader.html:1401-1420) pins the onboarding
@@ -6454,6 +6504,9 @@ function positionWelcomeFloatingButton() {
   // native scroll (position:absolute inside the scrollable #welcome-screen
   // under the max-height:820px breakpoint), keep working unmodified.
   if (!onboarding) {
+    body.style.removeProperty('--onb-wordmark-bottom');
+    body.style.removeProperty('--onb-notice-top');
+    body.style.removeProperty('--onb-stage-pad-top');
     body.style.removeProperty('--onb-controller-top');
     body.style.removeProperty('--onb-controller-height');
     body.style.removeProperty('--onb-cta-height');
@@ -6465,47 +6518,42 @@ function positionWelcomeFloatingButton() {
     const controllerRect = document.getElementById('device-img')?.getBoundingClientRect();
     if (!controllerRect?.height) return;
     const buttonHeight = btn.offsetHeight || 38;
-    // Rest-frame (scroll=0-equivalent) controller top: getBoundingClientRect()
-    // already reflects the live transform:translateY(--welcome-onb-scroll-offset),
-    // so add the current scroll delta back to recover the base the CSS formula
-    // expects — it re-adds the live offset itself; baking it in here too would
-    // double-count it and make the button drift further with every scroll tick.
-    const restControllerTop = controllerRect.top + onboardingScrollTop;
-    // ctaBottom is expressed in the CURRENT (live, already-scrolled) frame — the
-    // same quantity the CSS formula renders at the current scroll position — so
-    // the clamp below reads naturally against live notice/viewport measurements.
-    let ctaBottom = controllerRect.bottom + 18 + buttonHeight;
-    // Clamp the floating cluster (button on top, beats box 20px below it) clear of
-    // the browser-support notice, and — only when #welcome-screen ISN'T scrollable
-    // (viewport taller than the max-height:820px breakpoint, so there's no scroll
-    // escape hatch) — also keep it inside the viewport. The button is the topmost
-    // element in the cluster, so notice-clearance is checked against *its* top edge,
-    // not the beats box's.
-    //
-    // Below 820px, #welcome-screen already has its own overflow-y:auto fallback
-    // (with a scroll-hint gradient, welcome-onboarding-scrollable) built for exactly
-    // this "doesn't fit" case — forcing the cluster to also fit inside the first
-    // paint there fought that fallback and pushed it UP into the device artwork
-    // instead: text sitting directly on top of the faders/button graphic, and the
-    // notice overlapping the onboarding title above it (Frank, real-device
-    // screenshots 2026-08-17: "Connect & load" overlapping the button control,
-    // "needs Chrome or Edge" overlapping "Two faders..."). Letting it overflow and
-    // rely on scroll there is strictly better than an illegible overlap.
+    // Deliberate top-down cascade, not inherited from a live measurement: the
+    // wordmark anchors near the top of the viewport, the browser-support notice
+    // (when shown) and the controller stack below it in order. See the CSS
+    // comments on .welcome-wordmark and .welcome-browser-notice for the full
+    // story — this replaces a previous design where the controller's rest-top
+    // was inherited from wherever the shared controller happened to sit in the
+    // main app's pre-reparenting layout (a leftover of the old z-index-poke-
+    // through render path), which left ~54px of dead space above "FEEL FADER"
+    // on a real device and put the (plain-document-flow-positioned) notice on
+    // an unstable collision course with the controller (Frank 2026-08-17:
+    // "posunout controller i Feel Fader víc nahoru... a někam vhodně umístit
+    // tu červenou notifikaci"). None of this depends on live scroll position —
+    // it's the rest-frame layout by construction, not a measurement that needs
+    // scroll compensated back out of it.
+    const topMargin = 20, gap = 16;
+    const wordmarkHeight = document.querySelector('.welcome-wordmark')?.offsetHeight || 18;
+    const notice = document.getElementById('welcome-browser-notice');
+    const noticeShown = notice?.classList.contains('show');
+    const noticeHeight = noticeShown ? notice.offsetHeight : 0;
+    const wordmarkBottom = topMargin + wordmarkHeight;
+    const noticeTop = wordmarkBottom + gap;
+    const noticeBottomPos = noticeShown ? noticeTop + noticeHeight : wordmarkBottom;
+    const restControllerTop = noticeBottomPos + 20;
+    const restControllerHeight = controllerRect.height;
+    const ctaBottom = restControllerTop + restControllerHeight + 18 + buttonHeight;
+    // Does the cluster still fit the viewport? If not — and the static
+    // max-height:820px breakpoint hasn't already made #welcome-screen
+    // scrollable — engage the same scrollable fallback via a JS-toggled class.
+    // A fixed px breakpoint can't know in advance whether THIS device's content
+    // fits; measuring directly does. No more clamping ctaBottom downward here:
+    // that used to exist to resolve a fight between viewport-fit and notice-
+    // clearance, which no longer applies now that the notice is placed in the
+    // same deliberate cascade instead of competing with it independently.
     const beatsEl = document.getElementById('onb-beats');
     const beatsHeight = beatsEl?.offsetHeight || 176;
-    const notice = document.getElementById('welcome-browser-notice');
-    const noticeBottom = notice?.classList.contains('show') ? notice.getBoundingClientRect().bottom : 0;
     const margin = 12;
-    if (noticeBottom > 0) {
-      const minCtaBottom = noticeBottom + margin + buttonHeight;
-      if (ctaBottom < minCtaBottom) ctaBottom = minCtaBottom;
-    }
-    // Does the cluster fit the viewport once cleared of the notice? If not — and the
-    // static max-height:820px breakpoint hasn't already made #welcome-screen
-    // scrollable — force the same scrollable fallback via a JS-toggled class instead
-    // of capping ctaBottom to the viewport (which is what pushed the cluster up into
-    // the controller graphic before). A fixed px breakpoint can't know in advance
-    // whether THIS device's content fits; measuring directly does.
     const ws = document.getElementById('welcome-screen');
     const fitsViewport = (ctaBottom + 20 + beatsHeight) <= (window.innerHeight - margin);
     const mediaScrollable = matchMedia('(max-height:820px)').matches;
@@ -6514,13 +6562,18 @@ function positionWelcomeFloatingButton() {
     } else if (fitsViewport) {
       ws?.classList.remove('welcome-scroll-fallback');
     }
-    if (fitsViewport && !mediaScrollable) {
-      const maxCtaBottom = window.innerHeight - margin - 20 - beatsHeight;
-      if (ctaBottom > maxCtaBottom) ctaBottom = maxCtaBottom;
-    }
-    // Back-solve the rest-frame controller height that reproduces the (possibly
-    // clamped) live ctaBottom once the formula re-applies +18+cta-height-scrollOffset.
-    const restControllerHeight = ctaBottom - 18 - buttonHeight - controllerRect.top;
+    // .stage (the shared, un-reparented controller's real ancestor) sits below
+    // the viewport top by whatever the app's own hidden-behind-the-overlay
+    // header occupies — pad-top is relative to .stage's own box, so translate
+    // the viewport-space target into that local frame. Everything else here
+    // (wordmark, notice, button, native-scroll-reparented controller) is
+    // position:fixed/absolute inside the viewport-rooted #welcome-screen
+    // overlay and needs no such correction.
+    const stageTop = document.querySelector('.stage')?.getBoundingClientRect().top || 0;
+    const stagePadTop = Math.max(0, restControllerTop - stageTop);
+    body.style.setProperty('--onb-wordmark-bottom', wordmarkBottom + 'px', 'important');
+    if (noticeShown) body.style.setProperty('--onb-notice-top', noticeTop + 'px', 'important');
+    body.style.setProperty('--onb-stage-pad-top', stagePadTop + 'px', 'important');
     body.style.setProperty('--onb-controller-top', restControllerTop + 'px', 'important');
     body.style.setProperty('--onb-controller-height', restControllerHeight + 'px', 'important');
     body.style.setProperty('--onb-cta-height', buttonHeight + 'px', 'important');
