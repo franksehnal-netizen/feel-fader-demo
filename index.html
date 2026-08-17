@@ -1438,6 +1438,16 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .s
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .stage-collapse>.stage,
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .stage-collapse.is-collapsed>.stage{
   opacity:1!important;transform:none!important;
+  /* .stage's permanent overflow:hidden (line ~281, for the bank-switch collapse
+     animation) clips ANY content that moves past its own border-box — including
+     the controller's onboarding "fake scroll" (device-visual's translateY
+     tracking --welcome-onb-scroll-offset). Same trap already documented above
+     for .change-popover; same fix, scoped to onboarding instead of the popover
+     being open. Without this, scrolling far enough visually chops the top of
+     the controller off flush at .stage's edge — read by Frank as a bar
+     covering it (real-device video, 2026-08-17), when it's actually just a
+     hard clip, not a bar at all. */
+  overflow:visible!important;
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .device-home{
   width:220px!important;
