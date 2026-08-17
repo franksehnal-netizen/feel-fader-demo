@@ -104,6 +104,8 @@
   --dur-settle:.72s;  /* settle/shimmer */
   --dur-stage:1.1s;   /* major panel choreography */
   --dur-reveal:.6s;   /* post-connect Send button + live HUD reveal, must land together */
+  --dur-modal:.18s;   /* modal overlay fade-in + panel slide-up, same moment, must land together */
+  --dur-switch:.22s;  /* hid-switch track + thumb, same moment, must land together */
 }
 html.dark{
   color-scheme:dark;
@@ -144,7 +146,6 @@ html.dark{
   --piano-white:#d8d8dc;
   --piano-black:#202024;
 }
-html.dark .artic-display{background:#111115}
 html.dark select{color-scheme:dark}
 html.dark .uacc-preset-dropdown{background:#1a1a1e}
 .ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:pointer;transition:color .14s ease,filter .14s ease,transform var(--dur-press) ease,box-shadow .14s ease,background-color .14s ease}
@@ -173,11 +174,6 @@ body{
   color:var(--t1);font-family:'Mulish',sans-serif;font-size:13px;min-height:100vh;
   display:flex;flex-direction:column;
   -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
-}
-.content-col{
-  display:flex;flex-direction:column;align-items:center;
-  width:100%;padding:0 16px 40px;
-  box-sizing:border-box;
 }
 main{display:flex;flex-direction:column;flex:1;width:100%}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:var(--r-pill)}
@@ -283,10 +279,6 @@ header{
 /* Matches the welcome-onboarding wordmark badge exactly (Frank 2026-08-16,
    reference screenshot) rather than a bespoke header treatment. */
 .h-title{color:var(--t2);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;white-space:nowrap;user-select:none}
-.h-ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)}
-.h-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);border:1px solid var(--border-s);border-radius:var(--r-sm);padding:2px 8px}
-.h-badge.dev{color:#b07d00;border-color:rgba(176,125,0,.35);background:rgba(176,125,0,.07)}
-.h-badge.prod{color:#2e7d32;border-color:rgba(46,125,50,.35);background:rgba(46,125,50,.07)}
 .h-right{display:flex;align-items:center;gap:8px}
 
 /* MAIN */
@@ -294,10 +286,6 @@ main{width:100%;}
 
 .center-col{width:100%;max-width:700px;margin:0 auto;display:flex;flex-direction:column;flex:1;gap:16px;padding:0 16px 0;box-sizing:border-box;overflow:visible;}
 .center-col>*{width:100%;box-sizing:border-box;}
-.blk{width:100%;box-sizing:border-box;}
-.blk-wide{display:flex;align-items:center;width:100%;}
-
-@keyframes pg{0%,100%{transform:scale(1);opacity:0}50%{transform:scale(2.2);opacity:.18}}
 
 /* STAGE
    Coupled single-phase choreography (Frank 2026-07-26): the box (grid rows)
@@ -458,34 +446,19 @@ main{width:100%;}
 @media(prefers-reduced-motion:reduce){.send-btn,.send-change-note{transition:none}.send-change-note{filter:none}}
 
 /* BANK TABS */
-.bank-tabs-wrap{
-  display:flex;align-items:center;gap:8px;
-  width:100%;
-}
 .bank-tabs{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px;}
 .bank-tabs::-webkit-scrollbar{display:none;}
-.bank-tab{flex:0 0 auto;min-width:80px;padding:8px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--bg-card);cursor:pointer;font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;color:var(--t2);transition:all .15s;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:var(--shadow-sm);white-space:nowrap;}
-@media(hover:hover){.bank-tab:hover{background:var(--bg-input);color:var(--t1);}}
-.bank-tab:active{transform:scale(.97);}
 .bank-tab-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bank-tab.active{background:var(--t1);color:var(--bg);border-color:var(--t1)}
-.bank-tab-add{flex:0 0 auto;padding:8px 12px;border-radius:var(--r-sm);border:1px dashed var(--border);background:transparent;cursor:pointer;font-size:16px;color:var(--t3);transition:all .14s;display:flex;align-items:center;justify-content:center;height:auto;}
-.bank-tab-add:hover{border-color:var(--t2);color:var(--t1);background:var(--bg-input);}
-.bank-tab-add:active{transform:scale(.95);}
 
 /* PANELS */
 .panels-row{
   display:flex;flex-direction:column;gap:0;
 }
-@keyframes fadeSlideIn{
-  from{opacity:0;transform:translateY(6px)}
-  to{opacity:1;transform:translateY(0)}
-}
 @keyframes bankFade{
   from{opacity:0}
   to{opacity:1}
 }
-.bank-card.bank-anim{animation:bankFade .18s ease-out;}   /* T3: opacity fade celé karty vč. name-row — matches .bank-name-row below so the child's slide-in doesn't outlast its own parent's fade */
+.bank-card.bank-anim{animation:bankFade .18s ease-out;}   /* T3: opacity fade celé karty */
 /* Theme changes are captured as two complete frames. The incoming frame fades over
    the old one, so gradients, glass panels and solid colors all move at one tempo. */
 html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.theme-snapshot *::after{transition:none!important}
@@ -493,7 +466,6 @@ html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.the
 ::view-transition-new(root){animation:theme-frame-in .36s ease both}
 @keyframes theme-frame-in{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
-.bank-name-row{animation:fadeSlideIn .18s ease-out;}
 .panel{
   background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));
   border:1px solid var(--glass-border);border-radius:var(--r);padding:16px;flex:1;min-width:160px;
@@ -508,13 +480,9 @@ html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.the
    2026-07-26). Pin them to their natural (collapsed) height; the footer still
    sits at the bottom via its own margin-top:auto. */
 .center-col>.panel-wide{flex:0 0 auto;}
-.panel-head{display:flex;align-items:center;gap:8px;padding-bottom:10px;margin-bottom:11px;border-bottom:1px solid var(--border)}
 .panel-dot{display:none;}
 
 .panel-name{font-size:13px;font-weight:600;color:var(--t1);letter-spacing:-.01em;}
-.panel-rows{display:flex;flex-direction:column;gap:8px}
-.panel-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.panel-lbl{font-size:12px;color:var(--t2);white-space:nowrap}
 
 /* Roller mode — compact segmented pill. Keyswitch uses a quieter glass state. */
 .roller-mode-row{
@@ -542,7 +510,7 @@ html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.the
 .roller-mode-btn.active,.roller-mode-btn.active:hover{color:var(--t1)}
 html.dark .roller-mode-row{background:color-mix(in srgb,var(--bg-input) 80%,transparent)}
 html.dark .roller-mode-row::before{background:var(--control-glass-bg);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow)}
-.roller-mode-content{opacity:1;transform:translateY(0);transition:opacity var(--dur-fast) ease,transform .22s var(--ease-out)}
+.roller-mode-content{opacity:1;transform:translateY(0);transition:opacity var(--dur-fast) ease,transform var(--dur-fast) var(--ease-out)}
 .roller-mode-content.is-leaving{opacity:0;transform:translateY(3px)}
 .roller-mode-content.is-entering{animation:rollerContentIn .30s var(--ease-out)}
 .ks-basic-actions{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
@@ -617,16 +585,8 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 /* TWO-ROW FIELD (label + controls stacked) */
 .field-block{display:flex;flex-direction:column;gap:4px}
 .field-block .field-label{font-size:11px;color:var(--t2);letter-spacing:.03em}
-.field-row{display:flex;gap:8px;align-items:center}
-
-/* CHANNEL BADGE */
-.ch-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);border:1px solid var(--border-s);border-radius:var(--r-sm);padding:2px 4px;white-space:nowrap}
 
 /* ENCODER */
-.enc-current-wrap{text-align:center;padding:4px 0 8px}
-.enc-current{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:500;color:var(--t1);line-height:1}
-.enc-label{font-size:10px;color:var(--t2);letter-spacing:.07em;text-transform:uppercase;margin-top:3px}
-.enc-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;max-height:68px;overflow-y:auto}
 .enc-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 6px;border-radius:var(--r-sm);background:var(--bg-input);border:1px solid var(--border);color:var(--t3);transition:all .12s}
 .enc-chip.active{background:var(--t1);color:var(--bg);border-color:var(--t1)}
 
@@ -672,20 +632,6 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .hid-inline-action{flex-shrink:0;min-height:28px;padding:4px 10px;color:var(--t1);font:600 11px 'Mulish',sans-serif}
 @media(max-width:540px){.hid-inline-notice{align-items:flex-start;flex-wrap:wrap}.hid-inline-action{margin-left:auto}}
 
-/* BUTTON PANEL */
-.btn-panel-note{font-size:12px;color:var(--t2);margin-top:4px}
-
-/* BANK NAME ROW */
-/* bank-header-wrap removed — X is now inside bank-name-row */
-.bank-name-row{
-  display:flex;align-items:center;gap:8px;
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--r);padding:8px 12px;
-  box-shadow:var(--shadow-sm);
-  box-sizing:border-box;
-  flex:1;
-}
-.bank-name-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t2);white-space:nowrap}
 .icon-picker-trigger{
   padding:3px 6px;color:var(--t2);
   display:flex;align-items:center;justify-content:center;
@@ -739,20 +685,11 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 
 
 
-.faders-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
 @media(max-width:540px){
-  .faders-row{grid-template-columns:1fr;}
   .center-col{padding:16px 12px 0;gap:12px;}
   .section-field-row{display:flex;flex-direction:row;align-items:flex-start;gap:16px;flex-wrap:wrap;}
-  .field-block-value{min-width:0;width:100%;}
-  .bank-tab-add{right:-36px;width:28px;height:28px;font-size:14px;}
   .btn-remove-bank{font-size:14px;}
   .device-home{width:min(55vw,clamp(120px,calc(44.24vh - 126px),196px));}
-  .bank-tab{font-size:11px;padding:8px;}
   .panel{min-width:0;}
   .h-status{width:7px;min-width:7px;flex:0 0 7px}
   .controller-toggle-icon{display:none}
@@ -764,13 +701,10 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   .bank-quick-setup{padding-left:0;flex-wrap:wrap;}
   .bank-quick-setup-label{width:100%;}
   .quick-setup-picker{max-width:none;}
-  .library-quick-hint{display:none;}
   .section-summary{max-width:145px;}
   .btn.btn-ghost{padding:6px 12px;font-size:12px;color:var(--t2);}
   .uacc-tag{font-size:11px;padding:3px 6px;}
 }
-.full-width-panel{width:100%;}
-.full-width-block{width:100%;}
 .enc-unified-body{
   display:flex;
   flex-direction:column;
@@ -787,20 +721,6 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   width:100%;
   min-width:0;
 }
-/* ARTICULATION DISPLAY */
-.artic-display{
-  background:var(--bg-input);border:1px solid var(--border);
-  border-radius:var(--r-sm);padding:8px 16px;text-align:center;margin-bottom:2px;
-}
-.artic-name{
-  font-family:'Mulish',sans-serif;font-size:16px;font-weight:600;
-  color:var(--t1);line-height:1.2;margin-bottom:4px;
-  min-height:22px;
-}
-.artic-val-row{display:flex;align-items:center;justify-content:center;gap:4px}
-.artic-cc-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
-.artic-cc-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--t2)}
-
 /* UACC TAG WITH NAME */
 .uacc-num{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--t2);min-width:20px}
 .uacc-label{font-size:11px;color:var(--t2);font-family:'Mulish',sans-serif;}
@@ -821,17 +741,6 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .ks-note-chip.ks-live{border-color:var(--green-border);background:linear-gradient(var(--green-bg),var(--green-bg)),var(--glass-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--green-border) 48%,transparent),inset 0 1px 0 var(--glass-border)}
 @media(pointer:coarse){.ks-note-actions{opacity:1}.ks-note-chip .ks-note-actions button{width:32px;height:32px}}
 
-.device-info-toggle{
-  display:flex;align-items:center;justify-content:space-between;
-  width:100%;padding:12px 16px;background:none;border:none;
-  cursor:pointer;font-family:'Mulish',sans-serif;
-  font-size:13px;font-weight:600;color:var(--t1);
-  transition:background .13s;text-align:left;letter-spacing:-.01em;
-  -webkit-tap-highlight-color:transparent;
-}
-.device-info-toggle:focus{background:none;}
-.device-info-toggle:hover{background:rgba(128,128,128,.07);color:var(--t1)}
-
 /* DEVICE INFO */
 .info-grid{display:flex;flex-direction:column;gap:8px;}
 .field-block-invert{justify-content:flex-start;}
@@ -841,8 +750,8 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .info-row.info-row-action .info-lbl{min-width:100px;}
 .hid-switch{display:inline-flex;align-items:center;cursor:pointer;position:relative}
 .hid-switch input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
-.hid-switch-track{position:relative;width:34px;height:20px;border-radius:var(--r-pill);border:1px solid var(--control-glass-border);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);transition:background .22s var(--ease-out),border-color .22s var(--ease-out),box-shadow .22s var(--ease-out)}
-.hid-switch-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 6px rgba(34,34,40,.22),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .22s var(--ease-out)}
+.hid-switch-track{position:relative;width:34px;height:20px;border-radius:var(--r-pill);border:1px solid var(--control-glass-border);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);transition:background var(--dur-switch) var(--ease-out),border-color var(--dur-switch) var(--ease-out),box-shadow var(--dur-switch) var(--ease-out)}
+.hid-switch-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 6px rgba(34,34,40,.22),inset 0 1px 0 rgba(255,255,255,.85);transition:transform var(--dur-switch) var(--ease-out)}
 .hid-switch input:checked + .hid-switch-track{background:color-mix(in srgb,var(--green) 44%,transparent);border-color:color-mix(in srgb,var(--green) 72%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--green) 25%,transparent),inset 0 1px 2px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.24)}
 /* Header's "Show controller view" reuses .hid-switch styling via the shared
    .controller-switch class, but it's a view preference, not a device/connect
@@ -859,40 +768,14 @@ html.dark .hid-switch-thumb{background:rgba(245,245,247,.90)}
 .info-val{font-family:'Mulish',sans-serif;font-size:13px;color:var(--t1);font-weight:400;}
 html.dark .info-lbl{color:var(--t2)}
 html.dark .info-val{color:var(--t1)}
-html.dark .device-info-toggle{color:var(--t1)}
 html.dark #device-settings-chevron{color:var(--t3)}
 
 /* BOTTOM */
-.bottom-row{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:600px;flex-wrap:wrap;gap:8px}
-.btn-group{display:flex;gap:8px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;transition:color .13s ease,background-color .13s ease,border-color .13s ease,transform var(--dur-press) ease,box-shadow .13s ease;white-space:nowrap}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
 .btn-ghost{background:var(--control-glass-bg);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow);color:var(--t2)}
 .btn-ghost:hover{background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow-hover);color:var(--t1)}
-.btn-del{background:transparent;border-color:color-mix(in srgb,var(--danger) 35%,transparent);color:var(--danger)}
-.btn-del:hover{background:var(--danger-bg)}
-
-/* ADVANCED SECTION */
-.advanced-wrap{width:100%}
-
-
-
-
-/* .is-open handled by panel overflow:hidden */
-.advanced-inner{
-  background:var(--bg-card);border:1px solid var(--border);border-top:none;
-  border-radius:0 0 var(--r) var(--r);padding:8px 0;
-  transition:none;
-}
-.advanced-item{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:12px 16px;border-bottom:1px solid var(--border);
-}
-.advanced-item:last-child{border-bottom:none}
-.advanced-item-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
-.advanced-item-title{font-size:13px;font-weight:600;color:var(--t1);font-family:'Mulish',sans-serif;}
-.advanced-item-desc{font-size:12px;color:var(--t2);font-family:'Mulish',sans-serif;}
 .backup-tools{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 66%,transparent)}
 .backup-summary{display:flex;flex-direction:column;gap:2px;min-width:0}
 .backup-summary strong{font-size:12px;font-weight:600;color:var(--t1)}
@@ -933,21 +816,7 @@ html.dark #device-settings-chevron{color:var(--t3)}
    takže se pod ním nehne stepper (Frank, HW test 2026-08-08). */
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
 .vbar{display:block}
-.vbar-jump{
-  width:100%;padding:8px 10px 8px 12px;border-radius:var(--r-sm);font:600 12px 'Mulish',sans-serif;
-  display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer;color:var(--danger);
-  background:var(--danger-bg);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent)
-}
-.vbar-jump:hover{background:color-mix(in srgb,var(--danger-bg) 78%,var(--glass-soft))}
-.vbar-message{flex:1;min-width:0}
-.vbar-go{padding:4px 9px;border:1px solid color-mix(in srgb,var(--danger) 20%,var(--glass-border));border-radius:var(--r-pill);background:var(--glass-soft);color:var(--t2);font-size:10px;white-space:nowrap}
 .validation-target{box-shadow:0 0 0 2px color-mix(in srgb,var(--danger) 28%,transparent)!important}
-
-/* STATUS DOT (used in footer) */
-.status-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2)}
-.s-dot{width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0;position:relative}
-.s-dot.on{background:var(--green)}
-.s-dot.on::after{content:'';position:absolute;inset:-2px;border-radius:50%;background:var(--green);opacity:0;animation:pg 2.5s ease-in-out infinite}
 
 /* FOOTER */
 .site-footer{
@@ -978,9 +847,9 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 }
 
 /* MODAL */
-.overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.28);backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi .18s ease}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.28);backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi var(--dur-modal) ease}
 @keyframes fi{from{opacity:0}to{opacity:1}}
-.modal{background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.28);backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su .18s ease}
+.modal{background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.28);backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su var(--dur-modal) ease}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 /* TOASTS */
 #toasts{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;width:min(360px,calc(100vw - 32px));flex-direction:column;align-items:flex-end;gap:7px;pointer-events:none}
@@ -1832,14 +1701,6 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   border-radius:var(--r-sm);padding:4px 8px;letter-spacing:.04em;
   min-width:32px;line-height:1.2;
 }
-.lib-badge-sm{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:var(--bg-input);color:var(--t2);
-  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;
-  border-radius:var(--r-sm);padding:2px 4px;letter-spacing:.04em;
-  line-height:1.2;
-}
-html.dark .lib-badge-sm{background:#555}
 .icon-picker-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
 .confirm-overlay[hidden]{display:none}
 .confirm-overlay{z-index:170}
@@ -1964,22 +1825,6 @@ html.dark .lib-badge-sm{background:#555}
 
 
 
-/* ── BANK NAME ROW (new 2-row layout) ── */
-.bank-name-row{
-  display:flex;flex-direction:column;gap:6px;
-  width:100%;
-  background:var(--bg-card);
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  padding:10px 12px;
-  box-shadow:var(--shadow-sm);
-  box-sizing:border-box;
-}
-.bank-name-top{
-  display:flex;align-items:center;gap:8px;
-}
-.bank-name-top .bank-name-input{flex:1;}
-.bank-name-top .btn-remove-bank{margin-left:auto;}
 .bank-icon-display{
   font-size:20px;line-height:1;flex-shrink:0;
 }
@@ -2105,7 +1950,6 @@ button:focus-visible{outline-offset:3px;}
   28%{border-color:color-mix(in srgb,var(--red) 52%,var(--border-s));box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 14%,transparent),0 8px 24px color-mix(in srgb,var(--red) 9%,transparent)}
 }
 @media(prefers-reduced-motion:reduce){.bank-quick-setup.is-first-run-highlight .library-quick-input{animation:none;border-color:color-mix(in srgb,var(--red) 42%,var(--border-s));box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 12%,transparent)}}
-.library-quick-hint{font-size:10px;color:var(--t3);white-space:nowrap}
 .bank-card.quick-menu-open{overflow:visible;position:relative;z-index:60}
 .quick-setup-menu{
   position:absolute;top:calc(100% + 6px);z-index:120;padding:6px;border:1px solid var(--glass-border);border-radius:var(--r);
@@ -2189,7 +2033,6 @@ button:focus-visible{outline-offset:3px;}
 /* ── NEW DARK MODE RULES ── */
 html.dark .send-callout::before{background:rgba(15,15,17,.5);}
 html.dark .bank-card{background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));}
-html.dark .bank-name-row{background:var(--glass-soft);}
 html.dark .bank-block-tab{color:var(--t2);border-color:transparent;}  /* inactive tabs stay visually open; only the active pill gets a glass border */
 html.dark .bank-block-tabs .bank-block-tab.active{color:var(--t1);}
 html.dark .section-head{border-bottom-color:var(--border);}
@@ -3244,6 +3087,22 @@ function renderPanels() {
   updateStickySectionHeads();
 }
 
+// A-1 (final review 2026-08-17): shared markup for the MIDI CHANNEL/CC/
+// velocity stepper widget, dřív duplikovaný samostatně ve faderSectionContent,
+// ccEncoderBody a keyswitchBody. extraAttrs/extraHtml pokrývají místa, kde se
+// jednotlivá volání liší (aria-invalid+describedby, cc-meaning span pod cc).
+function stepperFieldHtml(id, label, value, min, max, decOnclick, incOnclick, oninput, ariaLabel, extraAttrs='', extraHtml='') {
+  return `<div class="field-block">
+          <span class="field-label">${label}</span>
+          <div class="stepper">
+            <button class="step-btn" onclick="${decOnclick}" aria-label="Decrease ${ariaLabel}">−</button><div class="stepper-sep"></div>
+            <input type="number" id="${id}" value="${value}" min="${min}" max="${max}"
+              oninput="${oninput}" aria-label="${ariaLabel}"${extraAttrs}/>
+            <button class="step-btn" onclick="${incOnclick}" aria-label="Increase ${ariaLabel}">+</button>
+          </div>${extraHtml}
+        </div>`;
+}
+
 function faderSectionContent(key, ctrl, bi) {
   const errs  = validate();
   const err   = errs.find(e => e.field === `b${bi}.${key}`)?.msg || '';
@@ -3257,27 +3116,15 @@ function faderSectionContent(key, ctrl, bi) {
     <div class="section-collapse-body" id="section-body-${bi}-${key}" ${open?'':'hidden'}>
     <div class="section-fields">
       <div class="section-field-row">
-        <div class="field-block">
-          <span class="field-label">MIDI CHANNEL</span>
-          <div class="stepper">
-            <button class="step-btn" onclick="stepCtrl(${bi},'${key}','channel',-1)" aria-label="Decrease ${ariaDisplayLabel} MIDI channel">−</button><div class="stepper-sep"></div>
-            <input type="number" id="b${bi}-${key}-ch" value="${ctrl.channel+1}" min="1" max="16"
-              oninput="onCtrl(${bi},'${key}','channel',+this.value-1)" aria-label="${ariaDisplayLabel} MIDI channel"
-              aria-invalid="${err?'true':'false'}" aria-describedby="err-b${bi}-${key}"/>
-            <button class="step-btn" onclick="stepCtrl(${bi},'${key}','channel',1)" aria-label="Increase ${ariaDisplayLabel} MIDI channel">+</button>
-          </div>
-        </div>
-        <div class="field-block">
-          <span class="field-label">MIDI CC</span>
-          <div class="stepper">
-            <button class="step-btn" onclick="stepCtrl(${bi},'${key}','cc',-1)" aria-label="Decrease ${ariaDisplayLabel} MIDI CC">−</button><div class="stepper-sep"></div>
-            <input type="number" id="b${bi}-${key}-cc" value="${ctrl.cc}" min="0" max="127"
-              oninput="onCtrl(${bi},'${key}','cc',+this.value)" aria-label="${ariaDisplayLabel} MIDI CC"
-              aria-invalid="${err?'true':'false'}" aria-describedby="err-b${bi}-${key}"/>
-            <button class="step-btn" onclick="stepCtrl(${bi},'${key}','cc',1)" aria-label="Increase ${ariaDisplayLabel} MIDI CC">+</button>
-          </div>
-          <span class="cc-meaning" id="cc-meaning-${bi}-${key}">${escHtml(ccMeaning)}</span>
-        </div>
+        ${stepperFieldHtml(`b${bi}-${key}-ch`, 'MIDI CHANNEL', ctrl.channel+1, 1, 16,
+          `stepCtrl(${bi},'${key}','channel',-1)`, `stepCtrl(${bi},'${key}','channel',1)`,
+          `onCtrl(${bi},'${key}','channel',+this.value-1)`, `${ariaDisplayLabel} MIDI channel`,
+          `\n              aria-invalid="${err?'true':'false'}" aria-describedby="err-b${bi}-${key}"`)}
+        ${stepperFieldHtml(`b${bi}-${key}-cc`, 'MIDI CC', ctrl.cc, 0, 127,
+          `stepCtrl(${bi},'${key}','cc',-1)`, `stepCtrl(${bi},'${key}','cc',1)`,
+          `onCtrl(${bi},'${key}','cc',+this.value)`, `${ariaDisplayLabel} MIDI CC`,
+          `\n              aria-invalid="${err?'true':'false'}" aria-describedby="err-b${bi}-${key}"`,
+          `\n          <span class="cc-meaning" id="cc-meaning-${bi}-${key}">${escHtml(ccMeaning)}</span>`)}
 
       </div>
       <div id="err-b${bi}-${key}" class="section-error">${escHtml(err)}</div>
@@ -3309,26 +3156,14 @@ function ccEncoderBody(ctrl, bi) {
         <span id="enc-artic-name" style="display:none">${initName}</span>
       <span id="enc-val" style="display:none">${initVal}</span>
         <div class="section-field-row" style="margin-top:10px">
-          <div class="field-block">
-            <span class="field-label">MIDI CHANNEL</span>
-            <div class="stepper">
-              <button class="step-btn" onclick="stepCtrl(${bi},'encoder','channel',-1)" aria-label="Decrease roller MIDI channel">−</button><div class="stepper-sep"></div>
-              <input type="number" id="b${bi}-encoder-ch" value="${ctrl.channel+1}" min="1" max="16"
-                oninput="onCtrl(${bi},'encoder','channel',+this.value-1)" aria-label="Roller MIDI channel"
-                aria-invalid="${encErr?'true':'false'}" aria-describedby="err-b${bi}-roller"/>
-              <button class="step-btn" onclick="stepCtrl(${bi},'encoder','channel',1)" aria-label="Increase roller MIDI channel">+</button>
-            </div>
-          </div>
-          <div class="field-block">
-            <span class="field-label">MIDI CC</span>
-            <div class="stepper">
-              <button class="step-btn" onclick="stepCtrl(${bi},'encoder','cc',-1)" aria-label="Decrease roller MIDI CC">−</button><div class="stepper-sep"></div>
-              <input type="number" id="b${bi}-encoder-cc" value="${ctrl.cc}" min="0" max="127"
-                oninput="onCtrl(${bi},'encoder','cc',+this.value)" aria-label="Roller MIDI CC"
-                aria-invalid="${encErr?'true':'false'}" aria-describedby="err-b${bi}-roller"/>
-              <button class="step-btn" onclick="stepCtrl(${bi},'encoder','cc',1)" aria-label="Increase roller MIDI CC">+</button>
-            </div>
-          </div>
+          ${stepperFieldHtml(`b${bi}-encoder-ch`, 'MIDI CHANNEL', ctrl.channel+1, 1, 16,
+            `stepCtrl(${bi},'encoder','channel',-1)`, `stepCtrl(${bi},'encoder','channel',1)`,
+            `onCtrl(${bi},'encoder','channel',+this.value-1)`, 'Roller MIDI channel',
+            `\n                aria-invalid="${encErr?'true':'false'}" aria-describedby="err-b${bi}-roller"`)}
+          ${stepperFieldHtml(`b${bi}-encoder-cc`, 'MIDI CC', ctrl.cc, 0, 127,
+            `stepCtrl(${bi},'encoder','cc',-1)`, `stepCtrl(${bi},'encoder','cc',1)`,
+            `onCtrl(${bi},'encoder','cc',+this.value)`, 'Roller MIDI CC',
+            `\n                aria-invalid="${encErr?'true':'false'}" aria-describedby="err-b${bi}-roller"`)}
         </div>
       </div>
 
@@ -3425,15 +3260,9 @@ function keyswitchBody(bi) {
   return `
   <div class="enc-unified-body">
     <div class="ks-basic-actions" style="margin-top:10px">
-      <div class="field-block">
-        <span class="field-label">MIDI CHANNEL</span>
-        <div class="stepper">
-          <button class="step-btn" onclick="stepKs(${bi},'ks_channel',-1)" aria-label="Decrease keyswitch MIDI channel">−</button><div class="stepper-sep"></div>
-          <input type="number" id="b${bi}-ks-ch" value="${(b.ks_channel ?? 0)+1}" min="1" max="16"
-            oninput="onKs(${bi},'ks_channel',+this.value-1)" aria-label="Keyswitch MIDI channel"/>
-          <button class="step-btn" onclick="stepKs(${bi},'ks_channel',1)" aria-label="Increase keyswitch MIDI channel">+</button>
-        </div>
-      </div>
+      ${stepperFieldHtml(`b${bi}-ks-ch`, 'MIDI CHANNEL', (b.ks_channel ?? 0)+1, 1, 16,
+        `stepKs(${bi},'ks_channel',-1)`, `stepKs(${bi},'ks_channel',1)`,
+        `onKs(${bi},'ks_channel',+this.value-1)`, 'Keyswitch MIDI channel')}
       <div class="field-block">
         <span class="field-label">RANGE PRESET</span>
         <div class="ks-preset-picker" id="ks-preset-picker-${bi}">
@@ -3475,14 +3304,9 @@ function keyswitchBody(bi) {
       <summary><span>Advanced keyswitch settings</span><span class="roller-advanced-summary">Velocity · naming · manual order</span></summary>
       <div class="roller-advanced-body">
         <div class="section-field-row">
-          <div class="field-block">
-            <span class="field-label">VELOCITY</span>
-            <div class="stepper">
-              <button class="step-btn" onclick="stepKs(${bi},'ks_velocity',-1)" aria-label="Decrease keyswitch velocity">−</button><div class="stepper-sep"></div>
-              <input type="number" id="b${bi}-ks-vel" value="${b.ks_velocity ?? 100}" min="1" max="127" oninput="onKs(${bi},'ks_velocity',+this.value)" aria-label="Keyswitch velocity"/>
-              <button class="step-btn" onclick="stepKs(${bi},'ks_velocity',1)" aria-label="Increase keyswitch velocity">+</button>
-            </div>
-          </div>
+          ${stepperFieldHtml(`b${bi}-ks-vel`, 'VELOCITY', b.ks_velocity ?? 100, 1, 127,
+            `stepKs(${bi},'ks_velocity',-1)`, `stepKs(${bi},'ks_velocity',1)`,
+            `onKs(${bi},'ks_velocity',+this.value)`, 'Keyswitch velocity')}
           <div class="field-block">
             <span class="field-label">NOTE NAMING</span>
             <div class="stepper ks-convention-stepper">
@@ -4846,8 +4670,12 @@ function initSerialDisconnectWatch() {
 const DEVICE_NAME = 'Feel Fader';
 
 function isFeelFader(portName) {
+  // 'circuitpython audio' fallback (for old firmware without a custom MIDI
+  // name) removed (final review 2026-08-17, SEC-003) — Frank: product
+  // hasn't shipped yet, no legacy-firmware installed base to support, and it
+  // accidentally matched any unrelated CircuitPython device's default name.
   const n = portName.toLowerCase();
-  return n.includes('feel fader') || n.includes('circuitpython audio');
+  return n.includes('feel fader');
 }
 
 function connectInputs(){
@@ -5017,6 +4845,14 @@ function normalizeFwConfig(p) {
       });
       bank.uacc_values = clampCcList(bank.uacc_values);
       bank.ks_notes = clampCcList(bank.ks_notes);
+      // SEC-004 (final review 2026-08-17): this branch rebuilds fader1/fader2/
+      // encoder/uacc_values/ks_notes above but left roller_mode/ks_channel/
+      // ks_velocity untouched — they reach data-mode="${rmode}" and
+      // value="${...}" template interpolation unescaped (DOM XSS via
+      // attribute breakout on a hostile JSON backup import).
+      bank.roller_mode = (bank.roller_mode === 'keyswitch' || bank.roller_mode === 'track_nav') ? bank.roller_mode : 'cc';
+      bank.ks_channel = clampChannel(bank.ks_channel, 0);
+      bank.ks_velocity = clampCc(bank.ks_velocity, 100);
       bank.nav_keys_cw = clampHidList(bank.nav_keys_cw).length ? clampHidList(bank.nav_keys_cw) : [0x52];
       bank.nav_keys_ccw = clampHidList(bank.nav_keys_ccw).length ? clampHidList(bank.nav_keys_ccw) : [0x51];
       bank.macro_keys = clampHidList(bank.macro_keys);   // prázdné je platné = "žádné makro pro tuhle banku"
@@ -7856,7 +7692,7 @@ function applyLibraryPreset(name, scope = 'all') {
       [bank.fader1, bank.fader2, bank.encoder].forEach(c => { c.cc = clampCc(c.cc, 0); c.channel = clampChannel(c.channel, 0); });
     }
     if (scope === 'all' && preset.roller) {
-      bank.roller_mode = preset.roller.roller_mode || 'cc';
+      bank.roller_mode = (preset.roller.roller_mode === 'keyswitch' || preset.roller.roller_mode === 'track_nav') ? preset.roller.roller_mode : 'cc';
       bank.nav_keys_cw = clampHidList(preset.roller.nav_keys_cw).length ? clampHidList(preset.roller.nav_keys_cw) : [0x52];
       bank.nav_keys_ccw = clampHidList(preset.roller.nav_keys_ccw).length ? clampHidList(preset.roller.nav_keys_ccw) : [0x51];
       bank.nav_invert = !!preset.roller.nav_invert;
@@ -7865,7 +7701,7 @@ function applyLibraryPreset(name, scope = 'all') {
       bank.uacc_values = clampCcList(preset.articulations.uacc_values || []);
       bank.ks_notes = clampCcList(preset.articulations.ks_notes || []);
       bank.ks_channel = clampChannel(preset.articulations.ks_channel ?? 0, 0);
-      bank.ks_velocity = preset.articulations.ks_velocity ?? 100;
+      bank.ks_velocity = clampCc(preset.articulations.ks_velocity, 100);
     }
     if (scope === 'all' && Object.prototype.hasOwnProperty.call(preset,'icon')) bank.icon = preset.icon;
   } else {
