@@ -1444,6 +1444,19 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
      the device artwork's own scroll-tracking (translateY, compositor-only). Composes
      with the base rule's translate(-50%,-50%) centering — same net position, smooth. */
   transform:translate(-50%,-50%) translateY(var(--welcome-onb-scroll-offset,0px))!important;
+  /* .send-btn's own base rule (feel-fader.html:324) puts transform on a .18s ease
+     transition (for its normal float-in/dock animations) — during a continuous
+     onboarding scroll, --welcome-onb-scroll-offset updates every frame (see
+     startOnbScrollSync()), but with this transition active the button visibly
+     eases toward each new value instead of tracking it immediately, chasing a
+     moving target the whole gesture (Frank 2026-08-17: "rozjede se" — comes apart
+     — specifically during the drag, even though it settles correctly at rest).
+     The device artwork's own scroll transform has no such transition; matching
+     that here is what actually keeps them visually locked together mid-gesture.
+     Everything else from the base rule (feel-fader.html:324) is repeated here
+     minus transform, not dropped outright — the opacity/color/etc. transitions
+     still matter for this button's normal reveal/feedback animations. */
+  transition:background-color .46s cubic-bezier(.22,1,.36,1),color .3s ease,border-color .3s ease,box-shadow .46s cubic-bezier(.22,1,.36,1),opacity .28s ease!important;
 }
 .device-wrap.welcome-mode[data-onb-feature="configure"] #send-btn.welcome-floating{
   box-shadow:0 0 4px 1px rgba(52,199,89,.6),0 0 14px 5px rgba(52,199,89,.28);
@@ -6155,6 +6168,7 @@ function restoreWelcomeSkip() {
   _welcomeSkipHome = null;
 }
 function finalizeWelcomeExit() {
+  stopOnbScrollSync();
   const controller = sharedController();
   if (controller) {
     delete controller.dataset.onbFeature;
@@ -6420,6 +6434,29 @@ function syncWelcomeOnboardingScroll() {
   const scrollTop = welcomeOnboardingScrollTop();
   const offset = -scrollTop;
   document.documentElement.style.setProperty('--welcome-onb-scroll-offset', offset + 'px');
+}
+// The 'scroll' event (below) drives --welcome-onb-scroll-offset, which the beats
+// text (native scroll, position:absolute inside #welcome-screen) and the floating
+// button (position:fixed, transform reading this custom property) both consume —
+// but 'scroll' events are dispatched on the main thread and can be coalesced/
+// throttled behind the compositor-driven native scroll during a fast touch drag
+// (a known WebKit/iOS characteristic), so the button visibly lagged the text
+// mid-gesture even though both settled at the correct synced position once
+// scrolling stopped (Frank, real-device report 2026-08-17: "rozjede se" during the
+// drag). Polling via requestAnimationFrame instead reads the live scrollTop every
+// painted frame, matching the text's own compositor cadence — active only while
+// onboarding is actually shown, not a permanent background loop.
+let _onbScrollRaf = null;
+function startOnbScrollSync() {
+  if (_onbScrollRaf) return;
+  const tick = () => {
+    syncWelcomeOnboardingScroll();
+    _onbScrollRaf = requestAnimationFrame(tick);
+  };
+  _onbScrollRaf = requestAnimationFrame(tick);
+}
+function stopOnbScrollSync() {
+  if (_onbScrollRaf) { cancelAnimationFrame(_onbScrollRaf); _onbScrollRaf = null; }
 }
 function updateWelcomeOverflowState() {
   const ws = document.getElementById('welcome-screen');
@@ -6705,6 +6742,7 @@ function onbStartWelcome() {
   if (welcomeScreen) welcomeScreen.scrollTop = 0;
   if (textBlock) textBlock.classList.add('welcome-onboarding');
   syncWelcomeOnboardingScroll();
+  startOnbScrollSync();
   const controller = sharedController();
   if (controller) controller.dataset.onbFeature = _ONB_BEATS[0].feature;
   beats.style.display = 'block';
