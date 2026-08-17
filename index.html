@@ -1279,6 +1279,30 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
     top:calc(var(--welcome-float-top,50%) + var(--welcome-onb-scroll-offset,0px));
   }
 }
+/* JS-driven mirror of the max-height:820px block above — positionWelcomeFloatingButton()
+   adds welcome-scroll-fallback to #welcome-screen when the floating cluster doesn't fit
+   the viewport even after clamping against the browser-support notice, regardless of raw
+   viewport height. A fixed px breakpoint can't anticipate every device: Frank, real-device
+   screenshots 2026-08-17 — a ~852px phone (just above the old 820px cutoff) hit the exact
+   same "doesn't fit" case (button overlapping the controller graphic, notice overlapping
+   the onboarding title) that this scrollable fallback exists to avoid. */
+#welcome-screen.welcome-scroll-fallback:has(#welcome-text-block.welcome-onboarding){
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
+}
+#welcome-screen.welcome-scroll-fallback:has(#welcome-text-block.welcome-onboarding) .welcome-inner{position:static}
+#welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .welcome-copy-stage{
+  position:absolute;inset:0 auto auto 0;width:100%;
+  height:calc(var(--welcome-controller-bottom,500px) + 520px);min-height:calc(100vh + 1px);
+}
+#welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .welcome-wordmark{position:absolute}
+#welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding #onb-beats{
+  position:absolute;top:calc(var(--welcome-cta-bottom,50%) + 20px);bottom:auto;
+  height:auto;max-height:none;padding-bottom:196px;
+  box-sizing:border-box;overflow:visible;
+}
+#welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .onb-nav{
+  position:relative;left:auto;right:auto;bottom:auto;margin:14px 0 0;
+}
 @media(max-width:600px){
   #welcome-text-block.welcome-onboarding #onb-beats{height:212px}
   .onb-beat-title{font-size:19px}
@@ -6219,58 +6243,103 @@ function revealPostConnectUI() {
 function welcomeOnboardingScrollTop() {
   const ws = document.getElementById('welcome-screen');
   const onboarding = document.getElementById('welcome-text-block')?.classList.contains('welcome-onboarding');
-  return ws && onboarding && matchMedia('(max-height:820px)').matches ? ws.scrollTop : 0;
+  const scrollable = ws && (matchMedia('(max-height:820px)').matches || ws.classList.contains('welcome-scroll-fallback'));
+  return scrollable && onboarding ? ws.scrollTop : 0;
 }
 function positionWelcomeFloatingButton() {
   const btn = document.getElementById('send-btn');
   if (!btn || !btn.classList.contains('welcome-floating')) return;
   const onboarding = document.getElementById('welcome-text-block')?.classList.contains('welcome-onboarding');
   const onboardingScrollTop = welcomeOnboardingScrollTop();
+  const body = document.body;
   // A parallel CSS block (~feel-fader.html:1401-1420) pins the onboarding
   // controller/button position to hardcoded per-width-breakpoint pixel
-  // constants (--onb-controller-top/height etc.) via !important, so it
-  // never reacted to viewport HEIGHT at all — the values computed below
-  // used to be silently discarded during onboarding (Frank, real-device
-  // screenshot 2026-08-17: browser-unsupported notice overlapping "Connect
-  // & load" on tall phones, beats carousel rendering entirely below the
-  // fold on short ones, identically on every viewport height because the
-  // CSS constants never moved). Inline !important on the same properties
-  // outranks stylesheet !important (author-origin cascade: inline wins
-  // ties within the !important tier), so the onboarding branch below sets
-  // `top` with 'important' priority to actually take effect. Always clear
-  // it first: this inline override must not leak into the non-onboarding
-  // branch after the user finishes the intro, which positions via the
-  // (non-important) --welcome-float-top custom property instead.
-  btn.style.removeProperty('top');
-  if (onboarding) {
+  // constants (--onb-controller-top/height, --onb-cta-height/half) via
+  // !important, so it never reacted to viewport HEIGHT at all — the values
+  // computed below used to be silently discarded during onboarding (Frank,
+  // real-device screenshots 2026-08-17: browser-unsupported notice
+  // overlapping "Connect & load"; then a follow-up report that the button
+  // no longer tracked scroll — an earlier version of this fix replaced the
+  // button's `top` with a static inline !important px value, which broke
+  // the CSS formula's own `+ var(--welcome-onb-scroll-offset,0px)` term
+  // that makes it ride along with the transform-based fake-scroll used for
+  // fixed-position elements here). Inline !important on the same custom
+  // properties outranks stylesheet !important (author-origin cascade:
+  // inline wins ties within the !important tier), so live-measured values
+  // are written into the *inputs* of the existing calc() chain instead of
+  // replacing its output — the scroll-offset term, and the beats box's own
+  // native scroll (position:absolute inside the scrollable #welcome-screen
+  // under the max-height:820px breakpoint), keep working unmodified.
+  if (!onboarding) {
+    body.style.removeProperty('--onb-controller-top');
+    body.style.removeProperty('--onb-controller-height');
+    body.style.removeProperty('--onb-cta-height');
+    body.style.removeProperty('--onb-cta-half');
+    document.getElementById('welcome-screen')?.classList.remove('welcome-scroll-fallback');
+  } else {
     const controllerRect = document.getElementById('device-img')?.getBoundingClientRect();
     if (!controllerRect?.height) return;
     const buttonHeight = btn.offsetHeight || 38;
-    const floatTop = controllerRect.bottom + onboardingScrollTop + 18 + buttonHeight / 2;
-    let ctaBottom = floatTop + buttonHeight / 2;
-    // Clamp the floating cluster (button on top, beats box 20px below it) into the
-    // visible viewport on both edges — neither bound is guaranteed by the anchor-to-
-    // device-image math above, which knows nothing about viewport height or the
-    // browser-support notice's flow-layout height. The button is the topmost element
-    // in the cluster, so notice-clearance is checked against *its* top edge, not the
-    // beats box's. Viewport-bottom is the hard bound (off-screen content is
-    // undiscoverable); notice-clearance is best-effort within whatever room that leaves.
+    // Rest-frame (scroll=0-equivalent) controller top: getBoundingClientRect()
+    // already reflects the live transform:translateY(--welcome-onb-scroll-offset),
+    // so add the current scroll delta back to recover the base the CSS formula
+    // expects — it re-adds the live offset itself; baking it in here too would
+    // double-count it and make the button drift further with every scroll tick.
+    const restControllerTop = controllerRect.top + onboardingScrollTop;
+    // ctaBottom is expressed in the CURRENT (live, already-scrolled) frame — the
+    // same quantity the CSS formula renders at the current scroll position — so
+    // the clamp below reads naturally against live notice/viewport measurements.
+    let ctaBottom = controllerRect.bottom + 18 + buttonHeight;
+    // Clamp the floating cluster (button on top, beats box 20px below it) clear of
+    // the browser-support notice, and — only when #welcome-screen ISN'T scrollable
+    // (viewport taller than the max-height:820px breakpoint, so there's no scroll
+    // escape hatch) — also keep it inside the viewport. The button is the topmost
+    // element in the cluster, so notice-clearance is checked against *its* top edge,
+    // not the beats box's.
+    //
+    // Below 820px, #welcome-screen already has its own overflow-y:auto fallback
+    // (with a scroll-hint gradient, welcome-onboarding-scrollable) built for exactly
+    // this "doesn't fit" case — forcing the cluster to also fit inside the first
+    // paint there fought that fallback and pushed it UP into the device artwork
+    // instead: text sitting directly on top of the faders/button graphic, and the
+    // notice overlapping the onboarding title above it (Frank, real-device
+    // screenshots 2026-08-17: "Connect & load" overlapping the button control,
+    // "needs Chrome or Edge" overlapping "Two faders..."). Letting it overflow and
+    // rely on scroll there is strictly better than an illegible overlap.
     const beatsEl = document.getElementById('onb-beats');
     const beatsHeight = beatsEl?.offsetHeight || 176;
     const notice = document.getElementById('welcome-browser-notice');
     const noticeBottom = notice?.classList.contains('show') ? notice.getBoundingClientRect().bottom : 0;
     const margin = 12;
-    const maxCtaBottom = window.innerHeight - margin - 20 - beatsHeight;
     if (noticeBottom > 0) {
       const minCtaBottom = noticeBottom + margin + buttonHeight;
       if (ctaBottom < minCtaBottom) ctaBottom = minCtaBottom;
     }
-    if (ctaBottom > maxCtaBottom) ctaBottom = maxCtaBottom;
-    const clampedFloatTop = ctaBottom - buttonHeight / 2;
-    btn.style.setProperty('--welcome-float-top', clampedFloatTop + 'px');
-    btn.style.setProperty('--welcome-float-left', (controllerRect.left + controllerRect.width / 2) + 'px');
-    btn.style.setProperty('top', clampedFloatTop + 'px', 'important');
-    document.getElementById('welcome-screen')?.style.setProperty('--welcome-cta-bottom', ctaBottom + 'px', 'important');
+    // Does the cluster fit the viewport once cleared of the notice? If not — and the
+    // static max-height:820px breakpoint hasn't already made #welcome-screen
+    // scrollable — force the same scrollable fallback via a JS-toggled class instead
+    // of capping ctaBottom to the viewport (which is what pushed the cluster up into
+    // the controller graphic before). A fixed px breakpoint can't know in advance
+    // whether THIS device's content fits; measuring directly does.
+    const ws = document.getElementById('welcome-screen');
+    const fitsViewport = (ctaBottom + 20 + beatsHeight) <= (window.innerHeight - margin);
+    const mediaScrollable = matchMedia('(max-height:820px)').matches;
+    if (!fitsViewport && !mediaScrollable) {
+      ws?.classList.add('welcome-scroll-fallback');
+    } else if (fitsViewport) {
+      ws?.classList.remove('welcome-scroll-fallback');
+    }
+    if (fitsViewport && !mediaScrollable) {
+      const maxCtaBottom = window.innerHeight - margin - 20 - beatsHeight;
+      if (ctaBottom > maxCtaBottom) ctaBottom = maxCtaBottom;
+    }
+    // Back-solve the rest-frame controller height that reproduces the (possibly
+    // clamped) live ctaBottom once the formula re-applies +18+cta-height-scrollOffset.
+    const restControllerHeight = ctaBottom - 18 - buttonHeight - controllerRect.top;
+    body.style.setProperty('--onb-controller-top', restControllerTop + 'px', 'important');
+    body.style.setProperty('--onb-controller-height', restControllerHeight + 'px', 'important');
+    body.style.setProperty('--onb-cta-height', buttonHeight + 'px', 'important');
+    body.style.setProperty('--onb-cta-half', (buttonHeight / 2) + 'px', 'important');
     updateWelcomeOverflowState();
     return;
   }
