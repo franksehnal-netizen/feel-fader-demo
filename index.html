@@ -1523,6 +1523,25 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   transform:translateX(-50%)!important;
   transition:background-color .46s cubic-bezier(.22,1,.36,1),color .3s ease,border-color .3s ease,box-shadow .46s cubic-bezier(.22,1,.36,1),opacity .28s ease!important;
 }
+/* floatDeviceHomeNative() moves #device-home here (see its own comment) — same
+   native-scroll treatment as the button above, for the controller. --onb-
+   controller-top is the same already-computed rest-frame value the transform-
+   tracking approach used; native scroll now does the runtime offsetting
+   instead of a JS-polled transform. The scroll-offset transform on its own
+   children must be turned off here — position:absolute + native scroll already
+   moves the whole box, so also applying the old translateY would move it
+   twice, doubling the scroll distance. */
+.device-home.onb-native-scroll{
+  position:absolute!important;
+  top:var(--onb-controller-top)!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+}
+.device-home.onb-native-scroll .device-visual,
+.device-home.onb-native-scroll #zone-roller,
+.device-home.onb-native-scroll #zone-macro{
+  transform:none!important;
+}
 @media(max-width:600px){
   body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
     --onb-controller-top:88px;
@@ -6264,6 +6283,38 @@ function restoreSendBtnNative() {
   _sendBtnScrollHome.parent.insertBefore(btn, _sendBtnScrollHome.next);
   _sendBtnScrollHome = null;
 }
+// Same fix as the button above, for the controller itself (Frank 2026-08-17:
+// button is smooth now, controller "still jerky"). #device-home normally lives
+// in .stage (the main app layout) and only becomes visible during welcome via
+// z-index poking through #welcome-screen's overlay — its onboarding position
+// comes from .stage's own normal-flow layout, not position:fixed, so its
+// scroll-tracking is the same JS-polled transform as the button used to have.
+// Reparenting it bodily into the scrollable content, same as the button, was
+// considered too risky at first (it's the shared, interactive controller —
+// faders, drag zones, click-to-highlight animations) and deferred in favor of
+// the safer will-change fix; that wasn't enough on its own, so doing the full
+// move now that the button's version of this exact pattern is proven working.
+// .device-home > .device-wrap's positioning rule only requires .device-wrap to
+// stay a *direct child* of .device-home (feel-fader.html ~1163) — moving
+// .device-home as one unit keeps that intact regardless of what .device-home's
+// own parent is. No CSS in this file scopes anything to ".stage .device-home"
+// specifically (checked), so nothing else should notice it moved.
+let _deviceHomeScrollHome = null;
+function floatDeviceHomeNative() {
+  const home = document.getElementById('device-home');
+  const beats = document.getElementById('onb-beats');
+  if (!home || !beats?.parentElement || _deviceHomeScrollHome) return;
+  _deviceHomeScrollHome = { parent: home.parentNode, next: home.nextSibling };
+  beats.parentElement.insertBefore(home, beats);
+  home.classList.add('onb-native-scroll');
+}
+function restoreDeviceHomeNative() {
+  const home = document.getElementById('device-home');
+  if (!home || !_deviceHomeScrollHome) return;
+  home.classList.remove('onb-native-scroll');
+  _deviceHomeScrollHome.parent.insertBefore(home, _deviceHomeScrollHome.next);
+  _deviceHomeScrollHome = null;
+}
 function finalizeWelcomeExit() {
   stopOnbScrollSync();
   // Must run unconditionally here, not rely on positionWelcomeFloatingButton()
@@ -6272,6 +6323,7 @@ function finalizeWelcomeExit() {
   // again post-exit, which left the button stuck reparented (0x0, invisible,
   // still inside #welcome-screen — caught by skip-welcome-send-btn-probe.mjs).
   restoreSendBtnNative();
+  restoreDeviceHomeNative();
   const controller = sharedController();
   if (controller) {
     delete controller.dataset.onbFeature;
@@ -6408,6 +6460,7 @@ function positionWelcomeFloatingButton() {
     body.style.removeProperty('--onb-cta-half');
     document.getElementById('welcome-screen')?.classList.remove('welcome-scroll-fallback');
     restoreSendBtnNative();
+    restoreDeviceHomeNative();
   } else {
     const controllerRect = document.getElementById('device-img')?.getBoundingClientRect();
     if (!controllerRect?.height) return;
@@ -6483,8 +6536,10 @@ function positionWelcomeFloatingButton() {
     // stay perfectly smooth beside them).
     if (mediaScrollable || ws?.classList.contains('welcome-scroll-fallback')) {
       floatSendBtnNative();
+      floatDeviceHomeNative();
     } else {
       restoreSendBtnNative();
+      restoreDeviceHomeNative();
     }
     return;
   }
