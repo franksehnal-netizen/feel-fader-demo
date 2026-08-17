@@ -1437,7 +1437,13 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
 }
 .device-wrap.welcome-mode[data-onb-feature] #send-btn.welcome-floating{
   left:50%!important;
-  top:calc(var(--onb-controller-bottom) + 18px + var(--onb-cta-half) + var(--welcome-onb-scroll-offset,0px))!important;
+  top:calc(var(--onb-controller-bottom) + 18px + var(--onb-cta-half))!important;
+  /* Scroll-offset applied via transform, not baked into `top` — `top` is a layout
+     property, so animating it on every scroll tick forces a synchronous reflow each
+     time (visibly janky on real devices, Frank 2026-08-17: "pohyb je trhaný"), unlike
+     the device artwork's own scroll-tracking (translateY, compositor-only). Composes
+     with the base rule's translate(-50%,-50%) centering — same net position, smooth. */
+  transform:translate(-50%,-50%) translateY(var(--welcome-onb-scroll-offset,0px))!important;
 }
 .device-wrap.welcome-mode[data-onb-feature="configure"] #send-btn.welcome-floating{
   box-shadow:0 0 4px 1px rgba(52,199,89,.6),0 0 14px 5px rgba(52,199,89,.28);
@@ -1463,7 +1469,15 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   #welcome-screen:has(#welcome-text-block.welcome-onboarding)::before{
     background:color-mix(in srgb,var(--bg) 28%,transparent);
   }
-  .device-wrap.welcome-mode[data-onb-feature] .device-visual{z-index:1}
+  /* Do NOT re-declare .device-visual's z-index here. This selector is identical to
+     the always-on z-index:205 rule above (feel-fader.html ~1404) — same specificity,
+     later in source order — so a stray z-index:1 here silently won on every mobile
+     width (<=900px, i.e. virtually all phones) and dropped the onboarding controller
+     from "always on top" to "loses to nearly everything else with an explicit
+     z-index." Confirmed via a real z-index:1 computed value during onboarding scroll
+     and Frank's real-device report (2026-08-17): the controller sliding behind a
+     solid-background bar while scrolling. Controller must stay at 205 on every
+     viewport width, matching desktop. */
 }
 .device-wrap.welcome-mode.connect-success .device-visual{z-index:205;pointer-events:none}
 
