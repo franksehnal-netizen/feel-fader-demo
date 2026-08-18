@@ -3562,7 +3562,7 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
     <div class="section-collapse-body" id="section-body-${bi}-macro" ${open?'':'hidden'}>
     <div class="section-fields">
       ${hidEnableNotice('Button Macro')}
-      <div class="uacc-note" style="margin:0 0 8px">Long-press the device button (≥0.5 s) to send this key combo — e.g. play/stop or a DAW shortcut. A short press still switches banks. ${escHtml(scopeNote)}</div>
+      <div class="uacc-note" style="margin:0 0 8px">${escHtml(scopeNote)}</div>
       <div class="field-block">
         <span class="field-label">LONG-PRESS KEY</span>
         <div style="display:flex;align-items:center;gap:8px">
