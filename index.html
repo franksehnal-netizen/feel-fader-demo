@@ -1478,6 +1478,16 @@ body.welcome-connecting #send-btn.welcome-floating{
   box-shadow:0 0 5px 3px rgba(52,199,89,.95),0 0 15px 9px rgba(52,199,89,.72),0 0 32px 17px rgba(52,199,89,.38);
 }
 .device-wrap.welcome-mode[data-onb-feature] .device-visual{z-index:205;pointer-events:none}
+/* Plain (returning-user, non-onboarding) welcome needs the same poke-
+   through — it never had its own z-index rule because #welcome-screen
+   ::before used to be translucent glass, so the controller showed
+   faintly through it regardless of stacking order. Removing that
+   translucency (Frank 2026-08-18: "zrušit blur", opaque background)
+   made the controller fully invisible on this path, since z-index:auto
+   sits BEHIND the now-opaque overlay. :not() guards keep this from
+   double-applying during the two cases that already have their own
+   z-index:205 rule (onboarding above; .connect-success below). */
+.device-wrap.welcome-mode:not([data-onb-feature]):not(.connect-success) .device-visual{z-index:205;pointer-events:none}
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .top-sticky,
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .live-hud,
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .center-col>:not(.stage-collapse){
