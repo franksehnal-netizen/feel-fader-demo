@@ -732,7 +732,6 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   filter:drop-shadow(0 0 3px rgba(52,199,89,.95)) drop-shadow(0 0 13px rgba(52,199,89,.72)) drop-shadow(0 0 27px rgba(52,199,89,.38));
 }
 .ctrl-zone{position:absolute;border-radius:10px;outline:1px solid transparent;outline-offset:1px;transition:background .2s,box-shadow .2s,outline-color .2s;}
-.ctrl-zone.zone-hidden{display:none;}
 /* Roller: matches onboarding's #zone-roller[data-onb-feature="roller"] exactly. */
 #zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 5px 2px rgba(52,199,89,.95),0 0 14px 7px rgba(52,199,89,.72),0 0 29px 14px rgba(52,199,89,.38);}
 #zone-macro{border-radius:0 999px 999px 0;clip-path:inset(-24px -24px -24px 0);}   /* půlkruh na hraně těla, oblouk ven; clip-path utne glow na ploché straně → čisté zalícování s hranou */
@@ -2264,7 +2263,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       </div>
       <div class="ctrl-zone" id="zone-roller" data-fader="roller" data-tip="Sends MIDI CC (Articulation), note keyswitches, or HID navigation keys, depending on the mode selected below."
         onmouseenter="hoverFaderLink('roller',true)" onmouseleave="hoverFaderLink('roller',false)"></div>
-      <div class="ctrl-zone zone-hidden" id="zone-macro" data-fader="macro" data-tip="A long-press (&#8805; 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks."
+      <div class="ctrl-zone" id="zone-macro" data-fader="macro" data-tip="A long-press (&#8805; 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks."
         onmouseenter="hoverFaderLink('macro',true)" onmouseleave="hoverFaderLink('macro',false)"></div>
       </div>
       <div class="send-anchor" id="send-anchor"><div class="send-callout">
@@ -3206,8 +3205,6 @@ function renderPanels(errs = validate()) {
       </div>
     </div>
   `;
-  const zm = document.getElementById('zone-macro');
-  if (zm) zm.classList.toggle('zone-hidden', !DEVICE_INFO.hid_enabled);
   if ((b.roller_mode || 'cc') === 'keyswitch' && isSectionOpen('roller')) {
     requestAnimationFrame(() => ksRevealRange(bi, false));
   }
@@ -5514,12 +5511,11 @@ const LIVE_HUD_FRICTION   = 0.90; // lower = stops sooner
 const LIVE_HUD_MIN_FLING  = 0.05; // release slower than this → no glide, just park
 const LIVE_HUD_STOP_SPEED = 0.02; // glide ends once it slows past this
 const LIVE_HUD_MAX_SPEED  = 4;    // cap so a hard flick can't rocket across the screen
-// Drag re-enabled for touch (Frank 2026-08-18: "je to dragable jen na PC, ne
-// když si to zobrazím v telefonu") — reverses the touch exclusion from
-// 2026-07-27. The enlarge/resize button stays touch-hidden independently
-// (its own gate, @media not all and (any-pointer:fine) on .live-hud-size-btn,
-// line ~236) — this request was specifically about drag, not resize.
-function liveHudManipulable(){ return window.matchMedia('(any-pointer:fine),(any-pointer:coarse)').matches; }
+// Touch drag was briefly re-enabled (2026-08-18) then reverted the same
+// day — Frank tried it and asked to keep the HUD fixed in the corner on
+// mobile instead ("nechme tem status bar prichyceny v rohu, jak byl
+// puvodne"). Back to mouse-only manipulation, matching 2026-07-27.
+function liveHudManipulable(){ return window.matchMedia('(any-pointer:fine)').matches; }
 function liveHudScale(){ return _liveHudState.large ? 2 : 1; }
 function liveHudSize(){ return LIVE_HUD_BASE * liveHudScale(); }
 function clampLiveHudPos(x, y){
