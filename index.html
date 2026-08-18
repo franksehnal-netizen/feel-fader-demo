@@ -79,8 +79,6 @@
   --highlight-rgb:76,175,105;
   --highlight-section-fill:rgba(var(--highlight-rgb),.10);
   --highlight-section-glow:rgba(var(--highlight-rgb),.16);
-  --highlight-element-fill:rgba(var(--highlight-rgb),.23);
-  --highlight-element-glow:rgba(var(--highlight-rgb),.34);
   --amber:#e6a23c;
   --piano-white:#fbfbfd;
   --piano-black:#303036;
@@ -154,8 +152,6 @@ html.dark{
   --highlight-rgb:92,190,120;
   --highlight-section-fill:rgba(var(--highlight-rgb),.12);
   --highlight-section-glow:rgba(var(--highlight-rgb),.20);
-  --highlight-element-fill:rgba(var(--highlight-rgb),.26);
-  --highlight-element-glow:rgba(var(--highlight-rgb),.38);
   --piano-white:#d8d8dc;
   --piano-black:#202024;
   --cursor-fader:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='32' viewBox='0 0 40 64'%3E%3Crect x='3' y='2' width='34' height='60' rx='11' fill='%23f5f5f7'/%3E%3C/svg%3E") 10 4;
@@ -721,19 +717,27 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 
 /* PANEL NAME EDITABLE */
 .fader-side-cap{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
-/* Linked section and hardware control share one frosty-green hue; compact hardware
-   targets use more opacity so their smaller shapes remain immediately legible. */
+/* Section stays on its own softer, frosty-green highlight — no onboarding
+   equivalent to match (onboarding never shows settings panels), scope
+   confirmed with Frank 2026-08-18. */
 .bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:var(--r-sm);box-shadow:0 0 12px 0 var(--highlight-section-glow);}
-/* fader glow = tvar slotu (úzký pill na dráze), vrstva pod thumbem (Frank 2026-07-03) */
-.fader-track::before{content:'';position:absolute;left:50%;top:-9px;bottom:-9px;width:12px;margin-left:-6px;border-radius:999px;
-  background:var(--highlight-element-fill);box-shadow:0 0 11px 4px var(--highlight-element-glow);
-  opacity:0;transition:opacity .2s;pointer-events:none;}
-.fader-track.fader-linked::before{opacity:1;}
+/* Hardware-zone highlight now matches onboarding's own glow EXACTLY (same
+   rgba(52,199,89,...) triple-layer values, per element) instead of the
+   softer --highlight-rgb system — Frank 2026-08-18: "chci aby byly ty
+   zvýrazněné prvky zvýrazněné stejným způsobem jako v onboarding screenu".
+   Faders: onboarding glows the THUMB shape itself via drop-shadow (not a
+   separate pill layer behind the track) — matched here on .fader-thumb,
+   replacing the old .fader-track::before pill-glow mechanism entirely. */
+.fader-track.fader-linked .fader-thumb{
+  filter:drop-shadow(0 0 3px rgba(52,199,89,.95)) drop-shadow(0 0 13px rgba(52,199,89,.72)) drop-shadow(0 0 27px rgba(52,199,89,.38));
+}
 .ctrl-zone{position:absolute;border-radius:10px;outline:1px solid transparent;outline-offset:1px;transition:background .2s,box-shadow .2s,outline-color .2s;}
 .ctrl-zone.zone-hidden{display:none;}
-.ctrl-zone.fader-linked{background:transparent;outline-color:rgba(var(--highlight-rgb),.48);box-shadow:0 0 12px 4px var(--highlight-element-glow);}
+/* Roller: matches onboarding's #zone-roller[data-onb-feature="roller"] exactly. */
+#zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 5px 2px rgba(52,199,89,.95),0 0 14px 7px rgba(52,199,89,.72),0 0 29px 14px rgba(52,199,89,.38);}
 #zone-macro{border-radius:0 999px 999px 0;clip-path:inset(-24px -24px -24px 0);}   /* půlkruh na hraně těla, oblouk ven; clip-path utne glow na ploché straně → čisté zalícování s hranou */
-#zone-macro.fader-linked{background:var(--highlight-element-fill);outline-color:transparent;}
+/* Button: matches onboarding's #zone-macro[data-onb-feature="button"] exactly (near-solid fill, not just a soft wash). */
+#zone-macro.fader-linked{background:rgba(52,199,89,.96);outline-color:transparent;box-shadow:0 0 5px 3px rgba(52,199,89,.95),0 0 15px 9px rgba(52,199,89,.72),0 0 32px 17px rgba(52,199,89,.38);}
 
 
 
@@ -961,7 +965,14 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
      actually applied to the most-used control in the app). Match the
      compound selector here so specificity ties and source order decides. */
   .stepper .step-btn{width:44px;height:44px}
-  .stepper input{width:40px}
+  /* height:44px (was 24px, same as desktop) — buttons grew to a 44px touch
+     target but the number field between them didn't, so it floated as a
+     small pill inside the taller outer one instead of matching it (Frank
+     2026-08-18: "pilulky... maji jine proporce" than desktop, where
+     button/input share one height). width:62px keeps the SAME
+     button-to-input ratio as desktop (34/24 ≈ 1.42×24, scaled to
+     1.42×44≈62) rather than an arbitrary touch width. */
+  .stepper input{width:62px;height:44px}
   .section-toggle-action{min-height:44px}
   /* 44px matched the era's blanket touch-target minimum, then reduced to
      36px (Frank 2026-08-16, docs/TODO.md) for reading as unusually
@@ -973,18 +984,21 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
      render identically instead of touch being enlarged. */
   .btn-remove-bank,.bank-action-btn{width:28px;height:28px}
   .icon-picker-trigger{min-width:44px;min-height:44px}
-  /* min-width, not just width: an unconditional (non-media) .dark-toggle
-     rule later in the file sets width:30px — at equal specificity, that
-     LATER rule wins the cascade over this earlier media-query one for the
-     `width` property specifically, even while this media query still
-     matches. `height` survived only because of the separate min-height
-     rule right below (which has no competing later override) — width had
-     no such floor, so it silently reverted to 30px while height stayed
-     44px, rendering a 30×44 rectangle instead of a circle (Frank
-     2026-08-17: "chci aby tlačítko... bylo kulaté"). min-width is a floor,
-     not overridden by that later width:30px rule the same way. */
-  .dark-toggle{width:44px;height:44px;min-width:44px}
-  .dark-toggle,.bank-block-tab,.bank-block-tab-add,.send-btn,.btn,.ks-preset-trigger{min-height:44px}
+  /* .dark-toggle's own width/height/min-* moved out of this block entirely
+     — see the dedicated @media(pointer:coarse) rule placed AFTER its base
+     (non-media) rule below, which avoids the min-width-floor workaround
+     this comment used to describe (that trick only works when the touch
+     size is BIGGER than the base size; going smaller — Frank 2026-08-18,
+     halving the diameter — needs a real cascade-order win instead). */
+  /* Matches .dark-toggle's diameter (Frank 2026-08-17 consistency request,
+     reconfirmed 2026-08-18 when the toggle halved) — pulled out of the
+     shared list below (that list is a general touch-target minimum for
+     OTHER, unrelated buttons — send-btn/btn/ks-preset-trigger — which must
+     stay at 44px). Unlike .dark-toggle, .bank-block-tab has no competing
+     unconditional height rule, so this can stay right here — no source-
+     order dance needed. */
+  .bank-block-tab{min-height:22px}
+  .bank-block-tab-add,.send-btn,.btn,.ks-preset-trigger{min-height:44px}
   .uacc-tag button{min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
   .tx{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   /* Keep toast chrome compact while the close button retains a 44px hit area. */
@@ -1001,17 +1015,6 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
   .stage{position:relative;top:auto;animation:none;margin-top:0;padding-bottom:96px;}
   .send-callout{justify-content:center}
   .send-btn{width:166px}
-  .send-callout.is-mobile-docked{
-    position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:90;
-    margin:0;padding:6px;transform:translateX(-50%);gap:7px;border:1px solid var(--glass-border);
-    border-radius:var(--r-pill);background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));
-    box-shadow:var(--glass-shadow);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);
-  }
-  .send-callout.is-mobile-docked::before{display:none}
-  .send-callout.is-mobile-docked .send-change-note{position:static;max-width:112px;padding-left:5px;transform:translateX(8px) scale(.975);transform-origin:right center}
-  .send-callout.is-mobile-docked .send-change-note.is-visible{transform:translateX(0) scale(1)}
-  .send-callout.is-mobile-docked .send-change-note.is-visible.is-swapping{transform:translateX(-3px) scale(.985)}
-  .send-callout.is-mobile-docked .change-popover{top:auto;bottom:calc(100% + 10px)}
   .panel{min-width:100%;max-width:100%}.info-grid{grid-template-columns:1fr}
   .welcome-action-slot,.welcome-start{height:44px;min-height:44px}
 }
@@ -1060,6 +1063,14 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
   color:var(--t2);overflow:hidden;flex:0 0 auto;
   backdrop-filter:blur(14px) saturate(155%);-webkit-backdrop-filter:blur(14px) saturate(155%);
 }
+/* Placed AFTER the base rule above on purpose — at equal specificity the
+   LATER rule wins the cascade regardless of media-query match, so this is
+   the one true way to make a touch-context override go SMALLER than the
+   base size (a min-width floor, used elsewhere in this file, only works
+   when going bigger). Frank 2026-08-18: "Průměr tlačítka na horní liště na
+   light dark mode zmenši na polovinu v mobilním zobrazení" — half of the
+   previous 44px touch diameter. */
+@media(pointer:coarse){.dark-toggle{width:22px;height:22px}}
 .dark-toggle:hover{color:var(--t1)}
 .dark-toggle .theme-icon{position:absolute;width:14px;height:14px;transition:opacity .28s ease,transform .34s ease}
 .dark-toggle .theme-icon-moon{opacity:0;transform:rotate(-24deg) scale(.62)}
@@ -3023,19 +3034,6 @@ function restoreSyncedConfig() {
   closeChangePopover();
   toast('i','Restored the last configuration sent to the device');
 }
-function updateMobileSendDock() {
-  const callout = document.querySelector('.send-callout');
-  const anchor = document.getElementById('send-anchor');
-  if (!callout || !anchor) return;
-  const mobile = window.matchMedia?.('(max-width:600px)').matches;
-  const passed = anchor.getBoundingClientRect().bottom < 48;
-  const docked = !!(mobile && dirty && passed);
-  if (docked && callout.parentElement !== document.body) document.body.appendChild(callout);
-  if (!docked && callout.parentElement !== anchor) anchor.appendChild(callout);
-  callout.classList.toggle('is-mobile-docked',docked);
-  document.body.classList.toggle('mobile-send-docked',docked);
-}
-
 // ═══════════════════════════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════════════════════════
@@ -3054,7 +3052,6 @@ function reflectDirty() {
   }
   updateChangeSummary();
   syncSendChangeNote();
-  if (typeof updateMobileSendDock === 'function') updateMobileSendDock();
   if (!dirty) closeChangePopover();
 }
 function render() {
@@ -7631,10 +7628,8 @@ document.addEventListener('pointerdown', event => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && document.getElementById('change-popover')?.classList.contains('is-open')) closeChangePopover();
 });
-window.addEventListener('scroll', updateMobileSendDock, {passive:true});
 window.addEventListener('scroll', updateContextualLiveStrip, {passive:true});
 window.addEventListener('scroll', updateStickySectionHeads, {passive:true});
-window.addEventListener('resize', updateMobileSendDock, {passive:true});
 window.addEventListener('resize', updateContextualLiveStrip, {passive:true});
 window.addEventListener('resize', positionLiveNote, {passive:true});
 let _hoverTipTimer = null, _hoverTipEl = null, _lastPointerX = 0, _lastPointerY = 0;
