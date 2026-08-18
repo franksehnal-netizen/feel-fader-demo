@@ -1459,12 +1459,9 @@ body.welcome-connecting #send-btn.welcome-floating{
   body.welcome-connecting #send-btn.welcome-floating{animation:none}
 }
 .device-wrap.welcome-mode .fader-tracks{display:block!important;pointer-events:none;z-index:2}
-.device-wrap.welcome-mode #thumb-l{animation:welcome-fader-master 5.5s ease-in-out infinite}
-.device-wrap.welcome-mode #thumb-r{animation:welcome-fader-slave 5.5s ease-in-out .5s infinite}
 .device-wrap.welcome-mode[data-onb-feature] .device-img,
 .device-wrap.welcome-mode[data-onb-feature] .fader-tracks,
 .device-wrap.welcome-mode[data-onb-feature] .ctrl-zone{transition:opacity var(--dur-base) ease,filter var(--dur-base) ease,background var(--dur-base) ease,box-shadow var(--dur-base) ease,outline-color var(--dur-base) ease}
-.device-wrap.welcome-mode[data-onb-feature] .fader-thumb{animation:none!important}
 .device-wrap.welcome-mode[data-onb-feature="faders"] .fader-thumb{
   filter:drop-shadow(0 0 3px rgba(52,199,89,.95)) drop-shadow(0 0 13px rgba(52,199,89,.72)) drop-shadow(0 0 27px rgba(52,199,89,.38));
 }
@@ -1659,19 +1656,6 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
      viewport width, matching desktop. */
 }
 .device-wrap.welcome-mode.connect-success .device-visual{z-index:205;pointer-events:none}
-
-@keyframes welcome-fader-master{
-  0%  {transform:translate3d(-50%,var(--wf-l-rest),0)}
-  38% {transform:translate3d(-50%,var(--wf-l-low),0)}
-  70% {transform:translate3d(-50%,var(--wf-l-high),0)}
-  100%{transform:translate3d(-50%,var(--wf-l-rest),0)}
-}
-@keyframes welcome-fader-slave{
-  0%  {transform:translate3d(-50%,var(--wf-r-rest),0)}
-  38% {transform:translate3d(-50%,var(--wf-r-low),0)}
-  70% {transform:translate3d(-50%,var(--wf-r-high),0)}
-  100%{transform:translate3d(-50%,var(--wf-r-rest),0)}
-}
 
 /* Connect confirmation: a restrained outline + soft halo + one glassy light pass. */
 .device-wrap::after{
@@ -4648,15 +4632,6 @@ function layoutFaders(){
   stT('track-r',Math.round(FRX*W-tw/2),tT,tw,tH);
   stTh('thumb-l',tw,th);stTh('thumb-r',tw,th);
   _faderTravel = tH - th;   // T4: dráha thumbu se mění jen s layoutem, ne per CC zpráva
-  const wrap=document.getElementById('device-wrap');
-  if(wrap){
-    wrap.style.setProperty('--wf-l-rest',Math.round(_faderTravel*.32)+'px');
-    wrap.style.setProperty('--wf-l-low',Math.round(_faderTravel*.58)+'px');
-    wrap.style.setProperty('--wf-l-high',Math.round(_faderTravel*.28)+'px');
-    wrap.style.setProperty('--wf-r-rest',Math.round(_faderTravel*.44)+'px');
-    wrap.style.setProperty('--wf-r-low',Math.round(_faderTravel*.56)+'px');
-    wrap.style.setProperty('--wf-r-high',Math.round(_faderTravel*.42)+'px');
-  }
   // hover zóny (roller + macro button) — px vůči obrázku; % by braly výšku celého device-wrap vč. send tlačítka
   // Match the visible roller silhouette closely; onboarding reuses this zone
   // as a glow mask, so excess hit-area would visibly produce the wrong shape.
