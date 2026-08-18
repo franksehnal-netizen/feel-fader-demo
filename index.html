@@ -199,13 +199,6 @@ header{
   backdrop-filter:var(--chrome-glass-filter);
   -webkit-backdrop-filter:var(--chrome-glass-filter);
   box-shadow:var(--chrome-glass-shadow);
-  /* Soft bottom-edge fade so content scrolling up from underneath (e.g. the
-     red Send button, in normal flow, not docked) reveals gradually instead
-     of getting clipped by the header's hard rectangular edge — same
-     mask-image technique as .bank-block-tabs.tabs-fade-r (Frank 2026-08-17:
-     "nedojede to plynule"). */
-  mask-image:linear-gradient(to bottom,#000 calc(100% - 14px),transparent);
-  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 14px),transparent);
 }
 /* transition:opacity matches .live-hud's own base transition (line 168) —
    both are governed by the same welcome-onboarding !important hide rule
@@ -692,7 +685,14 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 }
 html.dark .icon-picker-trigger svg{opacity:.7;}
 .bank-name-input{
-  flex:1;min-width:0;background:transparent;border:none;border-bottom:1px solid transparent;
+  flex:1;min-width:0;
+  /* Same cap as .fader-title-input (~1833, section titles) — Frank
+     2026-08-18: "chci omezit velikost pole pro zadávání názvu, tak jak
+     to máme u ostatních poli". flex:1 still lets it grow to fill the
+     header row up to this cap, and shrink below it on narrow screens
+     (min-width:0 above). */
+  max-width:min(190px,100%);
+  background:transparent;border:none;border-bottom:1px solid transparent;
   font-family:'Mulish',sans-serif;font-size:16px;font-weight:600;color:var(--t1);
   outline:none;padding:2px 0;transition:border-color .14s;
   text-align:left;letter-spacing:-.01em;
@@ -1803,8 +1803,11 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 }
 #welcome-screen::before{
   content:'';position:absolute;inset:0;z-index:0;
-  background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));
-  backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);
+  /* Solid, not blurred glass — matches the onboarding variant's own
+     background:var(--bg);backdrop-filter:none below (Frank 2026-08-18:
+     "Na welcome screenu zrušit blur"), same treatment for the returning-
+     user (non-onboarding) path. */
+  background:var(--bg);
   opacity:1;
 }
 #welcome-screen:has(#welcome-text-block.welcome-onboarding)::before{
@@ -2604,8 +2607,23 @@ function liveArticulationName(value) { return uaccName(value); }
 // je "všechno zavřené"; stav se záměrně nepersistuje do localStorage.
 const _openSections = new Set();
 function isSectionOpen(key) { return _openSections.has(key); }
+// Which OPEN section's controller-zone highlight (.fader-linked) currently
+// "wins" — sections themselves stay independent (multiple can be expanded
+// at once, unchanged), but only the most recently tapped one is
+// highlighted (Frank 2026-08-18: "chci aby mohla být aktivní vždy jen
+// jedna" — was highlighting every open section at once on touch, since
+// syncFaderLink() just OR'd hover with isSectionOpen()). Cleared when that
+// section closes again — closing the active one does NOT fall back to
+// highlighting some other still-open section.
+let _lastActiveFaderKey = null;
 function toggleSection(key, event) {
-  if (_openSections.has(key)) _openSections.delete(key); else _openSections.add(key);
+  if (_openSections.has(key)) {
+    _openSections.delete(key);
+    if (_lastActiveFaderKey === key) _lastActiveFaderKey = null;
+  } else {
+    _openSections.add(key);
+    _lastActiveFaderKey = key;
+  }
   renderPanels();
   runValidation();
   // event.detail === 0 identifies a keyboard/Enter-triggered click (real
@@ -5486,7 +5504,7 @@ function hoverFaderLink(key, on){
   syncFaderLink(key);
 }
 function syncFaderLink(key){
-  const on = _hoveredFaderKey === key || isSectionOpen(key);
+  const on = _hoveredFaderKey === key || (isSectionOpen(key) && key === _lastActiveFaderKey);
   document.querySelectorAll(`[data-fader="${key}"]`).forEach(el => el.classList.toggle('fader-linked', on));
 }
 
