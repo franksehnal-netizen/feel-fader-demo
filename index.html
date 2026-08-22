@@ -2691,9 +2691,23 @@ function refreshSectionSemantics(bi, key) {
   renderLiveStrip();
 }
 
+// localStorage may throw SecurityError when persistence is blocked by browser
+// policy. Keep every preference/config path optional so the app can still run
+// against the connected hardware without local persistence.
+function storageGet(key, fallback = null) {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? fallback : value;
+  } catch (_) { return fallback; }
+}
+function storageSet(key, value) {
+  try { localStorage.setItem(key, String(value)); return true; }
+  catch (_) { return false; }
+}
+
 // Note-name convention: 'C-2' → MIDI 0 = C-2 (Cubase/Logic/most libraries, default)
 //                     'C-1' → MIDI 0 = C-1 (Yamaha)
-let noteConvention = (localStorage.getItem('ff_note_convention') || 'C-2');
+let noteConvention = storageGet('ff_note_convention', 'C-2');
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
 function noteName(num, convention = noteConvention) {
@@ -2705,7 +2719,7 @@ function noteName(num, convention = noteConvention) {
 
 function setNoteConvention(conv) {
   noteConvention = conv;
-  localStorage.setItem('ff_note_convention', conv);
+  storageSet('ff_note_convention', conv);
   render();
 }
 
@@ -2820,7 +2834,7 @@ function dropLegacyBankTags(p) {
 }
 function cfgSave() {
   dropLegacyBankTags(cfg);
-  try { localStorage.setItem(LS_CFG_KEY, JSON.stringify(cfg)); } catch(e) {}
+  storageSet(LS_CFG_KEY, JSON.stringify(cfg));
 }
 let _autosaveT = null;
 function cfgAutosave() {   // audit S5 — edits přežijí refresh; dirty dál = „liší se od zařízení"
@@ -2829,7 +2843,7 @@ function cfgAutosave() {   // audit S5 — edits přežijí refresh; dirty dál 
 }
 function cfgLoad() {
   try {
-    const s = localStorage.getItem(LS_CFG_KEY);
+    const s = storageGet(LS_CFG_KEY);
     if (s) {
       const saved = dropLegacyBankTags(JSON.parse(s));
       saved.banks?.forEach(bank => {
@@ -3118,23 +3132,26 @@ function _updateTabsFade(el) {   // audit S9 — naznačit, že řada tabů pře
 
 let _lastRenderedBank = -1;
 let _stickySectionRaf = 0;
+function applyStickySectionHeads() {
+  const desktop = window.matchMedia('(min-width:601px)').matches;
+  const appHeader = document.querySelector('.top-sticky');
+  const stickyTop = appHeader ? appHeader.getBoundingClientRect().bottom : 42;
+  document.documentElement.style.setProperty('--section-sticky-top',`${Math.ceil(stickyTop)}px`);
+  document.querySelectorAll('.bank-section.is-open').forEach(section => {
+    const heading = Array.from(section.children).find(child => child.classList.contains('section-head'));
+    if (!heading) return;
+    const sectionRect = section.getBoundingClientRect();
+    const headingRect = heading.getBoundingClientRect();
+    const stuck = desktop && sectionRect.top < stickyTop && headingRect.top <= stickyTop + 3
+      && sectionRect.bottom > stickyTop + headingRect.height;
+    heading.classList.toggle('is-stuck',stuck);
+  });
+}
 function updateStickySectionHeads() {
   if (_stickySectionRaf) return;
   _stickySectionRaf = requestAnimationFrame(() => {
     _stickySectionRaf = 0;
-    const desktop = window.matchMedia('(min-width:601px)').matches;
-    const appHeader = document.querySelector('.top-sticky');
-    const stickyTop = appHeader ? appHeader.getBoundingClientRect().bottom : 42;
-    document.documentElement.style.setProperty('--section-sticky-top',`${Math.ceil(stickyTop)}px`);
-    document.querySelectorAll('.bank-section.is-open').forEach(section => {
-      const heading = Array.from(section.children).find(child => child.classList.contains('section-head'));
-      if (!heading) return;
-      const sectionRect = section.getBoundingClientRect();
-      const headingRect = heading.getBoundingClientRect();
-      const stuck = desktop && sectionRect.top < stickyTop && headingRect.top <= stickyTop + 3
-        && sectionRect.bottom > stickyTop + headingRect.height;
-      heading.classList.toggle('is-stuck',stuck);
-    });
+    applyStickySectionHeads();
   });
 }
 function renderPanels(errs = validate()) {
@@ -5079,7 +5096,7 @@ async function _serialEnsureOpen() {
   try {
     const ports = await navigator.serial.getPorts();
     // Prefer port with saved ProductID (the one that worked last time)
-    const savedPid = parseInt(localStorage.getItem(LS_SERIAL_PID_KEY) || '0');
+    const savedPid = parseInt(storageGet(LS_SERIAL_PID_KEY, '0'));
     const sorted = savedPid
       ? [...ports].sort((a, b) => (b.getInfo().usbProductId === savedPid ? 1 : 0) - (a.getInfo().usbProductId === savedPid ? 1 : 0))
       : ports;
@@ -5176,7 +5193,7 @@ async function serialReadInfo() {
   if (typeof info.bank === 'number' && info.bank >= 0) liveBank = info.bank | 0;
   DEVICE_INFO.config_hash   = info.config_hash   || null;
   DEVICE_INFO.config_source = info.config_source || null;
-  try { localStorage.setItem(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId); } catch(e) {}
+  storageSet(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId);
   const _faders = applyInfoFaders(info);   // set liveValues BEFORE render (render recreates value spans)
   updateDeviceInfo(); updateHidToggle();
   render();   // re-render roller selector — track_nav gating depends on hid_enabled
@@ -5198,10 +5215,10 @@ async function loadConfigFromDevice() {
   p = normalizeFwConfig(p);
   cfg = p; loaded = true; dirty = false; activeBank = 0; markConfigSynced();
   cfgSave();
-  try { localStorage.setItem(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId); } catch(e) {}
+  storageSet(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId);
   _serialGranted = true;
   if (protocolVersion === 2 && DEVICE_INFO.config_hash) {
-    try { localStorage.setItem(LS_HASH_KEY, DEVICE_INFO.config_hash); } catch(_) {}
+    storageSet(LS_HASH_KEY, DEVICE_INFO.config_hash);
   }
   render();
   renderConnState();
@@ -5280,7 +5297,7 @@ async function onDeviceConnected() {
         await new Promise(res => setTimeout(res, 400));
         await serialReadInfo();
       }
-      const stored = localStorage.getItem(LS_HASH_KEY);
+      const stored = storageGet(LS_HASH_KEY);
       const isDefaults = protocolVersion === 2 && DEVICE_INFO.config_source === 'defaults';
       const differs = protocolVersion === 2 && stored && DEVICE_INFO.config_hash
                        && stored !== DEVICE_INFO.config_hash;
@@ -5341,7 +5358,7 @@ async function doSend() {
   // compare in the first place. Bug found in fix-round-1 review, 2026-08-09.
   const wasDirty = dirty;
   let storedHash = null;
-  try { storedHash = localStorage.getItem(LS_HASH_KEY); } catch(_) {}
+  storedHash = storageGet(LS_HASH_KEY);
   const deviceConfirmedMatch = protocolVersion === 2
     ? (!!storedHash && !!DEVICE_INFO.config_hash && storedHash === DEVICE_INFO.config_hash)
     : true;
@@ -5352,7 +5369,7 @@ async function doSend() {
     const ackHash = await serialRequest('CMD_W', JSON.stringify(cfg), 5000);
     // protocolVersion 1: ackHash === '' (legacy fire-and-forget, dnešní chování)
     if (protocolVersion === 2 && ackHash) {
-      try { localStorage.setItem(LS_HASH_KEY, ackHash.trim()); } catch(_) {}
+      storageSet(LS_HASH_KEY, ackHash.trim());
       DEVICE_INFO.config_hash = ackHash.trim();
     }
     cfgSave();
@@ -5529,10 +5546,10 @@ function clampLiveHudPos(x, y){
   return { x: Math.max(LIVE_HUD_MARGIN, Math.min(maxX, x)), y: Math.max(minY, Math.min(maxY, y)) };
 }
 function persistLiveHud(){
-  try { localStorage.setItem(LIVE_HUD_POS_KEY, JSON.stringify(_liveHudState)); } catch (_) {}
+  storageSet(LIVE_HUD_POS_KEY, JSON.stringify(_liveHudState));
 }
 function liveHudHasCustomPos(){ return _liveHudState.x != null && _liveHudState.y != null && liveHudManipulable(); }
-function applyLiveHudState(persist=false){
+function applyLiveHudState(persist=false, syncContext=true){
   const strip = document.getElementById('live-strip');
   if (!strip) return;
   // Force 1x on mobile (mobile keeps its own fixed small size).
@@ -5555,7 +5572,7 @@ function applyLiveHudState(persist=false){
     ? `Live device values.${_liveHudState.large ? ' Enlarged.' : ''} Drag to move, arrow keys to nudge, Home to reset, corner button to resize.`
     : 'Live device values.');
   if (persist) persistLiveHud();
-  updateContextualLiveStrip();
+  if (syncContext) updateContextualLiveStrip();
 }
 function toggleLiveHudSize(){
   if (!liveHudManipulable()) return;
@@ -5608,7 +5625,7 @@ function initLiveHudPositioning(){
   const strip = document.getElementById('live-strip');
   if (!strip) return;
   try {
-    const saved = JSON.parse(localStorage.getItem(LIVE_HUD_POS_KEY) || 'null');
+    const saved = JSON.parse(storageGet(LIVE_HUD_POS_KEY, 'null'));
     if (saved && typeof saved === 'object') _liveHudState = {
       x: Number.isFinite(saved.x) ? saved.x : null,
       y: Number.isFinite(saved.y) ? saved.y : null,
@@ -6302,11 +6319,11 @@ function applyControllerVisibility(hidden, animate = true) {
 function toggleControllerVisibility(visible) {
   const hidden = !visible;   // switch ON = visible
   _controllerHidden = hidden;
-  localStorage.setItem('ff-controller-hidden', hidden ? '1' : '0');
+  storageSet('ff-controller-hidden', hidden ? '1' : '0');
   applyControllerVisibility(hidden, true);
 }
 function initControllerVisibility() {
-  _controllerHidden = localStorage.getItem('ff-controller-hidden') === '1';
+  _controllerHidden = storageGet('ff-controller-hidden') === '1';
   // Applying applyStageCollapse() here would put a `transform` on .stage
   // (via .stage-collapse.is-collapsed>.stage) while the page is still on the
   // welcome screen — and any transformed ancestor becomes the containing
@@ -6358,27 +6375,27 @@ function toggleDark() {
   const root = document.documentElement;
   const isDark = !root.classList.contains('dark');
   applyTheme(isDark);
-  localStorage.setItem('ff-dark', isDark ? '1' : '0');
+  storageSet('ff-dark', isDark ? '1' : '0');
   // Also save for current device if connected
   const serial = DEVICE_INFO.serial;
   if (serial && serial !== '—') {
-    localStorage.setItem(`ff-dark-${serial}`, isDark ? '1' : '0');
+    storageSet(`ff-dark-${serial}`, isDark ? '1' : '0');
   }
 }
 
 function initDark() {
   // Load global preference on startup
-  applyTheme(localStorage.getItem('ff-dark') === '1', false);
+  applyTheme(storageGet('ff-dark') === '1', false);
 }
 
 function applyDeviceDark(serial) {
   // Called when device connects — apply device-specific theme if saved
   if (!serial || serial === '—') return;
-  const saved = localStorage.getItem(`ff-dark-${serial}`);
+  const saved = storageGet(`ff-dark-${serial}`);
   if (saved === null) {
     // First time this device connects — save current preference for it
     const isDark = document.documentElement.classList.contains('dark');
-    localStorage.setItem(`ff-dark-${serial}`, isDark ? '1' : '0');
+    storageSet(`ff-dark-${serial}`, isDark ? '1' : '0');
     return;
   }
   const shouldBeDark = saved === '1';
@@ -7055,7 +7072,7 @@ function skipWelcome() {
 }
 
 // ── Onboarding (guided first-run) ──────────────────────────────
-function onbShouldRun() { return !localStorage.getItem('ff-onboarded'); }
+function onbShouldRun() { return !storageGet('ff-onboarded'); }
 
 let _onbBeat = 0, _onbBeatTimer = null;
 const _ONB_BEATS = [
@@ -7197,7 +7214,7 @@ function onbBeatShowCTA() {
 let _librarySetupCueObserver = null;
 let _librarySetupCueTimer = null;
 function armLibrarySetupCue() {
-  try { if (localStorage.getItem('ff-library-setup-cue-seen')) return; } catch (_) {}
+  if (storageGet('ff-library-setup-cue-seen')) return;
   const row = document.getElementById(`quick-setup-input-${activeBank}`)?.closest('.bank-quick-setup');
   if (!row) return;
   _librarySetupCueObserver?.disconnect();
@@ -7206,7 +7223,7 @@ function armLibrarySetupCue() {
     _librarySetupCueObserver?.disconnect();
     _librarySetupCueObserver = null;
     row.classList.add('is-first-run-highlight');
-    try { localStorage.setItem('ff-library-setup-cue-seen', '1'); } catch (_) {}
+    storageSet('ff-library-setup-cue-seen', '1');
     _librarySetupCueTimer = setTimeout(() => row.classList.remove('is-first-run-highlight'), 1750);
   };
   if (!('IntersectionObserver' in window)) { requestAnimationFrame(reveal); return; }
@@ -7216,7 +7233,7 @@ function armLibrarySetupCue() {
   _librarySetupCueObserver.observe(row);
 }
 function onbAfterWelcome() {
-  try { localStorage.setItem('ff-onboarded', '1'); } catch (_) {}
+  storageSet('ff-onboarded', '1');
   requestAnimationFrame(() => requestAnimationFrame(armLibrarySetupCue));
 }
 function onbReplay() {
@@ -7417,7 +7434,7 @@ let _customPresetReturnFocus = null;
 
 function loadCustomPresets() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(CUSTOM_PRESETS_STORAGE_KEY) || '{}');
+    const parsed = JSON.parse(storageGet(CUSTOM_PRESETS_STORAGE_KEY, '{}'));
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
     return Object.fromEntries(Object.entries(parsed).filter(([name, preset]) =>
       name && !['__proto__','prototype','constructor'].includes(name) && !conflictsWithBuiltInPreset(name) && isValidCustomPreset(preset)
@@ -7443,18 +7460,18 @@ function isValidCustomPreset(preset) {
     ['mapping','roller','articulations','icon'].some(key => Object.prototype.hasOwnProperty.call(preset,key));
 }
 function persistCustomPresets() {
-  localStorage.setItem(CUSTOM_PRESETS_STORAGE_KEY, JSON.stringify(customLibraryPresets));
+  storageSet(CUSTOM_PRESETS_STORAGE_KEY, JSON.stringify(customLibraryPresets));
   refreshLibraryPresetOptions();
 }
 function loadRecentQuickSetups() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(QUICK_RECENT_STORAGE_KEY) || '[]');
+    const parsed = JSON.parse(storageGet(QUICK_RECENT_STORAGE_KEY, '[]'));
     return Array.isArray(parsed) ? parsed.filter(name => typeof name === 'string').slice(0,3) : [];
   } catch (_) { return []; }
 }
 function rememberQuickSetup(name) {
   recentQuickSetups = [name, ...recentQuickSetups.filter(item => item !== name)].slice(0,3);
-  try { localStorage.setItem(QUICK_RECENT_STORAGE_KEY, JSON.stringify(recentQuickSetups)); } catch (_) {}
+  storageSet(QUICK_RECENT_STORAGE_KEY, JSON.stringify(recentQuickSetups));
 }
 function quickSetupExists(name) {
   return Object.prototype.hasOwnProperty.call(LIBRARY_PRESETS,name) || Object.prototype.hasOwnProperty.call(customLibraryPresets,name);
@@ -7624,10 +7641,6 @@ document.addEventListener('pointerdown', event => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && document.getElementById('change-popover')?.classList.contains('is-open')) closeChangePopover();
 });
-window.addEventListener('scroll', updateContextualLiveStrip, {passive:true});
-window.addEventListener('scroll', updateStickySectionHeads, {passive:true});
-window.addEventListener('resize', updateContextualLiveStrip, {passive:true});
-window.addEventListener('resize', positionLiveNote, {passive:true});
 let _hoverTipTimer = null, _hoverTipEl = null, _lastPointerX = 0, _lastPointerY = 0;
 document.addEventListener('mousemove', e => { _lastPointerX = e.clientX; _lastPointerY = e.clientY; }, { passive: true });
 // Anchored to the cursor, always below-right of it, not to the target
@@ -7694,35 +7707,54 @@ document.addEventListener('focusout', event => {
   if (!el || (event.relatedTarget && el.contains(event.relatedTarget))) return;
   hideHoverTip();
 });
-window.addEventListener('resize', () => {
-  if (!welcomeOnboardingActive()) updateStickySectionHeads();
-}, {passive:true});
-window.addEventListener('resize', () => {
-  if (!welcomeOnboardingActive()) applyLiveHudState();
-}, {passive:true}); // re-clamp custom pos to the new viewport
-let _welcomeResizeFrame = 0;
+const VIEWPORT_WINDOW_SCROLL = 1;
+const VIEWPORT_RESIZE = 2;
+const VIEWPORT_WELCOME_SCROLL = 4;
+let _viewportLayoutReasons = 0;
+let _viewportLayoutRaf = 0;
 let _welcomeResizeSettleTimer = 0;
+function scheduleViewportLayout(reason) {
+  _viewportLayoutReasons |= reason;
+  if (_viewportLayoutRaf) return;
+  _viewportLayoutRaf = requestAnimationFrame(() => {
+    const reasons = _viewportLayoutReasons;
+    _viewportLayoutReasons = 0;
+    _viewportLayoutRaf = 0;
+    const onboarding = welcomeOnboardingActive();
+
+    if (reasons & VIEWPORT_WELCOME_SCROLL) syncWelcomeOnboardingScroll();
+    if (reasons & VIEWPORT_RESIZE) {
+      syncWelcomeOnboardingScroll();
+      positionLiveNote();
+      if (!onboarding) applyLiveHudState(false, false); // re-clamp custom HUD position
+      if (!onboarding) {
+        positionWelcomeAnchor();
+        positionWelcomeFloatingButton();
+      }
+      layoutFaders();
+      positionThumbs();
+    }
+    if (reasons & (VIEWPORT_WINDOW_SCROLL | VIEWPORT_RESIZE)) {
+      updateContextualLiveStrip();
+      if (_stickySectionRaf) {
+        cancelAnimationFrame(_stickySectionRaf);
+        _stickySectionRaf = 0;
+      }
+      applyStickySectionHeads();
+    }
+  });
+}
+window.addEventListener('scroll', () => scheduleViewportLayout(VIEWPORT_WINDOW_SCROLL), {passive:true});
 window.addEventListener('resize', () => {
   if (welcomeOnboardingActive()) {
-    if (!_welcomeResizeFrame) {
-      _welcomeResizeFrame = requestAnimationFrame(() => {
-        _welcomeResizeFrame = 0;
-        syncWelcomeOnboardingScroll();
-      });
-    }
     clearTimeout(_welcomeResizeSettleTimer);
     _welcomeResizeSettleTimer = setTimeout(updateWelcomeOverflowState, 120);
-    return;
   }
-  if (_welcomeResizeFrame) return;
-  _welcomeResizeFrame = requestAnimationFrame(() => {
-    _welcomeResizeFrame = 0;
-    syncWelcomeOnboardingScroll();
-    positionWelcomeAnchor();
-    positionWelcomeFloatingButton();
-  });
+  scheduleViewportLayout(VIEWPORT_RESIZE);
 }, {passive:true});
-document.getElementById('welcome-screen')?.addEventListener('scroll', syncWelcomeOnboardingScroll, {passive:true});
+document.getElementById('welcome-screen')?.addEventListener('scroll', () => {
+  scheduleViewportLayout(VIEWPORT_WELCOME_SCROLL);
+}, {passive:true});
 
 function customPresetFromBank(bank) {
   const preset = { custom:true, saved_at:new Date().toISOString() };
@@ -8016,7 +8048,6 @@ window.addEventListener('load',()=>{
   initMidi();
   initSerialDisconnectWatch();
   showWelcome();
-});
-window.addEventListener('resize',()=>{layoutFaders();positionThumbs();});</script>
+});</script>
 </body>
 </html>
