@@ -89,7 +89,6 @@
      photo (#thumb-l) intentionally not reused directly — a photo would
      blur/not recolor at cursor size, so this is a redrawn flat silhouette.
      fill hex must mirror --t1 literally (data URIs can't reference var()). */
-  --cursor-fader:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='32' viewBox='0 0 40 64'%3E%3Crect x='3' y='2' width='34' height='60' rx='11' fill='%231d1d1f'/%3E%3C/svg%3E") 10 4;
   /* Radius */
   --r-sm:6px;
   --r:12px;
@@ -154,11 +153,10 @@ html.dark{
   --highlight-section-glow:rgba(var(--highlight-rgb),.20);
   --piano-white:#d8d8dc;
   --piano-black:#202024;
-  --cursor-fader:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='32' viewBox='0 0 40 64'%3E%3Crect x='3' y='2' width='34' height='60' rx='11' fill='%23f5f5f7'/%3E%3C/svg%3E") 10 4;
 }
 html.dark select{color-scheme:dark}
 html.dark .uacc-preset-dropdown{background:#1a1a1e}
-.ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:var(--cursor-fader),pointer;transition:color .14s ease,filter .14s ease,transform var(--dur-press) ease,box-shadow .14s ease,background-color .14s ease}
+.ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:pointer;transition:color .14s ease,filter .14s ease,transform var(--dur-press) ease,box-shadow .14s ease,background-color .14s ease}
 .ui-control:hover{color:var(--t1);filter:brightness(.98)}
 .ui-control:active{transform:scale(.96)}
 .ui-control:disabled{opacity:.35;cursor:default;filter:none;transform:none;box-shadow:none}
@@ -238,14 +236,21 @@ header{
 .live-hud-size-btn{
   position:absolute;right:3px;bottom:3px;width:19px;height:19px;padding:0;
   display:grid;place-items:center;border:0;border-radius:7px;background:transparent;
-  color:var(--t3);opacity:.45;cursor:var(--cursor-fader),pointer;transition:opacity .15s ease,background .15s ease,color .15s ease;
+  color:var(--t3);opacity:.45;cursor:pointer;transition:opacity .15s ease,background .15s ease,color .15s ease;
 }
 .live-hud-size-btn:hover,.live-hud-size-btn:focus-visible{opacity:1;background:rgba(127,127,135,.16);color:var(--t1)}
 .live-hud-size-btn svg{width:12px;height:12px;display:block}
 /* Enlarge/drag are mouse-gated, not width-gated: a half-screen desktop window keeps the button; touch-only devices hide it (Frank 2026-07-27). */
 @media not all and (any-pointer:fine){.live-hud-size-btn{display:none}}
 .live-hud-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr) 31px;gap:7px 5px;height:100%}
-.live-hud-bank{display:none}
+/* The green dot in the header already says that a device is connected. The
+   HUD owns device context: its first row maps the active physical bank with
+   one neutral dot per bank. This stays distinct from the edited-bank card. */
+.live-hud-bank{display:none;height:12px;align-items:center;justify-content:center;gap:4px;overflow:hidden}
+.live-hud-bank-dot{width:3px;height:3px;flex:0 0 auto;border-radius:50%;background:var(--t2);opacity:.28}
+.live-hud-bank-dot.is-active{width:5px;height:5px;background:var(--t1);opacity:.78;box-shadow:none}
+.live-hud[data-state^="CONNECTED"] .live-hud-bank{display:flex}
+.live-hud[data-state^="CONNECTED"] .live-hud-inner{height:calc(100% - 18px);margin-top:4px}
 .live-hud-item{min-width:0;color:var(--t2)}
 .live-hud-item:not(.live-hud-roller){position:relative;overflow:hidden;border-radius:var(--r);padding:4px 2px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;align-items:center;justify-items:center;row-gap:2px}
 /* Fader level as a background wash instead of a separate meter bar — the
@@ -266,7 +271,7 @@ header{
   content:'';position:absolute;z-index:0;inset:0;
   transform:scaleY(var(--live-level-frac,0));transform-origin:bottom;
   background:color-mix(in srgb,var(--t2) 14%,transparent);
-  transition:transform .06s linear,background-color .15s ease;
+  transition:background-color .15s ease;
 }
 .live-hud-item:not(.live-hud-roller):has(.live-hud-tech.has-issue)::before{
   background:color-mix(in srgb,var(--danger) 20%,transparent);
@@ -347,7 +352,7 @@ main{width:100%;}
    "shrink evenly toward center" (Frank 2026-08-18). Same duration/curve as
    the row collapse (var(--dur-stage)/var(--ease-out)) keeps both axes
    landing together. */
-.stage-collapse.is-collapsed>.stage{opacity:0;transform:scaleX(.85) scaleY(.94) translateY(-8px);transition:opacity .64s var(--ease-out),transform var(--dur-stage) var(--ease-out)}
+.stage-collapse.is-collapsed>.stage{opacity:0;transform:scaleX(.85) scaleY(.94) translateY(-8px);transition:opacity .32s var(--ease-out),transform var(--dur-stage) var(--ease-out)}
 @media(prefers-reduced-motion:reduce){
   /* .is-collapsed repeated at matching 2-class specificity so it can't beat
      this 1-class override and silently re-enable motion. */
@@ -369,7 +374,11 @@ main{width:100%;}
 .device-img{width:100%;display:block;border-radius:var(--r-lg);box-shadow:0 18px 44px rgba(0,0,0,.18),0 6px 16px rgba(0,0,0,.12);pointer-events:none;transition:box-shadow .6s ease}
 .fader-tracks{position:absolute;top:0;left:0;right:0;bottom:0}
 .fader-track{position:absolute;user-select:none}
-.fader-thumb{position:absolute;left:50%;top:0;transform:translate3d(-50%,0,0);pointer-events:none;transition:transform .06s linear;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+/* Live MIDI is already frame-coalesced in flushFaderFrame(). A CSS transform
+   transition here only makes the visual thumb chase each new CC value by
+   ~60ms, so leave the realtime path unanimated. The welcome handoff sets its
+   own temporary settle transition inline and remains unchanged. */
+.fader-thumb{position:absolute;left:50%;top:0;transform:translate3d(-50%,0,0);pointer-events:none;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .fader-thumb img{display:block;width:100%;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
 
 
@@ -407,7 +416,7 @@ main{width:100%;}
 .send-btn{
   background:var(--red);color:#fff;border:none;border-radius:var(--r-pill);
   font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;
-  width:166px;min-height:38px;padding:9px 16px;cursor:var(--cursor-fader),pointer;white-space:nowrap;
+  width:166px;min-height:38px;padding:9px 16px;cursor:pointer;white-space:nowrap;
   transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease,transform .18s ease;
   will-change:background-color,box-shadow;
   box-shadow:0 3px 12px rgba(228,87,69,.24);
@@ -429,7 +438,7 @@ main{width:100%;}
 .send-change-note{
   position:absolute;right:calc(100% + 10px);top:50%;width:max-content;max-width:150px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t2);
-  border:0;background:transparent;padding:3px 0;font-family:'Mulish',sans-serif;cursor:var(--cursor-fader),pointer;
+  border:0;background:transparent;padding:3px 0;font-family:'Mulish',sans-serif;cursor:pointer;
   font-size:11px;font-weight:600;opacity:0;visibility:hidden;filter:blur(3px);
   transform:translate(10px,-50%) scale(.975);transform-origin:right center;
   /* Matches .send-btn's own glow transition (--dur-glow/--ease-hero) — both
@@ -528,14 +537,14 @@ header,.live-hud{view-transition-name:none}
 /* Roller mode — compact segmented pill. Keyswitch uses a quieter glass state. */
 .roller-mode-row{
   --roller-index:0;
-  position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;
+  position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;
   margin:10px 0 12px;padding:3px;border:1px solid var(--border-s);border-radius:var(--r-pill);
   background:color-mix(in srgb,var(--bg-input) 88%,transparent);
   box-shadow:inset 0 1px 3px rgba(0,0,0,.10);
 }
 .roller-mode-row::before{
   content:'';position:absolute;z-index:0;left:3px;top:3px;bottom:3px;pointer-events:none;
-  width:calc((100% - 10px)/3);border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);
+  width:calc((100% - 12px)/4);border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);
   backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);
   transform:translateX(calc(var(--roller-index) * (100% + 2px)));
   box-shadow:var(--control-glass-shadow);
@@ -543,7 +552,7 @@ header,.live-hud{view-transition-name:none}
 }
 .roller-mode-btn{
   position:relative;z-index:1;min-width:0;padding:7px 10px;border:0;border-radius:var(--r-pill);touch-action:manipulation;
-  background:transparent;color:var(--t2);cursor:var(--cursor-fader),pointer;font:600 11px 'Mulish',sans-serif;
+  background:transparent;color:var(--t2);cursor:pointer;font:600 11px 'Mulish',sans-serif;
   line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   transition:color .15s ease,transform var(--dur-press) ease;
 }
@@ -557,7 +566,7 @@ html.dark .roller-mode-row::before{background:var(--control-glass-bg);backdrop-f
 .roller-mode-content.is-entering{animation:rollerContentIn .30s var(--ease-out)}
 .ks-basic-actions{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .roller-advanced{margin-top:2px;border-top:1px solid var(--border);padding-top:9px}
-.roller-advanced>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;cursor:var(--cursor-fader),pointer;color:var(--t2);font-size:11px;font-weight:600;padding:5px 2px}
+.roller-advanced>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;cursor:pointer;color:var(--t2);font-size:11px;font-weight:600;padding:5px 2px}
 .roller-advanced>summary::-webkit-details-marker{display:none}
 .roller-advanced>summary::after{content:'⌄';color:var(--t3);transition:transform .22s var(--ease-out)}
 .roller-advanced[open]>summary::after{transform:rotate(180deg)}
@@ -575,7 +584,7 @@ html.dark .roller-mode-row::before{background:var(--control-glass-bg);backdrop-f
 .stepper input{width:34px;height:24px;text-align:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow);font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--t1);padding:0;outline:none;-moz-appearance:textfield;font-weight:600;}
 .stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none}
 .stepper input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 20%,transparent),inset 0 1px 0 rgba(255,255,255,.78)}
-.step-btn{width:28px;height:32px;background:none;border:none;cursor:var(--cursor-fader),pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:14px;line-height:1;transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease;font-weight:400;font-family:'Mulish',sans-serif;}
+.step-btn{width:28px;height:32px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:14px;line-height:1;transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease;font-weight:400;font-family:'Mulish',sans-serif;}
 .stepper .step-btn{width:24px;height:24px;border-radius:var(--r-pill)}
 .step-btn:hover{background:rgba(127,127,135,.12);color:var(--t1);}
 /* Was --red — read as an error flash on plain +/- taps, which aren't an
@@ -594,7 +603,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-keyboard-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 88%,transparent);box-shadow:inset 0 1px 2px var(--border);scrollbar-width:thin;overscroll-behavior-x:contain}
 .ks-keyboard{--white-w:26px;position:relative;width:1950px;height:78px;user-select:none;touch-action:none}
 .ks-white-keys{display:flex;height:100%}
-.ks-key{appearance:none;padding:0;font-family:'IBM Plex Mono',monospace;cursor:var(--cursor-fader),pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,transform var(--dur-press) ease}
+.ks-key{appearance:none;padding:0;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,transform var(--dur-press) ease}
 .ks-key-white{position:relative;flex:0 0 var(--white-w);height:100%;border:0;border-right:1px solid var(--border-s);background:var(--piano-white);color:var(--piano-black);z-index:1}
 .ks-key-white:last-child{border-right:0}
 .ks-key-black{position:absolute;top:0;width:16px;height:48px;border:1px solid color-mix(in srgb,var(--piano-black) 78%,transparent);border-radius:0 0 4px 4px;background:var(--piano-black);color:var(--piano-white);z-index:3;box-shadow:0 2px 3px var(--border-s)}
@@ -606,7 +615,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-key-black.is-edge{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--red) 55%,var(--piano-white)),0 2px 3px var(--border-s)}
 .ks-key:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;z-index:5}
 .ks-key-label{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);font-size:10px;font-weight:600;white-space:nowrap;pointer-events:none}
-.ks-key-scroll-btn{width:28px;height:auto;min-height:78px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 86%,transparent);color:var(--t2);cursor:var(--cursor-fader),pointer;font-size:15px;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,transform var(--dur-press) ease}
+.ks-key-scroll-btn{width:28px;height:auto;min-height:78px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 86%,transparent);color:var(--t2);cursor:pointer;font-size:15px;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,transform var(--dur-press) ease}
 .ks-key-scroll-btn:hover{background:color-mix(in srgb,var(--bg-input) 68%,var(--glass-soft));color:var(--t1)}
 .ks-key-scroll-btn:active{transform:scale(.96)}
 .ks-key-scroll-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -635,7 +644,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 /* UACC */
 .uacc-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
 .uacc-tag{display:flex;align-items:center;gap:4px;background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);border:1px solid var(--control-glass-border);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:11px;color:var(--t1);box-shadow:var(--control-glass-shadow);transition:border-color var(--dur-fast) ease,background-color var(--dur-fast) ease,box-shadow var(--dur-fast) ease}
-.uacc-tag button{background:none;border:none;cursor:var(--cursor-fader),pointer;color:var(--t3);font-size:11px;padding:0 0 0 2px;line-height:1;transition:color .12s}
+.uacc-tag button{background:none;border:none;cursor:pointer;color:var(--t3);font-size:11px;padding:0 0 0 2px;line-height:1;transition:color .12s}
 .uacc-tag button:hover{color:var(--danger)}
 .uacc-tag .tag-order-btn{padding:0 1px;color:var(--t3);font-size:12px}
 .uacc-tag .tag-order-btn:hover{color:var(--t1)}
@@ -654,7 +663,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 }
 .uacc-preset-dropdown button{
   display:block;width:100%;text-align:left;
-  background:none;border:none;cursor:var(--cursor-fader),pointer;
+  background:none;border:none;cursor:pointer;
   font-family:'Mulish',sans-serif;font-size:12px;
   color:var(--t2);padding:8px;border-radius:var(--r-sm);
   transition:background .12s;
@@ -670,7 +679,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .hid-inline-notice{display:flex;align-items:center;gap:10px;margin:8px 0;padding:9px 10px;border:1px solid color-mix(in srgb,var(--amber) 34%,var(--border));border-radius:var(--r-sm);background:color-mix(in srgb,var(--amber) 7%,var(--glass-soft));color:var(--t2)}
 .hid-inline-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;font-size:11px;line-height:1.4}
 .hid-inline-copy strong{color:var(--t1);font-size:11px}
-.hid-inline-help{color:var(--t1);text-decoration:underline;text-underline-offset:2px;cursor:var(--cursor-fader),pointer;white-space:nowrap}
+.hid-inline-help{color:var(--t1);text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
 .hid-inline-action{flex-shrink:0;min-height:28px;padding:4px 10px;color:var(--t1);font:600 11px 'Mulish',sans-serif}
 @media(max-width:540px){.hid-inline-notice{align-items:flex-start;flex-wrap:wrap}.hid-inline-action{margin-left:auto}}
 
@@ -714,6 +723,16 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 }
 .bank-action-btn::before,.btn-remove-bank::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:auto}
 .bank-action-btn svg{position:relative;z-index:1;width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+/* On desktop the bank title is a short editable field, so its utility
+   actions belong to the card's far edge instead of reading as part of the
+   title. Keep the larger, easier-to-hit controls on compact/touch layouts. */
+@media (min-width:768px) and (hover:hover){
+  .bank-actions{margin-left:auto;gap:2px;opacity:.72;transition:opacity .14s ease}
+  .bank-block-name-top:hover .bank-actions,.bank-actions:focus-within{opacity:1}
+  .bank-action-btn,.btn-remove-bank{width:24px;height:24px}
+  .btn-remove-bank{font-size:14px}
+  .bank-action-btn svg{width:12px;height:12px}
+}
 
 /* PANEL NAME EDITABLE */
 .fader-side-cap{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
@@ -735,6 +754,11 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 /* Roller: matches onboarding's #zone-roller[data-onb-feature="roller"] exactly. */
 #zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 5px 2px rgba(52,199,89,.95),0 0 14px 7px rgba(52,199,89,.72),0 0 29px 14px rgba(52,199,89,.38);}
 #zone-macro{border-radius:0 999px 999px 0;clip-path:inset(-24px -24px -24px 0);}   /* půlkruh na hraně těla, oblouk ven; clip-path utne glow na ploché straně → čisté zalícování s hranou */
+/* The top render only shows the BUTTON as a tiny point on the device edge.
+   Keep that precise visual glow, but give its hover target a usable 28px
+   footprint; otherwise a normal mouse pass almost never reaches the 8px
+   geometry and the linked BUTTON section cannot light up. */
+#zone-macro::before{content:'';position:absolute;inset:-10px;pointer-events:auto;}
 /* Button: matches onboarding's #zone-macro[data-onb-feature="button"] exactly (near-solid fill, not just a soft wash). */
 #zone-macro.fader-linked{background:rgba(52,199,89,.96);outline-color:transparent;box-shadow:0 0 5px 3px rgba(52,199,89,.95),0 0 15px 9px rgba(52,199,89,.72),0 0 32px 17px rgba(52,199,89,.38);}
 
@@ -809,7 +833,20 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .info-row{display:flex;flex-direction:row;align-items:baseline;gap:8px;}
 .info-row.info-row-action{align-items:center;justify-content:flex-start;}
 .info-row.info-row-action .info-lbl{min-width:100px;}
-.hid-switch{display:inline-flex;align-items:center;cursor:var(--cursor-fader),pointer;position:relative}
+.response-select{position:relative;min-width:164px;}
+.response-select-trigger{width:100%;min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 10px 6px 12px;border-radius:11px;color:var(--t1);font:600 12px 'Mulish',sans-serif;text-align:left;}
+.response-select-trigger svg{width:14px;height:14px;color:var(--t3);transition:transform .18s var(--ease-out);flex:none;}
+.response-select.is-open .response-select-trigger{border-color:color-mix(in srgb,var(--green) 48%,var(--control-glass-border));box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 13%,transparent),var(--control-glass-shadow);}
+.response-select.is-open .response-select-trigger svg{transform:rotate(180deg);}
+.response-select-menu{display:grid;gap:3px;margin-top:6px;padding:5px;border:1px solid var(--control-glass-border);border-radius:13px;background:color-mix(in srgb,var(--bg) 83%,white);box-shadow:0 10px 24px rgba(32,32,40,.13),inset 0 1px 0 rgba(255,255,255,.58);}
+html.dark .response-select-menu{background:color-mix(in srgb,var(--bg) 90%,white);box-shadow:0 10px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);}
+.response-select-option{display:flex;flex-direction:column;gap:1px;width:100%;padding:7px 9px;border:0;border-radius:9px;background:transparent;color:var(--t1);font:600 12px 'Mulish',sans-serif;text-align:left;cursor:pointer;transition:background .14s ease,color .14s ease,transform var(--dur-press) ease;}
+.response-select-option small{font-size:10px;font-weight:500;line-height:1.25;color:var(--t3);}
+.response-select-option:hover,.response-select-option:focus-visible{background:color-mix(in srgb,var(--green) 12%,transparent);outline:none;}
+.response-select-option[aria-selected="true"]{background:var(--green);color:#fff;box-shadow:0 2px 7px color-mix(in srgb,var(--green) 30%,transparent);}
+.response-select-option[aria-selected="true"] small{color:rgba(255,255,255,.78);}
+.response-select-option:active{transform:scale(.98);}
+.hid-switch{display:inline-flex;align-items:center;cursor:pointer;position:relative}
 .hid-switch input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .hid-switch-track{position:relative;width:34px;height:20px;border-radius:var(--r-pill);border:1px solid var(--control-glass-border);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow);transition:background var(--dur-switch) var(--ease-out),border-color var(--dur-switch) var(--ease-out),box-shadow var(--dur-switch) var(--ease-out)}
 .hid-switch-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 2px 6px rgba(34,34,40,.22),inset 0 1px 0 rgba(255,255,255,.85);transition:transform var(--dur-switch) var(--ease-out)}
@@ -837,7 +874,7 @@ html.dark .info-val{color:var(--t1)}
 html.dark #device-settings-chevron{color:var(--t3)}
 
 /* BOTTOM */
-.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;cursor:var(--cursor-fader),pointer;border:1px solid;transition:color .13s ease,background-color .13s ease,border-color .13s ease,transform var(--dur-press) ease,box-shadow .13s ease;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;transition:color .13s ease,background-color .13s ease,border-color .13s ease,transform var(--dur-press) ease,box-shadow .13s ease;white-space:nowrap}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
 .btn-ghost{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow);color:var(--t2)}
@@ -849,7 +886,7 @@ html.dark #device-settings-chevron{color:var(--t3)}
 .backup-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .backup-actions .btn{padding:6px 10px;border-radius:var(--r-pill);font-size:11px}
 .midi-diagnostics{border:1px solid var(--border);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 58%,transparent);overflow:hidden}
-.midi-diagnostics>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;list-style:none;cursor:var(--cursor-fader),pointer;color:var(--t1)}
+.midi-diagnostics>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;list-style:none;cursor:pointer;color:var(--t1)}
 .midi-diagnostics>summary::-webkit-details-marker{display:none}
 .midi-diagnostics>summary::after{content:'⌄';color:var(--t3);font-size:11px;transition:transform .2s ease}
 .midi-diagnostics[open]>summary::after{transform:rotate(180deg)}
@@ -935,12 +972,12 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .toast.e .toast-icon{border-color:color-mix(in srgb,var(--danger) 30%,var(--glass-border));background:var(--danger-bg);color:var(--danger)}
 .toast-message{min-width:0;flex:1;color:var(--t2);overflow-wrap:anywhere}
 .toast.e .toast-message{color:color-mix(in srgb,var(--danger) 72%,var(--t1))}
-.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:var(--cursor-fader),pointer;font:600 11px 'Mulish',sans-serif;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
+.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 11px 'Mulish',sans-serif;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
 .tx:hover,.tx:focus-visible{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);opacity:1}.tx:active{transform:scale(.92)}
 .hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:8px;font:12px/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--chrome-glass-bg);backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);border:1px solid var(--chrome-float-border);box-shadow:var(--chrome-glass-shadow);opacity:0;pointer-events:none;transition:opacity .15s ease;}
 .hover-tip.show{opacity:1;}
 .hover-tip[hidden]{display:none;}
-.toast-action{min-height:26px;border:1px solid var(--control-glass-border);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);border-radius:var(--r-pill);padding:4px 9px;font:600 10px 'Mulish',sans-serif;cursor:var(--cursor-fader),pointer;box-shadow:var(--control-glass-shadow)}
+.toast-action{min-height:26px;border:1px solid var(--control-glass-border);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);border-radius:var(--r-pill);padding:4px 9px;font:600 10px 'Mulish',sans-serif;cursor:pointer;box-shadow:var(--control-glass-shadow)}
 @media(max-width:600px){#toasts{right:16px;bottom:calc(14px + env(safe-area-inset-bottom));left:16px;width:auto;align-items:center}.toast{max-width:min(100%,340px);transform-origin:center bottom}}
 @media(prefers-reduced-motion:reduce){.toast{animation:none;transition:none}.toast.is-leaving{display:none}}
 .sync-banner{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:250;   /* pod single-row header, nad stage (z-40) i toasty */
@@ -951,7 +988,7 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .sync-banner[hidden]{display:none}   /* class display:flex jinak přebije UA pravidlo pro [hidden] */
 .nvm-degraded-notice[hidden]{display:none}   /* stejný gotcha — .hid-inline-notice je taky display:flex */
 .sync-btn{border:1px solid var(--border-s);background:var(--bg-input);
-  padding:5px 12px;font-size:12px;font-weight:700;cursor:var(--cursor-fader),pointer;white-space:nowrap;flex-shrink:0}
+  padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .sync-btn-overwrite{border-color:color-mix(in srgb,var(--red) 42%,var(--border-s));color:var(--red)}
 /* Touch: enlarge tap targets to >=44px without bloating desktop */
 @media(pointer:coarse){
@@ -1250,7 +1287,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   display:inline-block;margin:0;
   background:var(--red);color:#fff;border:none;border-radius:var(--r-pill);
   font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;letter-spacing:.01em;
-  min-width:166px;padding:11px 36px;cursor:var(--cursor-fader),pointer;box-shadow:0 4px 16px rgba(228,87,69,.30);
+  min-width:166px;padding:11px 36px;cursor:pointer;box-shadow:0 4px 16px rgba(228,87,69,.30);
   /* Space is reserved from the start (no display:none) and the button fades in via .show,
      so surfacing it after the timeout never shifts the text below (Frank 2026-07-09). */
   opacity:0;pointer-events:none;
@@ -1267,7 +1304,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:3;
   width:max-content;transform:translateX(-50%);
   font-size:12px;color:var(--t2);background:none;border:none;
-  cursor:var(--cursor-fader),pointer;font-family:'Mulish',sans-serif;padding:8px 16px;
+  cursor:pointer;font-family:'Mulish',sans-serif;padding:8px 16px;
   -webkit-tap-highlight-color:transparent;
 }
 .welcome-skip.welcome-skip-floating{
@@ -1286,7 +1323,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .onb-detail-pill{display:inline-flex;align-items:center;min-height:27px;padding:0 10px;border:1px solid var(--border-s);border-radius:var(--r-pill);background:color-mix(in srgb,var(--glass-card) 82%,transparent);color:var(--t2);font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,.04)}
 .onb-detail-pill strong{margin-right:4px;color:var(--t1);font-weight:700}
 .onb-nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:7px;margin:0 0 8px;}
-.onb-nav-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font:600 11px/1 'Mulish',sans-serif;cursor:var(--cursor-fader),pointer;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:color var(--dur-fast) ease,border-color var(--dur-fast) ease,background var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
+.onb-nav-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font:600 11px/1 'Mulish',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:color var(--dur-fast) ease,border-color var(--dur-fast) ease,background var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
 .onb-nav-btn:hover:not(:disabled){color:var(--t1);border-color:var(--t3);background:var(--bg)}
 .onb-nav-btn:active:not(:disabled){transform:scale(.96)}
 .onb-nav-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -1309,7 +1346,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   transition:opacity var(--dur-glow) var(--ease-hero),visibility 0s linear var(--dur-glow),color var(--dur-fast) ease,border-color var(--dur-fast) ease,background var(--dur-fast) ease,transform var(--dur-press) ease;
 }
 .onb-dots{display:flex;gap:4px;justify-content:center;margin:0;}
-.onb-dot{display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;background:transparent;border-radius:var(--r-pill);cursor:var(--cursor-fader),pointer}
+.onb-dot{display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;background:transparent;border-radius:var(--r-pill);cursor:pointer}
 .onb-dot::before{content:'';width:6px;height:6px;border-radius:var(--r-pill);background:var(--border-s);transition:width var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);}
 .onb-dot.on::before{width:14px;background:var(--red);}
 .onb-dot:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
@@ -1765,7 +1802,7 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 .icon-btn{
   display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:8px;border-radius:var(--r);border:1px solid var(--border);
-  background:var(--bg-input);cursor:var(--cursor-fader),pointer;transition:all .13s;
+  background:var(--bg-input);cursor:pointer;transition:all .13s;
   min-width:58px;
 }
 .icon-btn:hover{border-color:var(--border-s);background:var(--bg)}
@@ -1829,11 +1866,11 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   transition:background .2s, box-shadow .2s;
 }
 .section-head.section-toggle{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--border);font-family:'Mulish',sans-serif;color:inherit}
-.section-head.section-toggle{cursor:var(--cursor-fader),pointer}
+.section-head.section-toggle{cursor:pointer}
 .section-toggle-title{display:flex;flex-direction:column;gap:3px;min-width:0}
 .section-toggle-meta{margin-left:auto;display:flex;align-items:center;gap:12px;min-width:0}
 .section-head-editable .section-toggle-title{flex:1}
-.section-toggle-action{display:flex;align-items:center;gap:12px;min-width:0;margin-left:auto;padding:5px 0 5px 12px;border:0;background:transparent;color:inherit;cursor:var(--cursor-fader),pointer;font-family:'Mulish',sans-serif}
+.section-toggle-action{display:flex;align-items:center;gap:12px;min-width:0;margin-left:auto;padding:5px 0 5px 12px;border:0;background:transparent;color:inherit;cursor:pointer;font-family:'Mulish',sans-serif}
 .section-toggle-action:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
 /* Šířka podle obsahu, ne pevných 190 px: prázdné místo napravo od názvu
    patří hlavičce sekce (= rozbalí ji), ne inputu (Frank, HW test 2026-08-08).
@@ -1949,7 +1986,7 @@ button:focus-visible{outline-offset:3px;}
   border:1px solid transparent;
   background:transparent;
   box-shadow:none;
-  cursor:var(--cursor-fader),pointer;
+  cursor:pointer;
   font-family:'Mulish',sans-serif;
   font-size:12px;font-weight:600;
   color:var(--t3);
@@ -1993,7 +2030,9 @@ button:focus-visible{outline-offset:3px;}
 }
 .bank-block-tab.drag-before::before{left:-1px}
 .bank-block-tab.drag-after::after{right:-1px}
-/* Parent-scoped so the selected edit bank keeps its quiet, shadow-free glass pill. */
+/* The selected edit bank is the primary local-working context, so give its
+   glass pill a little more depth than an inactive chip. Device-live context
+   deliberately lives in the floating HUD, not in this tab strip. */
 .bank-block-tabs .bank-block-tab.active{
   color:var(--t1);
   font-weight:600;
@@ -2002,7 +2041,7 @@ button:focus-visible{outline-offset:3px;}
   -webkit-backdrop-filter:var(--control-glass-filter);
   border-color:var(--control-glass-border);
   border-radius:var(--r-pill);
-  box-shadow:none;
+  box-shadow:var(--control-glass-shadow);
 }
 @media(max-width:600px){
   .bank-block-tab{padding:2px 8px}
@@ -2010,31 +2049,13 @@ button:focus-visible{outline-offset:3px;}
   .bank-block-tab.active .bank-tab-name{max-width:68px;opacity:1;margin-left:4px}
   .bank-block-tab-add{padding:4px 7px}
 }
-/* Replaces the old small neutral controller-icon glyph — barely noticed
-   next to the bank name (Frank 2026-08-18: "chtěl bych tam přidat něco
-   víc"). A pulsing dot reads at a glance and, since it's absolutely
-   positioned in the corner rather than inline, stays visually distinct
-   from .active (selected-for-editing) even when both states land on the
-   same tab, or on two different tabs at once — confirmed via visual
-   brainstorm against that exact two-state case. Real child <span>, not a
-   ::before/::after pseudo-element, so it can't collide with the tab's own
-   drag-indicator pseudo-elements (.drag-before::before/.drag-after::after,
-   below). */
-.bank-tab-live-dot{
-  position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;
-  background:var(--green);box-shadow:0 0 0 2px rgba(52,199,89,.22),0 0 6px 1px rgba(52,199,89,.55);
-  animation:bank-live-pulse 1.8s ease-in-out infinite;
-}
-@keyframes bank-live-pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@media(prefers-reduced-motion:reduce){.bank-tab-live-dot{animation:none}}
-.bank-block-tab.is-live{box-shadow:none}
 .bank-block-tab-add{
   flex:0 0 auto;
   padding:4px 9px;
   border-radius:var(--r-sm);
   border:none;
   background:transparent;
-  cursor:var(--cursor-fader),pointer;
+  cursor:pointer;
   font-size:16px;
   color:var(--t3);
   transition:all .14s;
@@ -2080,7 +2101,7 @@ button:focus-visible{outline-offset:3px;}
 .quick-setup-group-label{padding:4px 8px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
 .quick-setup-option{
   width:100%;display:flex;align-items:center;gap:8px;padding:8px;border:0;border-radius:var(--r-sm);
-  background:transparent;color:var(--t1);font:600 11px 'Mulish',sans-serif;text-align:left;cursor:var(--cursor-fader),pointer
+  background:transparent;color:var(--t1);font:600 11px 'Mulish',sans-serif;text-align:left;cursor:pointer
 }
 .quick-setup-option:hover,.quick-setup-option:focus-visible{background:var(--bg-input)}
 .quick-setup-option-icon{width:20px;text-align:center;font-size:14px;flex-shrink:0}
@@ -2097,13 +2118,13 @@ button:focus-visible{outline-offset:3px;}
 .custom-preset-name{width:100%;border:1px solid var(--border-s);border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:8px 11px;font:13px 'Mulish',sans-serif;outline:none}
 .custom-preset-name:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
 .custom-preset-scopes{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
-.custom-preset-scope{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--t2);line-height:1.35;cursor:var(--cursor-fader),pointer}
+.custom-preset-scope{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--t2);line-height:1.35;cursor:pointer}
 .custom-preset-scope input{margin-top:2px;accent-color:var(--red)}
 .custom-preset-list{display:grid;gap:6px;max-height:190px;overflow:auto}
 .custom-preset-empty{font-size:12px;color:var(--t3);padding:10px 0}
 .custom-preset-row{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 72%,transparent)}
 .custom-preset-row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--t1)}
-.custom-preset-row button{border:0;background:transparent;color:var(--t2);font:11px 'Mulish',sans-serif;cursor:var(--cursor-fader),pointer;padding:3px 6px;border-radius:var(--r-sm)}
+.custom-preset-row button{border:0;background:transparent;color:var(--t2);font:11px 'Mulish',sans-serif;cursor:pointer;padding:3px 6px;border-radius:var(--r-sm)}
 .custom-preset-row button:hover{background:var(--bg-input);color:var(--t1)}
 .custom-preset-row .custom-preset-delete:hover{color:var(--danger)}
 .custom-preset-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 20px 18px;border-top:1px solid var(--border)}
@@ -2134,7 +2155,7 @@ button:focus-visible{outline-offset:3px;}
   display:flex;align-items:center;justify-content:space-between;
   width:100%;padding:12px 16px;
   background:none;border:none;
-  cursor:var(--cursor-fader),pointer;font-family:'Mulish',sans-serif;
+  cursor:pointer;font-family:'Mulish',sans-serif;
   font-size:13px;font-weight:600;color:var(--t1);letter-spacing:-.01em;
   -webkit-tap-highlight-color:transparent;
   text-align:left;
@@ -2217,7 +2238,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 <div class="send-sticky-row" id="send-sticky-row" hidden><div class="send-sticky-row-inner" id="send-sticky-row-inner"></div></div>
 </div>
 <div class="live-hud" id="live-strip" data-state="DISCONNECTED" data-side="left" role="group" tabindex="0" aria-label="Live device values. Drag left or right to reposition." aria-hidden="true">
-  <div class="live-hud-bank" id="live-hud-bank">B1 · Bank 1</div>
+  <div class="live-hud-bank" id="live-hud-bank" role="img" aria-label="Active device bank"></div>
   <div class="live-hud-inner">
     <div class="live-hud-item" id="live-f1-item">
       <span class="live-hud-label"><span class="live-hud-label-long" id="live-f1-label-long">L</span><span class="live-hud-label-short" id="live-f1-label-short">L</span></span>
@@ -2261,7 +2282,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
           <div class="fader-thumb" id="thumb-r"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAE0AAAB0CAYAAADAfL/VAAAEq2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS41LjAiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczpleGlmPSJodHRwOi8vbnMuYWRvYmUuY29tL2V4aWYvMS4wLyIKICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgdGlmZjpJbWFnZUxlbmd0aD0iMTE2IgogICB0aWZmOkltYWdlV2lkdGg9Ijc3IgogICB0aWZmOlJlc29sdXRpb25Vbml0PSIyIgogICB0aWZmOlhSZXNvbHV0aW9uPSI3Mi8xIgogICB0aWZmOllSZXNvbHV0aW9uPSI3Mi8xIgogICBleGlmOlBpeGVsWERpbWVuc2lvbj0iNzciCiAgIGV4aWY6UGl4ZWxZRGltZW5zaW9uPSIxMTYiCiAgIGV4aWY6Q29sb3JTcGFjZT0iMSIKICAgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIKICAgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNS0xMS0wOVQyMDoxMzozMiswMTowMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNS0xMS0wOVQyMDoxMzozMiswMTowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InByb2R1Y2VkIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZmZpbml0eSAzLjAuMSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNS0xMS0wOVQyMDoxMzozMiswMTowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgo8P3hwYWNrZXQgZW5kPSJyIj8+PQNV2QAAAYJpQ0NQc1JHQiBJRUM2MTk2Ni0yLjEAACiRdZG/S0JRFMc/atEvw6iGhgaJalKxAqmlQSkLqsEMslr0+StQe7xnhLQGrUJB1NKvof6CWoPmICiKIJprLWqpeJ2nghF5Lueez/3eew73ngvWcEbJ6nVeyObyWijod85HFpwNL7TQRDs+PFFFV6dnx8PUtI87LGa8cZu1ap/711riCV0BS6PwqKJqeeEJ4am1vGrytnCnko7GhU+FXZpcUPjW1GNlfjY5VeYvk7VwKADWNmFn6hfHfrGS1rLC8nJ6s5lVpXIf8yX2RG5uVmKPeDc6IYL4cTLJGAHpyQAjMvtwM4hHVtTI95byZ1iRXEVmlQIay6RIk8cl6qpUT0hMip6QkaFg9v9vX/Xk0GC5ut0P9U+G8dYHDVvwXTSMz0PD+D4C2yNc5Kr5Kwcw/C56sar17oNjA84uq1psB843oetBjWrRkmQTtyaT8HoCrRHouIbmxXLPKvsc30N4Xb7qCnb3oF/OO5Z+AMo4aBNEp9nrAAAACXBIWXMAAAsTAAALEwEAmpwYAAAgAElEQVR4nO192a8lyZnX74uIzLPdtfbbu9unPIy77RnZbjwaGI0GpJEuCMETYnjgP+iWQEj8E0hI1S+8gBgBmheQEKApGYwHhMAw9rTdnvbW93jrruraupZbdzvnZEZ8PMT2RWbe6jYMb5NVeU8ukZERv/j2WBL48+2X3uj/9sG7d+/uP3n0CHXbQgHzSqnFsm3mIFpMTYXTqpqr5RJTRYslKVSjer5eNwtrzNw4twB4bkktDDNIqfn68HBR7+7OibBYPnoENZ3N6/EYT09OFtsbG2ifPJnrne1Fc3I6r2fTBYC5Xa8XqqoBYN6eni7MdDoHYdGcnMCMRnNVj7Bsm8VIG4xms/n67HRhlJ5PtrYWbO18+8KFt/+/gnb/3r25ffTw+vsHB/uztt0/+m9/NDdnp+CHD1ARYWtjAwDj5PQMAIMZmM5mOD45KV7iwq8igEBgImgweO8FNGdnqA4fw4aCrTa3MTo6BFHOgWPBmYv8Lr/wIgjAvVsfpmt7L7yIu7dvpWcUKSilsPflN7BaLqG+/MaiGY0Prn7+8zenGxuL8WRy888MtEd37rz54OD9/Re+9c39n/zxN9Fah8ZawFowO2gQFPlCgXzFYsYcdg0CE+AYIJIv9kcUQQxAUNhVzI8IzP6eEiVnkE9P/kVM3ZwDsEQ+P20wqgxaEBoGWq3xmS98EUdv/AZ2Xnv95oWLF//a/xNoh48fzz/69rdu/PS/fH3/2k9+BNgWylooawF2HhBmOHgUVChw/MvxhAEd7nGsYLwBXxlNBAoAgQNIYCj43whapBoWOTgIgAIFxvtEgA35ETMqrUFEWBPBkYIlBTcawYwnqLZ3cOVv/97Njde/8NZ0Ol380qDdvnVr/8F33nnz6F/9i33drOHWS1TMGBOgwb6qzqJ1Do1jEIWKi8KrCBwydWWYcuUBQFOmplgy3aMaAnVK7BCot5Nfgo6FSACjBsBgrJnQagNWCqO6xqiqUc9mqJTCnWsvYP73/+FbW7u7gzLPDF38xS9+sf/kO+/cePjP/ul87CxgW2jnoJlBYChkecLhGoWCq1BgFa8TwSORoVJg2JA2sisSFYWTgDLDUwgoUi71WtqXwVMkQH0Ew7sMGBrAmh2sA1rnoJSGIqAmQB1Z1FtbeO7+R/jwO+/cOH36dDHd2urJuUHQVu9+983//gf/ev66bWFsi9ZaOOdgiGGIYCJgvsRApDT2gBI8pemQH7Fva8eM1jm0gZyeti2mWuOwacAAWhDWzgXwCQ6MmghWlK1WKlRSgQgwRKiUgtK+KooIUAocQQ4IKiIYCuLEcRIDcBbKEqglmFqBTo4xHU8w+bd/gNsP7t9YL5c36vG4oLgeaN/+xjdu/Od/8o/3X0MLzc7LLmeTrNDkH7IBBNt6StwwCidNg+N1k1rfyxqGCs8qCkIcgGWGIsJRE6iQFCqlUGnln1IKRAocriulAKU8C5OCI4IiglMKVhGatgWY/XttC2t9uQyASiscMeFRa7FVVRhpBa00mNhToHOgtoFlBo/GIHaYKMLmf/36/Pgrb1xfLs/m4/EkybgCtNsffrh/+Pv//M0vjTS4caCmBblAOY7REEJhgcY53Ds9wxgMy4yjZYMZAWME2aY8GzlQ0qoEAinlqYEIIOXZjTxoUPHc/7JIw+ncUxATeYZX2mc18c1BAUyQ8mLEOShnsbVeY3r4CD8/eoJDx/i13R2QrlApQhUbkxlsW9jVEiekMNnYBP27f/Pm2e/9PQB4axC0X7z77v7yB++hahrU7EBJXnnDoWWgtS0+WDe4duEiXn7pVUzWKzy4dwdYnsBZ60FRGtoYMAPKGChtoLWCIgWjvLBXEaDA6ooIjgGmSImemq2vCzhIrKgovPnBINsCIo+ocUEEpRRIKRAIrhqh2djBFzShtg1+8PQQx1B4bXcHRmto8uKAnYUKlNeeHGP1/o/QfudP5uey54iwf3x6ghERlPNaMql2Zljn8Mg22N3aweSFl/H46SFWT59iUlVwZhsAozYVjFKojQEzB6pTiS2ZY+X9rwvCJaZ1QRIZClovpgsGs28+TqA5DqwORhOU0SqlC0qJCNoYwBg8HG2iWp/hy1sa75+c4fHpCTYUQesxAF9OZga3LVQ9wnQ6xcn3vrt/dnx8Y7Kx8VYB2p2Dgxvf/Uf/YK6VwqptYGybhDDBs+PZ8gy7sw0c7VzC6u4dXGALowAzHmNU1TBVBa21py4QnLNwTQPXNnBtC9c2HgTnUnOQIB3ZQE7uzolzVwBvnQMHzckgsNaebbX2nKI0SGtQ4wBSoKpCXWk8bBpctozTtsHx2SkuKQUeTQK1Bo8l5v/RLTy+fbtPaSdti5YZpAhrazFRymsW8ud3j45wdTLGShtsP/kYu+MxRoowriYYTSaYbu8mq97ZFrZpwKsVAIazFs62cC4olmRe5L8cLJOoQFjcjdTl2HnNxx5EZnmNPTWuucgjyketDarpDJpqtNpgOjaY1RXU0ydo2zXG7RL3HLAzm3nXjrynwW0LrQ22v/+9N5v1+kZV14sE2sF/+hrqusZqvYYBoQ1yRYHxk6dHmIBxSRNWYGzWNcZaYTaZYvvSFdB4nAUNM5QLrRsMMLYOcM5TGBOIInVJl4sA4mSXZYs/OlfZtZLegL8e6Cw8l8oCwHELMGDbBu16BaUUJjsXcDqZgk2NS9s7OD56gkfrFs+PVljxBC7IQQ6av1KEs7MlZtEKiO/Ye+GF+f3VGisANlBXC8bxagXbrPDyyOCQDLYnE2xqjelkip2re6Dp1Gs9uWsDMhV0PYKuR1BVlUEkytWnroVPwfWhwknvWrOFP8HlPXCm0UjS8Yplh7VtcfzoY5w9PcQKwCMzwsbGFi7UNVbW4dHJiWdRAiwILREUAGstmPl6ARof/Ni3DHlHtoHXZhuuxbZWWOkKW9MppkphNJ5gd+95YDxOJkEEIe3aU5vSGkobkNLezupVPIKXAcu3onVPEc7wKokiiyMWWHECKzF4YOmWHY6PDnFy9BQNCMf1BOvxDGvnsGVXsKtlKqG3fy2Ofvh92NZr6gTa8cVL0Moblk4ptAQwO5y0LV7bmMJqg02tMa4Mdi9fBuq6DFekXwmcgjIVVF1BVVUAT5VpChKSvmoE0hu0pEhQagTX75LYEoNmPvX/pUZlRuMsTp4+Rrte4QwKdjJDPZnhpLWoVmfeJtQmBSHCNk+g3btzZw7m69Y5L/yI0ELh6fEx7q4afOyAiakwVoTJxhb0bCNXuMseBQgKymhoU0FXFbQxnk2FjRaprAtePo5/KAPZTY8MyCcVSW6Nczh8/BDkLFptYLZ2AaXw5PQEihm6qkJ+hOn8OgDcTKBd3dtbALgZWyE6vQ+bBheNwhEDtSIorbF98ZKXW0Vxn7GRSiyqjIFSOrFi4XynsJIk3cj26MvDbqREyK9P2mIax4ymbcC2hTEG1fYurly8jL1KYwL2rhx7bW29sttPoIVtngQzASMw1m2LlfO0vVNVGI0nwGjUZytZEllqIkCR9wiqCsrUHjylQeQ1FII7RBEwKoirACxRWbrXL0cCvXMrFS9o+HjeWIvjk2OcNQ2gNcz2rq+ja1LAAQBW730vHSfQNh89XMTcmQG3XuO5SmPpHKahnFs7uwMF7RSyVw8PXFQKZHTyMSM6XPx2MxFU1aO2HLQshX5/6xUvPODAWK5WYBvM+J0LwHQTWK+KgGY4XhSgHV+6kv06AOwcquB0GwIqraG1LkFL8RWUTiF3rkV5pL1fqpQG6eAXCgFPEJSEeI5EbXFX4rmcfqC9Snx6GtUbzIzW2QAaAFMB9RhwrqDI6V/5XWitDwrQVnU999xERQTWJ4quRRT+EZgBwFJJO9dC9IJ0AIxKLdqVWemwYN4S4ILyqIyfFe06eJI357yrxqGcUCqA5oKMB9QHP1+MJpOS0vY++1lRQa/IRbkFWXfePHQu93QNCTzIikdQ+pyXIUiPCA0aYmtSmw5p1SK7br7x7ek59mDFMgZqAwj2hRfn69VqDnSiHPkFBBuONHl3igfwKQ0kPn8vDIJcedlzJPMiCFeJAIqYk6+kUiqEl3SKxBJlqoi5SHbsvkMqhkRNKosfthZggJQvDT98uKhHo5LS6rbNeRKCqu1ynBMAiVefA04qnqAyEpRWmhzI1CbOU3k6dl2WaaV8k5Qj6Djn2T0MWpiRO2BAHhaduI2w8eKLqa8ggba29maEgUG+N4mi1RBiYloLFAcoyoU9hMnBDnDRfZHAqbB35FJPonu2Zak9k8yjlIcS+ZHIgsSJBLCrm53zXZLkImy+Pr46PjJtR6P9HntOr+2l3iXLDo5diHL4F3GIg32iDOvtLtlGuQaBUlh1IhoMcK5YirmBvTnCEFSkvNvLGsSACu8h8j1jodBJ3JxnimQaYDhnQ2jel8Cxg4OGI2D5+PHNC132BIDXn38u4gwKNozvhlM5+llQlnsmWBKwKF8QqLbrf0rNV4iJgibiIaUfFTpdlNJCOXSA6RxLIRI5CxT6XJ3NLw5iyDnG+KWXU8g7g0a0+MGtj1JawJMnA5kr4ms+kbo4JONiL6iUFMqOFcGCUm0LkEqfVICuKPRU5Ty7pkcXvJQNvKwmUCYEohD780FZCvn3QGNm/IXn9jzuREmj6Cg7YiGiwD9XQ8r7In1R+Y65MOhl9Cs9WGWikJ/KFBwph6LhNAyYF/6RAwClVSeB71wCA2xM6sLL2nNzc87NOoDlK90GIcgIvUfxTQkMCWIHt3QgBbf0HbMCiA2SNGSByzDFSBZLPiwp3ycQ2RRCMQxRa8rMd2KzdSKNZDOE0H0HNGNbTL/8F8EMWBflUCwUhA0kKKsArESNBXv687D3QEEGEfB2WcJLmA7nVToZxp6NlKS4wOIyn+7GABw7EHnBHxNyrFOo9+jylfRM0p56OsXJO98uDEQdIZBsJKkoHsvfLktCyLOujBusim9lCgWn8H5/EmtDGRNwoCjlNadir5XJG7wdyziBIEuoSHmzIoFEqTcqDm84G6I0e3Z2kza3FopKytLke6wLV+M8wGRRuMQuH3K+FqmwA1lXCZD8jaUQ+aYHhT2ptPasmpSNeDbCzZHSghhxLmjPbPIoeCN3XJmDHmhmMr0++9XPzwnemFXwxm2xSZKVCiABJ7RmZFNBadHILe92sg9F7l6HuBdZOp1LmVgYz3kXcqBslFA+G+RahAvM0KFlHANW5eia1J4H7NwiZm+IfIcvx+iGEI4FO3L/endLuGZg828+7ILUNzUKwy1vEQTpninqhZ4KzMRzHAGP1BbuWfb9p+FKfwAMATg7eH8e9Z1lhoUfKiCN0JIVOwAmBIaokRMFljLtkzZK70oiLdc4yywv/IIGDfgwg1gDDBAxYpQzigkSnoJvx+j++QuGGS0Rplf3oGzbN24tM8afedVTGnk+j8WNA0t6LNkR+FlWyT3EqpwDs/gtFIIcpxExydo0nkv2zT8dthNUF41dr01VqUWFVxHryYnkOeWvGGFkAPp2Wkg6dwhBudCkigCtOsZtAVYELwOXq8fp3pB3kCkPZX45t952Xh+ABFDG3JQqgwM5iBlxy/xqrUVu/BjhYGy//ApoNEqvSqApT/sLgvcGPIsijULMbjXQISVxLVeVwjUPUPBRXX4mAcI593jaaRJkxVBSUwlgPuaISMfNSi6WNKwp58PRjQp1MszQBBz//GfgIfZ0zDBXrgYAgYpQulJArnxRO+4BlsCKQHSojCWVZdwEUFT89imOEk4kARtIh+QZRNNJBbgFYETZThOgqZB36xxID7hRV65dW1Sz2UEcHioHEKhz2VNQWSHzJJiZwrgIE3GBVsI/wDRMcUPnVFIpd6935Jtw52Tg0jFy2UL5rAu5/NbvAKF3vQANAJa3b3mZFMiSAUHOGAbkGTtLBcA5jJSJMgLWFfHDdoVMwV0Kk2wnZFovDNVNI/3hJEq8Bo2R253bHwIYUAT3796d89b2dT9ymoo5AEXrSlOhQ1lRA2XWEwat+IVQAF3zdoi6Mmy5NOcxJEJkI1FqiIJkKhMGr1AQLBox2WqMRDAUhigUoF25dm0B8EGsuGxXCWBPAQjACrZlpLkFBStmfNL1bG4UejdDVYi4YTk32MCpbIHpBygtHitFuQ6hHiqVm1Dp7BF0h8QvCASdCudjazqEhXywrhNzQlYY+dcXX7pQUubloU8p1aAM615L94JhJdNGWyvaYLJ3vEhT+NH+KpFvYBcTB2WglIJmxslPDrAzm/U7VgDg4u6FuQPQCEqzISOX6t3XghKwQpsKsAoPICURHS5dShQVpYHjUp6Vzwx5G1E+D3cyUxrL6zpc5OApa3l6mhRBQWn37t4JEyS8Co6qnSiOru7LExZHHIBioSl7xmxxrU9dXejKe9S7UiQq/axCvRAxOHSiZvvOpycARunQseSSnQr2vmf91d9cWJFvQWnX9vYWDG+jpZltlF+cqEYyVVdjSsqSdk93P8+o6PDTuQK/i2WoZDcrSZmewLrmRpaShDAFyLlUDgvA/u//UeRbUNqdj+5AU4itsw9362AESlZMZSwqmd2hmDaNuu5SWRTMnQr6XqEsfKU2jV14Q1TZ24MYkWKhNIIpp5bR4Sh+wjiOSCSqqucyIFdQ2vZzz80ji0VZxsjOe6SQondJFo4ZHIassxxAIu00yZPP4LQ+W8p71LkrzhMndAgvNQQJEDPlxUQc+nzj1gJQr31hIeVkqT2dWxD5MLcF0HKcHxm9gX51cutn4V/KMBeAzHIMyNTW3aTUKikvJqBy6PuAHMPQWZRfgeK6b6cYP3QMcjYoizCPS+sibUFpU2DuAlsaFZUAJVCkVS8Fez4PFOWENxABc5JFO5UqFes51ab+tU4IvKtfMznJLIKxChHxSAYx+xmHUQ5TgJfdHMD1mG1Bacy8kIVSHT7ud4YEODuyLGtO52NpUpNGvhwktK6sY5E0Nd3AE1Fj9BshlzeohRiMFEHJmCRylJKUy8Dq5z9fbJ5npz1dLudxHmdN2exI7OJcqnhygzpyrgAuOepCiJWG2bmk1RV5+Tz6nn07LV2JYZ90DEGVlFhUOghR5DWBQ6KtxUQw88/h7ORk2GFfHR2BGGlekAoZe2WADIgAo7dLthyI0nqxF92uEq0h/TDEnnLr9mmm30Jblnml39RAmc1j+aN8bgA0Bz8utGc5dXFrKxiyshpR2xA4dG95JLPITkC4DFBJMjxU0gCQcNKHdUNvk5XPPVz5emJGypo1eS7i3QkwiosMUNL2qZ6+7ouJWD2hoDQ1Gi0IOWJbhYdcrJy1cG0LthbsbAbJOWHEuj5LSpQGqz8E2ACCXTZMqbqSbmgkmrzdvZ6g9WM3XDY5HAPV/HPzc90ot1r56YsA2jA5Pj5O7OcIgVzowVbFyxkMuDAfM04vdK40bBGJrmTFIbaUxkdP7FEeoJMrHYELLhOiwdpZRSF5JAWzBJbUIAQLIIDbgqFPjlGdR2nMbk4SdZK4sJ/o2jRh4msLZ9tMcdbBxWNBhbKQMZ/e1iO46I7103n2GuZjKcZIXJTD5iMYnVRg8kMR4mTcmKYCYGcbi9Pj4/2YtqC0S9MpAD8myzJgBJkzA65twBxm6yqbI6OhFQu5BmBI+A8J477wzy6UBLN4lrvPDMtFYWwkwKQ7GJOnSbGxsf1aOzFcNFdK9YclAMD9o+MFAdCkwijIXCCCByROqy522wbK84Zh3LvhI1nBgfoNsOcwCz+brWVeXcufBo78FkNCmh0Uu0RpTMDq/R9hfD578hzsM4wrs6SOYvjRgR6gPCfdBjb1rGlLDdply8Suz6htp9qykj2zIu7USTiYR/QE8p1sbzIa56AQep5SPj5ggYcf4/T4eFgRXATjZ+Qt4kjShjKlJRkW/D848kOb5EIj8OzF4cWFtZGqkRnmPGobuj50r8S+z9bpTuDFglXDw0R+ZRkAeSGCcN8yQ80/t1BDw0cBoJrOwhBwz+OSMCL/R+PPT+YPE/rTbjNbgnuAlWXlATBl2qH+gvOPh7Z4/xzDI20EoLEOcQ0S4qht/RJBT9751vnrctxZLhcc3Ke4opT8m4RkgJFA2Q4EwArwSwUImIsS94v/aQERAZLB+93nfllwlcod4hzLTX5m4Pb2tnfiw1bKNGvnsXMhspqCFOQy1FMOavERz07UI/JD2rkj0s4XbOdSR3YlUxQmeZrPIKnkunXg4iBrrbVerLC3SeMWlxpDmCALdChN67jmix+fZqMGjf6nXzGgWxoADGK/fIQnvWhIUm415BBTMbAWEbxPYqLhTXhlxXH3fjwpfeVwjRBGETBKF4pQEcFsb8O27bD2vDIZh7r6jjpCXAlFFKbjKvWd8giMoCLuimc+h8DOk3JdKMRGw3cKEM99V06gqWOeBG6xDKwuXIIRncVlb9TZMs11jKtGSSXg8+pKCyVMCSfKEo1ezjWjTvW7qkwIrXPlEGdAShnHgwBFERDDWOd1QZIAKjUweW2qf7ZAux4YqHzn9u35lcn4elC8aUIZhw5PFyMAonVSsdjLuPRScU9SmZQrqWiSqGLwRIDb358l1iWvnnMvlH2o35YAtOxySg5c+iuvwdQD49NAhPtnZwdxwoJTyq8YGiseFp+TEdhzW062agc4aYcUDBEqSr8EZ56/CZiHyhjFhzDCM6WJbMgb9JPlKdzQ+DQwo9HVdYbXGJZ9BzGCAxumluVCBTIZ7gh25fUO6wFlf9InqwApG2Pd+kHL836LfHoNnMVBjMioABjg5de9d78Du1r3FcHe888vmgf3fYXiSBogVxp+XmRJabEo/lqvf5NlLYWSQKp5p9rDXNUFpwhnfFqy7FBWCWJkSYZ1tgCdSIGdAxnTp7T7d+/Of/rDHxyQuJiWQmU/0rucPt1hUUQKk9MVS4rIZR+2mYarnefSF+5Pl7U7h8mcGKCsPqtGcSJAIb/mEpPnvPV6gNKCQNznECIxJArKoegy7NOtXSxQ6qorHfcIcA+oQo6UwMl3RZbsPQ4UjTLI7EGBDcmzqNxUqGiyFII3QMyoihVvyjG316/u7fmhVRSGjFKUa64sGHOqxJCQ7bdsWfBY6Fx3UXv074tUfXnW5fYELYssRMNwhjkxuNTqMtQN3xtlAehmPdgbdaCARVxjMYsjn130QctWHZBIveEIWf4VMi0WVspFUfli5/Kd5duHKTDlKpVTJ8bXUwYsR/BmuU7MQFX32ZOA65Z5Hh+uwiqhreMwvt7zd66MEOzPoLRcqLB3GqNHET0AxDUJukhWyDuI+Jqg6mRjdlkzlNm5yJqin1f04NN5A5UlFce5MoywgCWGNimBOwWUA17O2QoKZXFxgIX9rT6Lpkdi1XoyraMAYiNJcQEU1kLKCn7VQguAT09TjoLSeH743T8Bw6+rbcj3E+QXnFOZTgX64PXtoU+BYu9yT8SJd8tHe2CmMohxKIkbMj4MhKVzSmbPRDQwlmP9+MnC5+JHz8SlSy0yyzkgLY9VUon3MTPHOX8tTKJPo3yYUwnjxFcOEZG+ESLkp1QagkW5c01yuccnlFuwY+wLyOIlLCcS8lFIuPopnKEjhtp2MNw9dxxmqihKKxS3KfBY8rsHIBuYcWgmEEByzvvyLswOUcGxjyCl5wPoHiexDUt/GTzIaXLabO7k4RE9GdajfCl3y83lEHp/6qI7Pl5o23retn59WwKwdiIj7ki2gEEhxyXDOOc7lQUVlJXOheaQUSz6IDdK00Dog8Bwqd5epEZD20KOYoqqWNqMeTaOvx9raUPja6VAWvcpTU8ncyJAM9KgkvjVCZsmjsYvCYgqxzmUadmVbq2EHGQgrmXbebyQTd35BMMyTUguznmkfwNaMiuDMgcguI5OXIsr0ajw9YWHD1PqBFqr9IKQ5YBPLJadYfYaVWib/GpKgBSXvHQNY/fj+oqx7yBGUHLPVR+Q8jBjFABOQEi25DDWJLKoNH+EjCzkZNaicbEDEHyneGiU09VyYGl9pUIM3CMcBX+ckswBqCG2kcD5dJxZjS3IEUBhSCYDSWmnPlUEMDvUNYCZEF7FtQRY7C1zFmw7Y31RgpVFRRwNmb0Ex34+hYWX7Rsvv9Jnz8MPPsjyhQi11sVy9b6FhEzr2DcFsSdqgqekDosm7JiL588DLLJnZtWsjQtDuujdz4NvZN4S+CRnY+eMYF1FYaUIbaCsxfEPf5ieTqDNRvU8Uoc0qC1z6sskbYBmVbZ+V5QJAPwf52UFEYisD6ETEMPhUkU8E7QOYGXgoOOBJJLnMoNOnrHwfiGTQHOiLk0IQjKA6dmAcdsul8kuSV1jIrTPQa51h6N71hBioviVVBA6l9n2IyGQQnwYMARwOq8WAoj6lwuAhjb/TOzTjP6E1MzxmiLaPwtj1PLS+kHwx5YrIgDs6UBpAxdNK0iZ0CV88cvwciW1PkAafhUDJaN3USF084pGcB8FCbewrNPxEIt3ihvKk4e8x3qvGXn4BQB9904aDZnnsCu9kHzmQsvZVDikT3N0ATpvS1oN4UMMrjuUwSXBzaFnO44Py9Tb9zG7FFmwbmqbbum69CdA69xpogWR+uOAw6vX5mfHx28WoB1/dGsf8PHxOJlUU5iQEIYqkKnQ6Q7pVEacdwV3YtcwDsTZNNrIsRwxiUCU3HvHIBafeutOWYxXAWNM+DCNF/6WAaNNGm5GAOr33gWIFoA0OcaTAwBz6/wAkDURJtrgmBowh7URTeXtN3t+q3W3nFL4n+Dgl8ZiI86yTyKq6J1neC3Lww00zHt50liivI4y8MkI43oEAx+93TQGtSJgOkn5MhFGFy6mR3K/563bUCBo5ZXBShls1ZW3VWz4fJsOa24/o/uoS2Xl9SD8nU3j2eIY3eQTDmi+AuwIQaLKwKxiUkBcgC4u0ERKjBGmkuKUUjDG+I92mQr1aARMxoA2Qbb7tMuPP07PJEq7srONp8ifEjJaYakrHDmHbd+Mea8AAAiPSURBVGdRMaMFYTwaw5025wIm+aisZnadQOw1qHJ+HhKC0JVDUYcaA2Vj5DAOBQXql8zxxrUKn4NTQV5aP2g7yM44z2AynqCqamzWBpWpgNZ4t4CUX5wzloVyIFIBwMMHD+bamOuRf00w7I5BYFIAO0zhsGRGU42CEy6AEieFoOZMIFlIy99gkIperGR4sMinu7N8b6Qwlb5ZpbSBNhVUVUNXtT+Oy/rHNXFBUEpjY7aJTaNRVzU2NzaBi5cA2wLG+O/jBUymV66B5fcILl6+vHDW3oysaQL5Tjc2cW00wgWt8PHpKbRzaLSB3tjuuVRlRYSIGQQ2qcbSluv5iAL5IRFKlFavUj4S4cExBip+OKKq/LEJ33lRfldKY2tzC+O6xuZ4jOnOLvTWNqArQPuvesxiOQE83toGhr5HQPDrCtVhrbBaa+zNpjhl4PHZKaq2wdp5aqvHM0SWKwHq6j0J3JD5kIHJ9pZUH+KoA14amUYkqMx/HU0bAx0/HBHA0uFbCFprbMw2sLmxhe1RjfF0A2YyBTY3gOUJMJ7kRgnl2XyUZVruwnNuoYgwrirIacqr6SburBqcWsb9J4/AzRotADfbwmi6kfoSZFXO36jUmOI3UlZJXBmhEsaYV6Y0/y29zlRrFdfhiMvxe0BHgRUNGJvbu6gnE9DODvD0CbBeZSpghxEYY8TFmzrfI3jlK2+gUgoTY9LH/wAvoJ/f3cVIazxqLY4PH+H07NSvTbS5jY3dy5hMN8uVViI4Ar8MT9ZgPjmlm5Jtu+xbgjdAyzEvUEmZXvMAAIwi7E6n2N7cggJwZTbFZDaDeu55oFkB9z4KU3yiIHYYgzFihvnt31lMwvTFpD0nu7sHr37+Ndw5eB+OFAwR2jAnu55MQdaiOT0GAVieHOOEGWoywWw8xnQywWQ6QxuGx69WS6xb/83OuKyY91ozYHEV42JaTKpfrLbwJ3Pdy9aQWjmcUQTaWhA7bBKgjQaThgWhVgqXaoON8cSz4uET4OE9D5gaiBk2a1id14TMa3dvby/+Q+Pwq9aCtQa0hrWtryoDVI/wAgFPV0u8Uik8OT3GifXfALX1GPVkBgNgpAjbYfQ3g9E0re+pD+5REzpb1q0FEcE6C+u8AWlDQCB+4o0UpfEkcQgYA/lrtYGa8sdX41rjPj9HnOZRNWFgy0wp7LRLv+b3MaE9fATDLnz/V6zl66OQWFsLVVWwl6/0g5D1aHTwu3/5Ly0OFj+aG6Vgw9dYNYXBukRYViNcNgYPV2e4XGkcrldYgtGulmhHY8BUWFZ1kB8mLFjnjUQFvzDlCN4PnVZVaNBsnsRAehvKnRglUVFp0Epta4N7ZoE0gcIFc0Y7hxEcRspzkCHGhtE4WZ3BaAMzm5aUa4z/bEj4JBS+9FXU4nPjCbTxeLx4/PDhTfOn771Zvfcu1qsVmL2d5+e1x54qg3q6gdsnJ9hWCrAt2rbBuF2FsQ/+87hMBFYabbSsSYGMCWEn+DB4oB4w/GDh0MpVeGeUSOGTah6oyO7iUx6OvetnAo/WoZEiRxv4TziNyGGsNLRSOLKM7dnUA5TEhPKT/LXxrKo12Izw6Lf/6tsvbmz0QQOA3YsX37rz4x/Pf/r97+2r8QTMDsQO1jk/5QcER0ANhWubm9ggYEqMpm1TOr9wm19KTDkLtOvYfkActhpkRfwbR+cwKShm/7XaIMQdI33oOX1pESiit35t3qxQQEAV3L0qxAhrpVBrDaMIMJVv8GL1vnCe1v9moKrQfvENXHrppRsSp943izf39t6+9fKr11/56MP56XoFp52f9tO23nIPhTOhb/QMQF3VmKloFPtWjx8/4EAJce6np6b4Mef4QVOkqYN+ATj2H/DjMCw/DhkICsTPSVVw8N8jBnv7UgnFEhsgTj8iInAQOUWfEDibTUoBSicqu/Urv4bRX/8bb2/NZsU32QeNqsOHD/cP/ugbf2i/9oc4PT4C1iuotsHIthg5hwkxJgTU8OxbK4Wx9qBJCywZshzqEtjJ93T7BojdgxyA9NO+GZYIsceUQrjGcR6lqeGdbR3ApBgFiUqEvEKIMdlYLkWe/ZO9qJVn0fCBQyjPnj/64lfxyt/5u2/r3d0bdV0XoA1+Unz74sWb937xi7d++uDBDfXH/zO9zBgD7SxqMAy7NM1PByOSgdxpgs5vEGaxYnGAg9YsBL3fHBhGnDOQBk2zSJnkYzxLLRZNlr6PHHuXdHxYB8CIANKAqXAy3cKVv/m3bk6uXk0fd/5E0ADg6ssvv/34/v3F7atXbjz8j/9+XhkNt1oBWqNtG1TKzwnV7HugLfyweaJsU3EwF+Knu5P8ShUpHdRInX7OS1zIPD/XtWlj2mSqSVtNgCnfl3v8Y4hI+V1XQF3j+PUv4eirv3nz4t5zg4CJ152/nZ6c7J89efLmwb/8/X334x9gRxHq5SkmRCBrMSJgHFeLQWCvgFoExYeOo0yKBih6lJkWggq2lgQNFBf3jC5O1o7xY9ESuW7FKNwj+LUeVbBFna6wVBr0G7+F5VfeuFl/5rNvb2xt3cQztk8ELW4f37+/f/bxx2+a9969fvj1r82NtTDB2h6Jj53KnKMsi7WzSdZESpI+uE8UbTFFGZh8N/t9eVBOxEm4WhG/RFH+PNAURsqbFu9tXsAXf/3X8bMXX7l58fUv3Ny+ePHtT4PFpwYtbk8fPNiHUrBNs0/LMzj/ddW5PTpanN27N5/N5x6Sp4cLp9QczIvR5Ss4eudP5htf+hLO/tc3MX711UWj9BzWLlRVAcxzx7xQ9+7Osec/jmMZC71ezakyC9q5APXhB3P30kvgW7dAs9mCgTmYF1AKbVXNsVot9MnxvL1wCcwOerVaqKqak7ULtbOL0w8/mE9ffAn28SOcKrUYjyegrc2Drd0Li9F4/EzK+vPtz2D7P88AAGI5CLeRAAAAAElFTkSuQmCC" alt=""/></div>
         </div>
       </div>
-      <div class="ctrl-zone" id="zone-roller" data-fader="roller" data-tip="Sends MIDI CC (Articulation), note keyswitches, or HID navigation keys, depending on the mode selected below."
+      <div class="ctrl-zone" id="zone-roller" data-fader="roller" data-tip="Sends MIDI CC (Articulation), note keyswitches, HID navigation keys, or relative CC, depending on the mode selected below."
         onmouseenter="hoverFaderLink('roller',true)" onmouseleave="hoverFaderLink('roller',false)"></div>
       <div class="ctrl-zone" id="zone-macro" data-fader="macro" data-tip="A long-press (&#8805; 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks."
         onmouseenter="hoverFaderLink('macro',true)" onmouseleave="hoverFaderLink('macro',false)"></div>
@@ -2319,6 +2340,21 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
             <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
           </label>
         </div>
+        <div class="info-row info-row-action" data-tip="Controls how the device filters and interpolates both physical faders. Saved with Send to device.">
+          <span class="info-lbl">Fader response</span>
+          <div class="response-select" id="fader-response-select">
+            <button type="button" class="response-select-trigger ui-control ui-glass" id="fader-response-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="fader-response-menu" aria-describedby="fader-response-note" onclick="toggleFaderResponseMenu()" onkeydown="onFaderResponseTriggerKeydown(event)">
+              <span id="fader-response-value">Balanced</span>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="response-select-menu" id="fader-response-menu" role="listbox" aria-labelledby="fader-response-trigger" hidden>
+              <button type="button" class="response-select-option" role="option" data-response="immediate" aria-selected="false" onclick="onFaderResponseChange('immediate')" onkeydown="onFaderResponseOptionKeydown(event)"><span>Immediate</span><small>Direct response for precise performance</small></button>
+              <button type="button" class="response-select-option" role="option" data-response="balanced" aria-selected="true" onclick="onFaderResponseChange('balanced')" onkeydown="onFaderResponseOptionKeydown(event)"><span>Balanced</span><small>Natural control with subtle filtering</small></button>
+              <button type="button" class="response-select-option" role="option" data-response="smooth" aria-selected="false" onclick="onFaderResponseChange('smooth')" onkeydown="onFaderResponseOptionKeydown(event)"><span>Smooth</span><small>Gentle glide for long expressive moves</small></button>
+            </div>
+          </div>
+        </div>
+        <div id="fader-response-note" style="margin:-1px 0 0 100px;font-size:11px;line-height:1.35;color:var(--t3)">Connect a compatible device to change fader response.</div>
       </div>
 
       <div class="settings-divider"></div>
@@ -2380,7 +2416,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <div class="settings-subhead" id="help-banks">Banks</div>
       <p style="margin:0 0 12px">Bank names and icons are saved in this browser and — with firmware 1.1.0+ — also on the device, so they follow it between computers. The frosty pill is the bank you're editing; the small controller icon marks the bank currently active on the hardware. Library setups show a review before changing the bank; built-in setups are starting points and should be checked against the exact library patch.</p>
       <div class="settings-subhead" id="help-roller">Roller modes</div>
-      <p style="margin:0 0 12px"><b>Articulation (CC)</b> — the roller steps through articulations (UACC). <b>Keyswitch</b> — the roller sends note keyswitches selected on a piano keyboard (see below). <b>Navigation (keys)</b> — the roller sends a keyboard key per detent (e.g. arrows) to navigate your DAW; requires Keyboard (HID).</p>
+      <p style="margin:0 0 12px"><b>Articulation (CC)</b> — the roller steps through articulations (UACC). <b>Keyswitch</b> — the roller sends note keyswitches selected on a piano keyboard (see below). <b>Navigation (keys)</b> — the roller sends a keyboard key per detent (e.g. arrows) to navigate your DAW; requires Keyboard (HID). <b>Relative CC</b> — the roller sends a relative step (value 1 = up, 127 = down) on the configured CC/channel, for external MIDI processing (e.g. a per-track keyswitch mapper).</p>
       <div class="settings-subhead" id="help-keyswitch">Keyswitch mode</div>
       <p style="margin:0 0 12px">In Keyswitch mode the roller sends MIDI note keyswitches on the configured channel. Click one piano key or drag across a range; rotating the roller steps through the selected notes. Reorder long sequences by dragging chips or with Alt + arrow keys.</p>
       <div class="settings-subhead" id="help-macro">Button macro (long-press)</div>
@@ -2799,11 +2835,12 @@ const MAX_BANKS = 8;
 // A-3 (final review 2026-08-17): single source for the roller mode list —
 // dřív duplikováno jako inline literál na 4 místech (encoderPanel ×2,
 // rollerModeKey, setRollerMode).
-const ROLLER_MODES = ['cc','keyswitch','track_nav'];
+const ROLLER_MODES = ['cc','keyswitch','track_nav','cc_relative'];
 
 const DEFAULT_CFG = {
   macro_keys: [],
   macro_global: true,   // false = každá banka má vlastní macro_keys
+  fader_response: 'balanced',
   banks: [
     { name:'Bank 1', icon:'', uacc_values:[1,2,3,20,21,22,40,41,42,43,50], fader1:{cc:11,channel:0,label:'Expression'}, fader2:{cc:1,channel:0,label:'Dynamics'}, encoder:{cc:32,channel:0}, roller_mode:'cc', ks_notes:[], ks_channel:0, ks_velocity:100, nav_keys_cw:[0x52], nav_keys_ccw:[0x51], nav_invert:false, macro_keys:[] },
     { name:'Bank 2', icon:'', uacc_values:[1,2,3,20,21,22,40,41,42,43,50], fader1:{cc:12,channel:1,label:'Expression'}, fader2:{cc:13,channel:1,label:'Dynamics'}, encoder:{cc:32,channel:1}, roller_mode:'cc', ks_notes:[], ks_channel:0, ks_velocity:100, nav_keys_cw:[0x52], nav_keys_ccw:[0x51], nav_invert:false, macro_keys:[] },
@@ -2819,6 +2856,8 @@ const DEVICE_INFO = {
   hid_available: false,
   hid_enabled:   false,
   schema_version: null,   // z CMD_INFO; < 3 = firmware neumí per-bank makra
+  fader_response_presets: false,
+  fader_response: null,
 };
 
 const LS_CFG_KEY        = 'ff-cfg';
@@ -2936,6 +2975,7 @@ function configChangeItems(base = _syncedConfigSnapshot, current = cfg) {
   });
   if (!same(base?.macro_keys || [],current?.macro_keys || [])) items.push('Button macro');
   if ((base?.macro_global !== false) !== (current?.macro_global !== false)) items.push('Button macro scope');
+  if (normalizeFaderResponse(base?.fader_response) !== normalizeFaderResponse(current?.fader_response)) items.push('Fader response');
   (current?.banks || []).forEach((b,i) => {
     if (!same(base?.banks?.[i]?.macro_keys || [], b.macro_keys || []))
       items.push(`${b.name || 'Bank '+(i+1)}: button macro`);
@@ -3092,11 +3132,9 @@ function renderBankTabs() {
     const iconHtml = b.icon
       ? `<span class="bank-tab-ic" aria-hidden="true">${escHtml(b.icon)}</span>`
       : `<span class="bank-tab-fallback" aria-hidden="true">${i+1}</span>`;
-    const isLive = i === liveBank && _ffConnected;
-    const liveMarker = isLive ? '<span class="bank-tab-live-dot" title="Active on device" aria-hidden="true"></span>' : '';
     const nm = escHtml(b.name || 'Bank '+(i+1));
-    return `<button class="bank-block-tab ${i===activeBank?'active':''}${isLive?' is-live':''}" onclick="selectBank(${i},event)" aria-label="Edit ${nm}${isLive?' · active on device':''}" ${i===activeBank?'aria-current="true"':''}
-      draggable="true" data-bank-index="${i}" ondragstart="onBankDragStart(event,${i})" ondragover="onBankDragOver(event,${i})" ondragleave="onBankDragLeave(event)" ondrop="onBankDrop(event,${i})" ondragend="onBankDragEnd()">${liveMarker}${iconHtml}<span class="bank-tab-name">${nm}</span></button>`;
+    return `<button class="bank-block-tab ${i===activeBank?'active':''}" onclick="selectBank(${i},event)" aria-label="Edit ${nm}" ${i===activeBank?'aria-current="true"':''}
+      draggable="true" data-bank-index="${i}" ondragstart="onBankDragStart(event,${i})" ondragover="onBankDragOver(event,${i})" ondragleave="onBankDragLeave(event)" ondrop="onBankDrop(event,${i})" ondragend="onBankDragEnd()">${iconHtml}<span class="bank-tab-name">${nm}</span></button>`;
   }).join('');
   const addHtml = cfg.banks.length < MAX_BANKS
     ? `<button class="bank-block-tab-add" onclick="addBank()" title="Add bank" aria-label="Add bank">+</button>`
@@ -3112,15 +3150,8 @@ function setActiveTab(i){
   el.querySelectorAll('.bank-block-tab').forEach((btn,idx)=>{
     btn.classList.toggle('active', idx===i);
     if (idx===i) btn.setAttribute('aria-current','true'); else btn.removeAttribute('aria-current');
-    const isLive = idx===liveBank && _ffConnected;
-    btn.classList.toggle('is-live',isLive);
-    btn.querySelector('.bank-tab-live-dot')?.remove();
-    if(isLive){
-      const s=document.createElement('span'); s.className='bank-tab-live-dot'; s.title='Active on device'; s.setAttribute('aria-hidden','true');
-      btn.insertBefore(s, btn.children[0]||null);
-    }
   });
-  markSectionIssues();   // live marker se přestavuje tady, chybová tečka se musí obnovit s ním
+  markSectionIssues();
   const act=el.querySelector('.bank-block-tab.active');
   if(act&&act.scrollIntoView) act.scrollIntoView({block:'nearest',inline:'nearest'});
   _updateTabsFade(el);
@@ -3477,11 +3508,12 @@ function keyswitchBody(bi) {
 }
 
 function rollerModeTitle(mode) {
-  return mode === 'keyswitch' ? 'Keyswitch' : mode === 'track_nav' ? 'Navigation' : 'Articulation';
+  return mode === 'keyswitch' ? 'Keyswitch' : mode === 'track_nav' ? 'Navigation' : mode === 'cc_relative' ? 'Relative CC' : 'Articulation';
 }
 function rollerModeBodyHtml(ctrl, bi, mode = cfg.banks[bi].roller_mode || 'cc', errs = validate()) {
   return mode === 'keyswitch' ? keyswitchBody(bi)
        : mode === 'track_nav' ? trackNavBody(bi)
+       : mode === 'cc_relative' ? ccRelativeBody(ctrl, bi, errs)
        : ccEncoderBody(ctrl, bi, errs);
 }
 function encoderPanel(ctrl, bi, errs = validate()) {
@@ -3496,11 +3528,11 @@ function encoderPanel(ctrl, bi, errs = validate()) {
 
   return `
   <div class="panel panel-wide">
-    ${sectionHeaderHtml(bi,'roller','ROLLER',rollerModeTitle(rmode),null,'Sends MIDI CC (Articulation), note keyswitches, or HID navigation keys, depending on the mode selected below.')}
+    ${sectionHeaderHtml(bi,'roller','ROLLER',rollerModeTitle(rmode),null,'Sends MIDI CC (Articulation), note keyswitches, HID navigation keys, or relative CC, depending on the mode selected below.')}
     <div class="section-collapse-body" id="section-body-${bi}-roller" ${open?'':'hidden'}>
       <div class="roller-mode-row" role="group" aria-label="Roller mode" data-mode="${rmode}" style="--roller-index:${ROLLER_MODES.indexOf(rmode)}">
         ${ROLLER_MODES.map((m,mi) => {
-          const labels = {cc:'Articulation (CC)', keyswitch:'Keyswitch', track_nav:'Navigation (keys)'};
+          const labels = {cc:'Articulation (CC)', keyswitch:'Keyswitch', track_nav:'Navigation (keys)', cc_relative:'Relative CC'};
           const active = (cfg.banks[bi].roller_mode || 'cc') === m;
           return `<button type="button" class="roller-mode-btn${active?' active':''}"
             data-roller-mode="${m}" aria-pressed="${active}" tabindex="${active?'0':'-1'}"
@@ -3544,6 +3576,24 @@ function trackNavBody(bi){
         <span class="field-label">INVERT</span>
         <input type="checkbox" ${b.nav_invert?'checked':''} onchange="cfg.banks[${bi}].nav_invert=this.checked;dirty=true;render()" aria-label="Invert navigation direction">
       </div>
+    </div>
+  </div>`;
+}
+
+function ccRelativeBody(ctrl, bi, errs = validate()) {
+  const encErr = errs.find(e => e.field === `b${bi}.encoder`)?.msg || '';
+  return `
+  <div class="enc-unified-body">
+    <div class="uacc-note" style="margin:8px 0">Rotating the roller sends a relative CC (1 = step up, 127 = step down) on this CC/channel. The keyswitch note list lives in the Keyswitch Stepper Max for Live device on the track, not here.</div>
+    <div class="section-field-row" style="margin-top:10px">
+      ${stepperFieldHtml(`b${bi}-encoder-ch`, 'MIDI CHANNEL', ctrl.channel+1, 1, 16,
+        `stepCtrl(${bi},'encoder','channel',-1)`, `stepCtrl(${bi},'encoder','channel',1)`,
+        `onCtrl(${bi},'encoder','channel',+this.value-1)`, 'Roller MIDI channel',
+        `\n                aria-invalid="${encErr?'true':'false'}" aria-describedby="err-b${bi}-roller"`)}
+      ${stepperFieldHtml(`b${bi}-encoder-cc`, 'MIDI CC', ctrl.cc, 0, 127,
+        `stepCtrl(${bi},'encoder','cc',-1)`, `stepCtrl(${bi},'encoder','cc',1)`,
+        `onCtrl(${bi},'encoder','cc',+this.value)`, 'Roller MIDI CC',
+        `\n                aria-invalid="${encErr?'true':'false'}" aria-describedby="err-b${bi}-roller"`)}
     </div>
   </div>`;
 }
@@ -3593,7 +3643,7 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
       ${schemaStale
         ? `<div id="macro-schema-notice" class="section-error" style="min-height:auto">Connected device runs an older firmware (schema ${escHtml(String(DEVICE_INFO.schema_version))}) that only supports one macro for all banks — per-bank macros will be ignored until you update it.</div>`
         : ''}
-      <label class="uacc-note" style="display:flex;align-items:center;gap:8px;margin:10px 0 0;cursor:var(--cursor-fader),pointer">
+      <label class="uacc-note" style="display:flex;align-items:center;gap:8px;margin:10px 0 0;cursor:pointer">
         <input type="checkbox" id="macro-global-toggle" ${isGlobal?'checked':''} onchange="setMacroGlobal(this.checked)"/>
         <span>Global — same macro for all banks</span>
       </label>
@@ -3628,6 +3678,84 @@ function updateHidToggle(){
   const el=document.getElementById('hid-toggle');
   if(el){ el.checked = !!DEVICE_INFO.hid_enabled; el.disabled = !(_ffConnected || DEVICE_INFO.hid_available); }
 }
+function updateFaderResponseControl(){
+  const select = document.getElementById('fader-response-select');
+  const trigger = document.getElementById('fader-response-trigger');
+  const value = document.getElementById('fader-response-value');
+  const note = document.getElementById('fader-response-note');
+  if (!select || !trigger || !value || !note) return;
+  const supported = DEVICE_INFO.fader_response_presets === true;
+  const response = normalizeFaderResponse(cfg?.fader_response);
+  const labels = {immediate:'Immediate', balanced:'Balanced', smooth:'Smooth'};
+  value.textContent = labels[response];
+  trigger.disabled = !supported;
+  select.querySelectorAll('[data-response]').forEach(option => {
+    option.setAttribute('aria-selected', String(option.dataset.response === response));
+  });
+  if (!supported) closeFaderResponseMenu();
+  note.textContent = supported
+    ? ({immediate:'Fastest response for recording expressive automation.', balanced:'Balanced response for everyday expressive control.', smooth:'Gentler transitions for long expressive movements.'})[response]
+    : 'Connect a compatible device to change fader response.';
+}
+function closeFaderResponseMenu({focusTrigger=false}={}){
+  const select = document.getElementById('fader-response-select');
+  const trigger = document.getElementById('fader-response-trigger');
+  const menu = document.getElementById('fader-response-menu');
+  if (!select || !trigger || !menu) return;
+  select.classList.remove('is-open');
+  trigger.setAttribute('aria-expanded','false');
+  menu.hidden = true;
+  if (focusTrigger) trigger.focus();
+}
+function toggleFaderResponseMenu(){
+  const select = document.getElementById('fader-response-select');
+  const trigger = document.getElementById('fader-response-trigger');
+  const menu = document.getElementById('fader-response-menu');
+  if (!select || !trigger || !menu || trigger.disabled) return;
+  const open = menu.hidden;
+  select.classList.toggle('is-open', open);
+  trigger.setAttribute('aria-expanded', String(open));
+  menu.hidden = !open;
+}
+function focusFaderResponseOption(direction){
+  const options = [...document.querySelectorAll('#fader-response-menu [data-response]')];
+  const active = document.activeElement;
+  const selected = options.findIndex(option => option.getAttribute('aria-selected') === 'true');
+  const current = options.indexOf(active);
+  const base = current >= 0 ? current : selected;
+  options[(base + direction + options.length) % options.length]?.focus();
+}
+function onFaderResponseTriggerKeydown(event){
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    const menu = document.getElementById('fader-response-menu');
+    if (menu?.hidden) toggleFaderResponseMenu();
+    focusFaderResponseOption(event.key === 'ArrowDown' ? 1 : -1);
+  } else if (event.key === 'Escape') {
+    closeFaderResponseMenu();
+  }
+}
+function onFaderResponseOptionKeydown(event){
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    focusFaderResponseOption(event.key === 'ArrowDown' ? 1 : -1);
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    closeFaderResponseMenu({focusTrigger:true});
+  }
+}
+function onFaderResponseChange(value){
+  const next = normalizeFaderResponse(value);
+  if (cfg.fader_response === next) { closeFaderResponseMenu(); return; }
+  cfg.fader_response = next;
+  closeFaderResponseMenu();
+  dirty = true;
+  render();
+}
+document.addEventListener('pointerdown', event => {
+  const select = document.getElementById('fader-response-select');
+  if (select && !select.contains(event.target)) closeFaderResponseMenu();
+});
 function openDeviceSettingsAtHid() {
   const body = document.getElementById('device-settings-body');
   if (body?.style.display === 'none') toggleDeviceSettings();
@@ -3707,6 +3835,7 @@ function updateDeviceInfo() {
   setVal('di-serial',   serial);
   setVal('di-firmware', firmware);
   updateHidToggle();
+  updateFaderResponseControl();
   updateMacroUI();
   renderMidiDiagnostics();
 }
@@ -4673,12 +4802,13 @@ function scheduleFaderFrame(){
 }
 function flushFaderFrame(){
   _faderRafPending=false;
-  if(_faderDirty.l){ _faderDirty.l=false; pF('track-l','thumb-l',liveValues.f1); }
-  if(_faderDirty.r){ _faderDirty.r=false; pF('track-r','thumb-r',liveValues.f2); }
+  const changed = {l:_faderDirty.l,r:_faderDirty.r};
+  if(changed.l){ _faderDirty.l=false; pF('track-l','thumb-l',liveValues.f1); }
+  if(changed.r){ _faderDirty.r=false; pF('track-r','thumb-r',liveValues.f2); }
   // High-rate fader CC must stay on a tiny fast path. Rebuilding every label,
   // validation marker and contextual HUD position at up to 125 Hz lets other
   // MIDI-heavy tabs push this page into a visible event backlog.
-  renderLiveFaderValues();
+  renderLiveFaderValues(changed);
 }
 function pF(tid,thid,v){
   const th=document.getElementById(thid);
@@ -4710,6 +4840,7 @@ function diagnosticRollerMapping(bank) {
     return `Keyswitch · Ch ${(bank.ks_channel ?? 0)+1} · ${range}`;
   }
   if (mode === 'track_nav') return `Navigation · ${keyComboLabel(bank.nav_keys_cw || [0x52])} / ${keyComboLabel(bank.nav_keys_ccw || [0x51])} · HID ${DEVICE_INFO.hid_enabled?'on':'off'}`;
+  if (mode === 'cc_relative') return `Relative CC · Ch ${(bank.encoder?.channel ?? 0)+1} · CC ${bank.encoder?.cc ?? 32}`;
   return `Articulation · Ch ${(bank.encoder?.channel ?? 0)+1} · CC ${bank.encoder?.cc ?? 32}`;
 }
 function midiDiagnosticsData() {
@@ -4736,7 +4867,12 @@ function renderMidiDiagnostics() {
   setTxt('diag-left',d.left); setTxt('diag-right',d.right); setTxt('diag-roller',d.roller);
   setTxt('diag-last-event',d.lastEvent); setTxt('diag-device',d.device); setTxt('diag-hash',d.hash);
 }
-function recordMidiDiagnostic(data) {
+function recordMidiDiagnostic(data, coalesceHighRate = false) {
+  // High-rate fader CCs may arrive around 125 Hz. Once a diagnostics refresh
+  // is already queued, avoid allocating an array and formatting a human text
+  // for every intermediate value — the visible diagnostics remain throttled
+  // to the same 250ms cadence either way.
+  if (coalesceHighRate && _midiDiagnosticRenderTimer !== null) return;
   const bytes = Array.from(data || []), status = bytes[0] || 0, type = status & 0xF0, ch = (status & 0x0F)+1;
   let text;
   if (status === 0xF0) text = `SysEx · ${bytes.length} bytes`;
@@ -4870,12 +5006,17 @@ function connectInputs(){
 function onMidiMsg(event){
   const data=event.data, st=data[0];
   monitorMidiBacklog(event);
-  recordMidiDiagnostic(data);
   if(st===0xF0){
+    recordMidiDiagnostic(data);
     handleSysEx(data);return;
   }
   const type=st&0xF0, ch=st&0x0F;
   const bank=cfg.banks[liveBank];
+  const isLiveFaderCc = type===0xB0 && !!bank && (
+    ch===bank.fader1.channel && data[1]===bank.fader1.cc
+    || ch===bank.fader2.channel && data[1]===bank.fader2.cc
+  );
+  recordMidiDiagnostic(data, isLiveFaderCc);
   if(!bank)return;
   if(type===0xB0){
     const cc=data[1],val=data[2];
@@ -4972,6 +5113,8 @@ function clampChannel(v, dflt) { v = Number(v); return Number.isFinite(v) ? Math
 function clampCcList(arr) { return Array.isArray(arr) ? arr.map(v => clampCc(v, 0)) : []; }
 // HID usage IDs 0–255 (mirrors firmware ff_config.parse_macro_keys / _nav_keys).
 function clampHidList(arr) { return Array.isArray(arr) ? arr.map(v => Number(v)).filter(v => Number.isFinite(v) && v >= 0 && v <= 255).map(v => Math.trunc(v)) : []; }
+const FADER_RESPONSE_PRESETS = ['immediate','balanced','smooth'];
+function normalizeFaderResponse(value) { return FADER_RESPONSE_PRESETS.includes(value) ? value : 'balanced'; }
 
 function normalizeFwConfig(p) {
   if (!p.banks) return p;
@@ -4998,7 +5141,7 @@ function normalizeFwConfig(p) {
       // ks_velocity untouched — they reach data-mode="${rmode}" and
       // value="${...}" template interpolation unescaped (DOM XSS via
       // attribute breakout on a hostile JSON backup import).
-      bank.roller_mode = (bank.roller_mode === 'keyswitch' || bank.roller_mode === 'track_nav') ? bank.roller_mode : 'cc';
+      bank.roller_mode = (bank.roller_mode === 'keyswitch' || bank.roller_mode === 'track_nav' || bank.roller_mode === 'cc_relative') ? bank.roller_mode : 'cc';
       bank.ks_channel = clampChannel(bank.ks_channel, 0);
       bank.ks_velocity = clampCc(bank.ks_velocity, 100);
       bank.nav_keys_cw = clampHidList(bank.nav_keys_cw).length ? clampHidList(bank.nav_keys_cw) : [0x52];
@@ -5009,11 +5152,13 @@ function normalizeFwConfig(p) {
     });
     p.macro_keys = clampHidList(p.macro_keys);
     p.macro_global = p.macro_global !== false;   // chybí = true (starý config)
+    p.fader_response = normalizeFaderResponse(p.fader_response);
     return p;
   }
   return {
     macro_keys: clampHidList(p.macro_keys),
     macro_global: p.macro_global !== false,
+    fader_response: normalizeFaderResponse(p.fader_response),
     banks: p.banks.map((raw, i) => {
       // A malformed bank entry (null/string/array/etc.) must not throw when its
       // fields are read below — coerce to a bare object first (P2-1).
@@ -5030,7 +5175,7 @@ function normalizeFwConfig(p) {
       fader1:      { cc: clampCc(Array.isArray(b.fader_cc) ? b.fader_cc[0] : 11, 11), channel: clampChannel(Array.isArray(b.fader_ch) ? b.fader_ch[0] : (b.channel ?? 0), 0), label: mL[0] || (prev.fader1 && prev.fader1.label) || 'Expression' },
       fader2:      { cc: clampCc(Array.isArray(b.fader_cc) ? b.fader_cc[1] : 1, 1),  channel: clampChannel(Array.isArray(b.fader_ch) ? b.fader_ch[1] : (b.channel ?? 0), 0), label: mL[1] || (prev.fader2 && prev.fader2.label) || 'Dynamics' },
       encoder:     { cc: clampCc(typeof b.encoder === 'number' ? b.encoder : 32, 32), channel: clampChannel(typeof b.encoder_ch === 'number' ? b.encoder_ch : (b.channel ?? 0), 0) },
-      roller_mode: (b.roller_mode === 'keyswitch' || b.roller_mode === 'track_nav') ? b.roller_mode : 'cc',
+      roller_mode: (b.roller_mode === 'keyswitch' || b.roller_mode === 'track_nav' || b.roller_mode === 'cc_relative') ? b.roller_mode : 'cc',
       ks_notes:    clampCcList(Array.isArray(b.ks_notes) ? b.ks_notes : []),
       ks_channel:  typeof b.ks_channel === 'number' ? b.ks_channel : (typeof b.encoder_ch === 'number' ? b.encoder_ch : 0),
       ks_velocity: typeof b.ks_velocity === 'number' ? b.ks_velocity : 100,
@@ -5057,6 +5202,8 @@ function handleSysEx(data){
       if(info.mode)DEVICE_INFO.mode=info.mode;
       if(info.firmware)DEVICE_INFO.firmware=info.firmware;
       if(typeof info.hid_available==='boolean') DEVICE_INFO.hid_available=info.hid_available;
+      DEVICE_INFO.fader_response_presets = info.fader_response_presets === true;
+      if (typeof info.fader_response === 'string') DEVICE_INFO.fader_response = normalizeFaderResponse(info.fader_response);
       DEVICE_INFO.schema_version = Number(info.schema_version) || null;
       if(typeof info.hid_enabled==='boolean')   DEVICE_INFO.hid_enabled=info.hid_enabled;
       if(typeof info.bank==='number' && info.bank>=0) liveBank=info.bank|0;   // sync live-bank indicator on info push
@@ -5114,6 +5261,20 @@ async function _serialEnsureOpen() {
   _serialPort = port;
 }
 
+async function releaseSerialPort({forget = false} = {}) {
+  const port = _serialPort;
+  _serialPort = null;
+  if (!port) return;
+  try { if (port.readable || port.writable) await port.close(); } catch (_) {}
+  // In DEV mode CircuitPython exposes a REPL console and a data port with the
+  // same USB identity. Retrying a timed-out remembered console forever hides
+  // the picker, so forget that failed grant and let the user select the data
+  // endpoint on the next explicit Connect & load click.
+  if (forget && typeof port.forget === 'function') {
+    try { await port.forget(); } catch (_) {}
+  }
+}
+
 // Wave 2 — jediné místo, které čte serial. Jedna transakce naráz; v2 odpovědi
 // se párují podle typu + rid, cizí/stale řádky se zahazují (to je ta ochrana,
 // drain je jen best-effort úklid nulové ceny).
@@ -5143,8 +5304,19 @@ function _readReply(port, v2, expect, rid, timeoutMs) {
     const reader = port.readable.getReader();
     const dec = new TextDecoder();
     let buf = '';
-    const timer = setTimeout(() => { try { reader.releaseLock(); } catch(_){} reject(new Error('timeout')); }, timeoutMs);
-    const done = (fn, v) => { clearTimeout(timer); try { reader.releaseLock(); } catch(_){} fn(v); };
+    let settled = false;
+    const done = (fn, v, cancel = false) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      // releaseLock() cannot end an in-flight read. Cancel it first on a
+      // timeout, otherwise the abandoned reader can keep the serial stream
+      // locked and leave the UI indefinitely at “sending”.
+      if (cancel) { try { reader.cancel(); } catch (_) {} }
+      try { reader.releaseLock(); } catch(_){}
+      fn(v);
+    };
+    const timer = setTimeout(() => done(reject, new Error('timeout'), true), timeoutMs);
     (async () => {
       try {
         while (true) {
@@ -5186,6 +5358,8 @@ async function serialReadInfo() {
   if (info.serial)   DEVICE_INFO.serial   = info.serial;
   if (typeof info.hid_available === 'boolean') DEVICE_INFO.hid_available = info.hid_available;
   if (typeof info.hid_enabled   === 'boolean') DEVICE_INFO.hid_enabled   = info.hid_enabled;
+  DEVICE_INFO.fader_response_presets = info.fader_response_presets === true;
+  if (typeof info.fader_response === 'string') DEVICE_INFO.fader_response = normalizeFaderResponse(info.fader_response);
   DEVICE_INFO.schema_version = Number(info.schema_version) || null;
   // Sync live-bank indicator to the device's actual current bank on (re)connect,
   // so it isn't stuck at Bank 1 until the next Program Change (firmware reports
@@ -5262,7 +5436,7 @@ async function doStart() {
     hideWelcome();                              // transition → main page
   } catch(e) {
     const cancelled = e && (e.name === 'AbortError' || e.name === 'NotFoundError' || /cancel|no port selected/i.test(e.message || ''));
-    if (!cancelled && _serialPort) { try { await _serialPort.close(); } catch(_) {} _serialPort = null; }
+    if (!cancelled) await releaseSerialPort({forget:true});
     if (btn) { btn.disabled = false; btn.textContent = cancelled ? 'Connect & load' : 'Try again'; }
     if (msg) {
       msg.textContent = cancelled ? '' : 'Connection failed';
@@ -5387,9 +5561,7 @@ async function doSend() {
   } catch(e) {
     console.warn('[Send] failed:', e);
     const errReason = /^ERR:(.+)$/.exec(e.message || '');
-    if (!errReason && e.message !== 'timeout' && e.name !== 'AbortError' && _serialPort) {
-      try { await _serialPort.close(); } catch(_) {} _serialPort = null;
-    }
+    if (!errReason && e.name !== 'AbortError') await releaseSerialPort({forget:true});
     if (errReason) toast('e', 'Device rejected config: ' + errReason[1] + ' — kept as unsaved.');
     else if (e.message === 'timeout') toast('e', 'No confirmation from device — kept as unsaved. Retry send.');
     else toast('e', serialErrMsg(e, 'Send failed'));
@@ -5743,16 +5915,39 @@ function updateContextualLiveStrip(){
   strip.classList.toggle('is-idle',!live);
   strip.setAttribute('aria-hidden',String(!visible));
 }
-function renderLiveFaderValues(){
+function renderLiveFaderValues(changed = {l:true,r:true}){
   const allowed = connState() === 'CONNECTED_LIVE';
   const setLiveValue = (id, itemId, value, seen) => {
     const valid = allowed && seen && Number.isFinite(value);
-    setTxt(id, valid ? value : '—');
+    const text = valid ? String(value) : '—';
+    const valueEl = document.getElementById(id);
+    // This runs inside the fader RAF. Do not enqueue a text/layout invalidation
+    // when the rendered value is already current (e.g. the other fader moved).
+    if (valueEl && valueEl.textContent !== text) valueEl.textContent = text;
     const item = document.getElementById(itemId);
     if (item) item.style.setProperty('--live-level-frac', valid ? String(Math.max(0, Math.min(127, value)) / 127) : '0');
   };
-  setLiveValue('live-f1-value', 'live-f1-item', liveValues.f1, liveSeen.f1);
-  setLiveValue('live-f2-value', 'live-f2-item', liveValues.f2, liveSeen.f2);
+  if (changed.l) setLiveValue('live-f1-value', 'live-f1-item', liveValues.f1, liveSeen.f1);
+  if (changed.r) setLiveValue('live-f2-value', 'live-f2-item', liveValues.f2, liveSeen.f2);
+}
+
+function renderLiveHudBankDots(bankCount, activeIndex){
+  const bankHud = document.getElementById('live-hud-bank');
+  if (!bankHud) return;
+  const count = Math.max(1, Math.min(8, Number(bankCount) || 1));
+  const active = Math.max(0, Math.min(count - 1, Number(activeIndex) || 0));
+  bankHud.replaceChildren();
+  const dots = document.createDocumentFragment();
+  for (let index = 0; index < count; index++) {
+    const dot = document.createElement('span');
+    dot.className = `live-hud-bank-dot${index === active ? ' is-active' : ''}`;
+    dot.setAttribute('aria-hidden', 'true');
+    dots.appendChild(dot);
+  }
+  bankHud.appendChild(dots);
+  const label = `Active device bank: ${active + 1} of ${count}`;
+  bankHud.setAttribute('aria-label', label);
+  bankHud.title = label;
 }
 
 function renderLiveStrip(errs = validate()){
@@ -5767,7 +5962,7 @@ function renderLiveStrip(errs = validate()){
 
   const bank = cfg.banks[liveBank] || cfg.banks[activeBank];
   if (!bank) { updateContextualLiveStrip(); return; }
-  setTxt('live-hud-bank', `${bank.icon ? bank.icon+' ' : ''}B${liveBank+1} · ${bank.name || `Bank ${liveBank+1}`}`);
+  renderLiveHudBankDots(cfg.banks.length, liveBank);
   setTxt('live-f1-label-long', 'L');
   setTxt('live-f1-label-short', 'L');
   setTxt('live-f2-label-long', 'R');
@@ -5792,8 +5987,8 @@ function renderLiveStrip(errs = validate()){
     // scope, confirmed 2026-08-10).
     rollerValue = `${keyComboLabel(bank.nav_keys_cw || [0x52])} / ${keyComboLabel(bank.nav_keys_ccw || [0x51])}`;
   }
-  setTxt('live-roller-label', mode === 'keyswitch' ? 'ROLLER · KEYSWITCH' : mode === 'track_nav' ? 'ROLLER · NAVIGATION' : 'ROLLER · ARTICULATION');
-  setTxt('live-roller-label-short', mode === 'keyswitch' ? 'KS' : mode === 'track_nav' ? 'NAV' : 'ART');
+  setTxt('live-roller-label', mode === 'keyswitch' ? 'ROLLER · KEYSWITCH' : mode === 'track_nav' ? 'ROLLER · NAVIGATION' : mode === 'cc_relative' ? 'ROLLER · RELATIVE CC' : 'ROLLER · ARTICULATION');
+  setTxt('live-roller-label-short', mode === 'keyswitch' ? 'KS' : mode === 'track_nav' ? 'NAV' : mode === 'cc_relative' ? 'REL' : 'ART');
   const ksNotes = bank.ks_notes || [];
   const ksRange = ksNotes.length ? `${noteName(Math.min(...ksNotes))}–${noteName(Math.max(...ksNotes))}` : 'no notes';
   setTxt('live-roller-tech', mode === 'keyswitch'
@@ -5952,11 +6147,12 @@ var TRANSLATIONS = {
     'onb.beat1.sub': 'Assign each motorless fader its own MIDI CC and channel — Expression, Dynamics, or anything else.',
     'onb.beat1.detail1': 'Left fader',
     'onb.beat1.detail2': 'Right fader',
-    'onb.beat2.title': 'One roller. Three modes.',
-    'onb.beat2.sub': 'Step through articulation CC values, send keyswitch notes, or navigate your DAW with keyboard commands.',
+    'onb.beat2.title': 'One roller. Four modes.',
+    'onb.beat2.sub': 'Step through articulation CC values, send keyswitch notes, navigate your DAW with keyboard commands, or send relative steps for external control.',
     'onb.beat2.detail1': 'Articulation CC',
     'onb.beat2.detail2': 'Keyswitch',
     'onb.beat2.detail3': 'Navigation',
+    'onb.beat2.detail4': 'Relative CC',
     'onb.beat3.title': 'Tap for banks. Hold for a macro.',
     'onb.beat3.sub': 'Switch complete control mappings with a tap, double-tap to jump back, or hold the button to send a custom keyboard shortcut.',
     'onb.beat3.detail1': 'Tap|Switch bank',
@@ -7077,7 +7273,7 @@ function onbShouldRun() { return !storageGet('ff-onboarded'); }
 let _onbBeat = 0, _onbBeatTimer = null;
 const _ONB_BEATS = [
   { t: 'onb.beat1.title', s: 'onb.beat1.sub', feature: 'faders', details: ['onb.beat1.detail1','onb.beat1.detail2'] },
-  { t: 'onb.beat2.title', s: 'onb.beat2.sub', feature: 'roller', details: ['onb.beat2.detail1','onb.beat2.detail2','onb.beat2.detail3'] },
+  { t: 'onb.beat2.title', s: 'onb.beat2.sub', feature: 'roller', details: ['onb.beat2.detail1','onb.beat2.detail2','onb.beat2.detail3','onb.beat2.detail4'] },
   { t: 'onb.beat3.title', s: 'onb.beat3.sub', feature: 'button', details: ['onb.beat3.detail1','onb.beat3.detail2','onb.beat3.detail3'] },
   { t: 'onb.beat4.title', s: 'onb.beat4.sub', feature: 'configure', details: ['onb.beat4.detail1','onb.beat4.detail2'] },
 ];
@@ -7423,6 +7619,96 @@ var LIBRARY_PRESETS = {
     icon: '🎹',
     uacc_values: [1,2,3,20,21,40,41,42,100,101]
   },
+  'Sonuscore LUX — Orchestral Strings': {
+    // LUX Ensemble: C0 Legato, C#0 Sustain, D0 Marcato, D#0 Tremolo.
+    // Feel Fader's default C-2 naming convention maps C0 to MIDI 24.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: [24,25,26,27],
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Sonuscore LUX — Violins 1': {
+    // LUX Violins 1: C0 Legato, C#0 Sustain, D0 Marcato, D#0 Staccato,
+    // E0 Spiccato, F0 Pizzicato, F#0 Tremolo, G0 Portamento.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: [24,25,26,27,28,29,30,31],
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Sonuscore LUX — Violas': {
+    // LUX Violas: C0 Legato, C#0 Sustain, D0 Marcato, D#0 Staccato,
+    // E0 Spiccato, F0 Pizzicato, F#0 Tremolo, G0 Trills.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: [24,25,26,27,28,29,30,31],
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Sonuscore LUX — Celli': {
+    // LUX Celli: C0 Legato, C#0 Sustain, D0 Marcato, D#0 Staccato,
+    // E0 Spiccato, F0 Pizzicato, F#0 Tremolo, G0 Portamento.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: [24,25,26,27,28,29,30,31],
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Sonuscore LUX — Basses': {
+    // LUX Basses: C0 Legato, C#0 Sustain, D0 Marcato, D#0 Staccato,
+    // E0 Spiccato, F0 Pizzicato, F#0 Tremolo, G0 Trills.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: [24,25,26,27,28,29,30,31],
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Spitfire Symphonic Orchestra — Celli (All techniques)': {
+    // SSO Celli All techniques: contiguous keyswitches C-1 through A#-1.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–22.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:11}, (_, index) => index + 12),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Spitfire Symphonic Orchestra — Basses (All techniques)': {
+    // SSO Basses All techniques: contiguous keyswitches C-1 through A#-1.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–22.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:11}, (_, index) => index + 12),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Spitfire Symphonic Orchestra — Ensembles (All techniques)': {
+    // SSO Ensembles All techniques: contiguous keyswitches C-1 through A#-1.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–22.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:11}, (_, index) => index + 12),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Spitfire Symphonic Orchestra — Violas (All techniques)': {
+    // SSO Violas All techniques: contiguous keyswitches C-1 through B-1.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–23.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:12}, (_, index) => index + 12),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Spitfire Symphonic Orchestra — Violins 1 (All techniques)': {
+    // SSO Violins 1 All techniques: contiguous keyswitches C-2 through G0.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 0–31.
+    icon: '🎻',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:32}, (_, index) => index),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
 };
 
 const CUSTOM_PRESETS_STORAGE_KEY = 'ff-custom-library-presets-v1';
@@ -7526,7 +7812,7 @@ function closeQuickSetupMenu(bi, returnFocus = false) {
 let _libraryPreviewName = null;
 let _libraryPreviewReturnFocus = null;
 function libraryPresetHasArticulations(preset) {
-  return !!(preset?.custom ? preset.articulations : Array.isArray(preset?.uacc_values));
+  return !!(preset?.custom ? preset.articulations : (Array.isArray(preset?.uacc_values) || Array.isArray(preset?.ks_notes)));
 }
 function libraryPresetPreviewRows(name, preset) {
   const rows = [];
@@ -7537,7 +7823,7 @@ function libraryPresetPreviewRows(name, preset) {
     }
     if (preset.roller) {
       const mode = preset.roller.roller_mode || 'cc';
-      rows.push(['Roller', mode === 'track_nav' ? `Navigation · ${keyComboLabel(preset.roller.nav_keys_cw || [0x52])} / ${keyComboLabel(preset.roller.nav_keys_ccw || [0x51])}` : mode === 'keyswitch' ? 'Keyswitch mode' : 'Articulation mode']);
+      rows.push(['Roller', mode === 'track_nav' ? `Navigation · ${keyComboLabel(preset.roller.nav_keys_cw || [0x52])} / ${keyComboLabel(preset.roller.nav_keys_ccw || [0x51])}` : mode === 'keyswitch' ? 'Keyswitch mode' : mode === 'cc_relative' ? 'Relative CC mode' : 'Articulation mode']);
     }
     if (preset.articulations) {
       const uaccCount = (preset.articulations.uacc_values || []).length;
@@ -7546,9 +7832,11 @@ function libraryPresetPreviewRows(name, preset) {
     }
     if (Object.prototype.hasOwnProperty.call(preset,'icon')) rows.push(['Bank icon', preset.icon || 'Remove icon']);
   } else {
-    rows.push(['Faders', `Expression · CC ${preset.fader1_cc ?? 11}; Dynamics · CC ${preset.fader2_cc ?? 1} · channels stay unchanged`]);
     rows.push(['Roller', `${rollerModeTitle(preset.roller_mode || 'cc')} · CC ${preset.encoder_cc ?? 32} · channel stays unchanged`]);
-    rows.push(['Sequence', `${(preset.uacc_values || []).length} UACC articulation values`]);
+    const keyswitches = preset.ks_notes || [];
+    rows.push(['Sequence', keyswitches.length
+      ? `${keyswitches.length} keyswitch notes · Ch ${(preset.ks_channel ?? 0)+1}`
+      : `${(preset.uacc_values || []).length} UACC articulation values`]);
     rows.push(['Bank icon', cfg.banks[activeBank]?.icon ? 'Keep current icon' : (preset.icon || 'No icon')]);
   }
   return rows.map(([label,value]) => `<div class="library-preview-row"><span class="library-preview-row-label">${escHtml(label)}</span><span class="library-preview-row-value">${escHtml(value)}</span></div>`).join('');
@@ -7909,7 +8197,7 @@ function applyLibraryPreset(name, scope = 'all') {
       [bank.fader1, bank.fader2, bank.encoder].forEach(c => { c.cc = clampCc(c.cc, 0); c.channel = clampChannel(c.channel, 0); });
     }
     if (scope === 'all' && preset.roller) {
-      bank.roller_mode = (preset.roller.roller_mode === 'keyswitch' || preset.roller.roller_mode === 'track_nav') ? preset.roller.roller_mode : 'cc';
+      bank.roller_mode = (preset.roller.roller_mode === 'keyswitch' || preset.roller.roller_mode === 'track_nav' || preset.roller.roller_mode === 'cc_relative') ? preset.roller.roller_mode : 'cc';
       bank.nav_keys_cw = clampHidList(preset.roller.nav_keys_cw).length ? clampHidList(preset.roller.nav_keys_cw) : [0x52];
       bank.nav_keys_ccw = clampHidList(preset.roller.nav_keys_ccw).length ? clampHidList(preset.roller.nav_keys_ccw) : [0x51];
       bank.nav_invert = !!preset.roller.nav_invert;
@@ -7923,12 +8211,18 @@ function applyLibraryPreset(name, scope = 'all') {
     if (scope === 'all' && Object.prototype.hasOwnProperty.call(preset,'icon')) bank.icon = preset.icon;
   } else {
     if (scope === 'all') {
-      bank.fader1.cc = preset.fader1_cc ?? 11;
-      bank.fader2.cc = preset.fader2_cc ?? 1;
       bank.encoder.cc = preset.encoder_cc ?? 32;
       bank.roller_mode = preset.roller_mode || 'cc';
     }
-    bank.uacc_values = [...preset.uacc_values];
+    if (Array.isArray(preset.ks_notes)) {
+      bank.ks_notes = clampCcList(preset.ks_notes);
+      bank.ks_channel = clampChannel(preset.ks_channel ?? 0, 0);
+      bank.ks_velocity = clampCc(preset.ks_velocity, 100);
+      // A keyswitch sequence is only useful when the roller sends notes.
+      if (scope === 'articulations') bank.roller_mode = 'keyswitch';
+    } else {
+      bank.uacc_values = [...preset.uacc_values];
+    }
     // Set built-in instrument icons only when the bank does not already have one.
     if (scope === 'all' && !bank.icon && preset.icon) bank.icon = preset.icon;
   }
@@ -7939,7 +8233,12 @@ function applyLibraryPreset(name, scope = 'all') {
   render();
   if (scope === 'articulations') toast('s', `Articulations from "${name}" applied`);
   else if (preset.custom) toast('s', `My setup "${name}" applied`);
-  else toast('s', `"${name}" setup applied — Expression CC${preset.fader1_cc ?? 11}, Dynamics CC${preset.fader2_cc ?? 1}, ${preset.uacc_values.length} articulations`);
+  else {
+    const sequence = Array.isArray(preset.ks_notes)
+      ? `${preset.ks_notes.length} keyswitches`
+      : `${preset.uacc_values.length} articulations`;
+    toast('s', `"${name}" roller setup applied — ${sequence}`);
+  }
 }
 
 // Make all functions globally accessible (fix for Cloudflare script injection)
@@ -8003,6 +8302,7 @@ window.closeIconPicker   = closeIconPicker;
 window.selectIcon        = selectIcon;
 window.clearIcon         = clearIcon;
 window.toggleDeviceSettings = toggleDeviceSettings;
+window.onFaderResponseChange = onFaderResponseChange;
 window.requestEnableHid = requestEnableHid;
 window.renderMidiDiagnostics = renderMidiDiagnostics;
 window.copyMidiDiagnostics = copyMidiDiagnostics;
