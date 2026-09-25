@@ -2615,23 +2615,36 @@ window.addEventListener('unhandledrejection', e => { try{ toast('e','Something w
 // ═══════════════════════════════════════════════════════════
 
 // ── UACC standard articulation names ─────────────────────────────────────────
-// Based on Spitfire Audio UACC standard, compatible with East West, 
-// Orchestral Tools, Cinesamples and most orchestral VST libraries.
+// Spitfire Audio UACC v2 spec (Spitfire Chamber Strings manual, Appendix E).
+// Only Spitfire libraries implement it, and only with the plugin's articulation
+// lock set to "Locked to UACC" – other vendors use keyswitches or their own CCs.
 const UACC_NAMES = {
-  1:'Legato', 2:'Legato Run', 3:'Slur', 4:'Portamento', 5:'Glissando',
-  20:'Long — Sustain', 21:'Long — Vibrato', 22:'Long — No Vibrato',
-  23:'Long — Flautando', 26:'Long — Sul Ponticello', 31:'Long — Col Legno',
-  32:'Long — Harmonics',
-  40:'Short — Détaché', 41:'Short — Staccato', 42:'Short — Spiccato',
-  43:'Short — Pizzicato', 44:'Short — Snap Pizzicato', 45:'Short — Col Legno',
-  46:'Short — Staccatissimo', 47:'Short — Martelé', 49:'Short — Ricochet',
-  50:'Short — Tremolo', 52:'Short — Harmonics',
-  70:'Trill — Half Step', 71:'Trill — Whole Step',
-  72:'Trill — Minor Third', 73:'Trill — Major Third',
-  74:'Mordent', 75:'Turn',
-  90:'FX 1', 91:'FX 2',
-  100:'Crescendo', 101:'Diminuendo',
-  110:'Accent', 112:'Accent — Marcato',
+  1:'Long', 2:'Long — Alternative', 3:'Long — Octave', 4:'Long — Octave Muted',
+  5:'Long — Small Section', 6:'Long — Small Muted', 7:'Long — Muted',
+  8:'Long — Soft (Flautando)', 9:'Long — Hard (Cuivré)', 10:'Long — Harmonics',
+  11:'Tremolo / Flutter', 12:'Tremolo — Muted', 13:'Tremolo — Soft',
+  14:'Tremolo — Hard', 15:'Tremolo — Muted Soft', 16:'Long — Molto Vibrato',
+  17:'Long — Higher (Sul Tasto)', 18:'Long — Lower (Sul Pont)', 19:'Long — Lower Muted',
+  20:'Legato', 21:'Legato — Alternative', 22:'Legato — Octave', 23:'Legato — Octave Muted',
+  24:'Legato — Small Section', 25:'Legato — Small Muted', 26:'Legato — Muted',
+  27:'Legato — Soft', 28:'Legato — Hard', 29:'Legato — Harmonics', 30:'Legato — Tremolo',
+  31:'Legato — Slow (Portamento)', 32:'Legato — Fast', 33:'Legato — Run',
+  34:'Legato — Détaché', 35:'Legato — Higher', 36:'Legato — Lower',
+  40:'Short', 41:'Short — Alternative', 42:'Short — Spiccato', 43:'Short — Spiccato Soft',
+  44:'Short — Staccato', 45:'Short — Octave', 46:'Short — Octave Muted', 47:'Short — Muted',
+  48:'Short — Soft (Brushed)', 49:'Short — Hard (Dig)', 50:'Short — Tenuto',
+  51:'Short — Tenuto Soft', 52:'Short — Marcato', 53:'Short — Marcato Soft',
+  54:'Short — Marcato Hard', 55:'Short — Marcato Long', 56:'Short — Pizzicato',
+  57:'Short — Bartók Pizz', 58:'Short — Col Legno', 59:'Short — Higher',
+  60:'Short — Lower', 61:'Short — Harmonics',
+  70:'Trill — Minor 2nd', 71:'Trill — Major 2nd', 72:'Trill — Minor 3rd',
+  73:'Trill — Major 3rd', 74:'Trill — Perfect 4th', 75:'Multitongue', 76:'Multitongue — Muted',
+  80:'Synced — 120 BPM', 81:'Synced — 150 BPM', 82:'Synced — 180 BPM',
+  90:'FX 1', 91:'FX 2', 92:'FX 3', 93:'FX 4', 94:'FX 5',
+  95:'FX 6', 96:'FX 7', 97:'FX 8', 98:'FX 9', 99:'FX 10',
+  100:'Run / Rip Up', 101:'Run / Fall Down', 102:'Crescendo', 103:'Decrescendo',
+  104:'Arc (Swell)', 105:'Slides',
+  110:'Disco Up (Rip)', 111:'Disco Down (Fall)', 112:'Single String (Sul G/C)',
 };
 
 function uaccName(v) {
@@ -3383,13 +3396,8 @@ function ccEncoderBody(ctrl, bi, errs = validate()) {
               <button onclick="applyArticulationList('Spitfire Chamber Strings')">🎻 Spitfire Chamber Strings</button>
               <button onclick="applyArticulationList('Spitfire Brass')">🎺 Spitfire Brass</button>
               <button onclick="applyArticulationList('Spitfire Woodwinds')">🎷 Spitfire Woodwinds</button>
-              <button onclick="applyArticulationList('EW Hollywood Strings')">🎻 EW Hollywood Strings</button>
-              <button onclick="applyArticulationList('EW Hollywood Brass')">🎺 EW Hollywood Brass</button>
-              <button onclick="applyArticulationList('OT Berlin Strings')">🎻 OT Berlin Strings</button>
-              <button onclick="applyArticulationList('OT Berlin Brass')">🎺 OT Berlin Brass</button>
-              <button onclick="applyArticulationList('Kontakt Factory')">🎹 Kontakt Factory</button>
               <div class="uacc-dropdown-section">General patterns</div>
-              <button onclick="applyUaccTemplate('spitfire')">Spitfire UACC (full)</button>
+              <button onclick="applyUaccTemplate('spitfire')">UACC common techniques</button>
               <button onclick="applyUaccTemplate('legato')">Legato family</button>
               <button onclick="applyUaccTemplate('shorts')">Shorts family</button>
               <div class="uacc-dropdown-divider"></div>
@@ -4339,9 +4347,9 @@ function onBankDragEnd() {
 
 // ── UACC Templates ────────────────────────────────────────────────────────────
 const UACC_TEMPLATES = {
-  spitfire: [1,2,3,4,5,20,21,22,23,26,31,32,40,41,42,43,44,45,46,47,49,50,52,70,71,72,73,74,75,90,91,100,101,110,112],
-  legato:   [1,2,3,4,5],
-  shorts:   [40,41,42,43,44,45,46,47,49,50,52],
+  spitfire: [20,1,7,8,10,11,17,18,42,44,50,52,56,57,58,70,71],
+  legato:   [20,21,26,27,28,31,32,33],
+  shorts:   [40,42,43,44,47,50,52,55,56,57,58,61],
 };
 
 function toggleUaccPresets() {
@@ -7830,42 +7838,27 @@ function clearIcon() {
 // ════════════════════════════════════════════════════════════════
 // LIBRARY PRESETS
 // ════════════════════════════════════════════════════════════════
+// UACC presets exist only for Spitfire – the one vendor implementing UACC v2
+// (values: see UACC_NAMES). EW Opus uses keyswitches and OT SINE its own CC
+// values, so those libraries get keyswitch presets per patch or none at all.
 var LIBRARY_PRESETS = {
   'Spitfire BBCSO': {
+    // Strings core: legato, longs (con sord, flautando, harmonics, sul tasto/pont),
+    // tremolo, shorts (spiccato, pizz, Bartók, col legno), trills.
     icon: '🎻',
-    uacc_values: [1,2,3,4,5,20,21,22,23,26,31,32,40,41,42,43,44,45,46,47,49,50,52,70,71,72,73,74,75,90,91,100,101,110,112]
+    uacc_values: [20,1,7,8,10,17,18,11,42,56,57,58,61,70,71]
   },
   'Spitfire Chamber Strings': {
     icon: '🎻',
-    uacc_values: [1,2,3,20,21,22,40,41,42,43,49,50,100,101]
+    uacc_values: [20,1,7,8,11,42,44,56,58,70,71]
   },
   'Spitfire Brass': {
     icon: '🎺',
-    uacc_values: [1,2,3,20,21,22,26,40,41,46,47,100,101,110]
+    uacc_values: [20,1,9,42,44,50,52,100,101]
   },
   'Spitfire Woodwinds': {
     icon: '🎷',
-    uacc_values: [1,2,3,20,21,22,40,41,42,46,47,70,71,100,101]
-  },
-  'EW Hollywood Strings': {
-    icon: '🎻',
-    uacc_values: [1,2,3,20,21,22,40,41,42,43,44,49,50,100,101]
-  },
-  'EW Hollywood Brass': {
-    icon: '🎺',
-    uacc_values: [1,2,3,20,21,22,26,40,41,47,100,101,110,112]
-  },
-  'OT Berlin Strings': {
-    icon: '🎻',
-    uacc_values: [1,2,3,4,20,21,22,40,41,42,43,49,50,52,100,101]
-  },
-  'OT Berlin Brass': {
-    icon: '🎺',
-    uacc_values: [1,2,3,20,21,22,40,41,47,100,101,110]
-  },
-  'Kontakt Factory': {
-    icon: '🎹',
-    uacc_values: [1,2,3,20,21,40,41,42,100,101]
+    uacc_values: [20,1,11,42,44,70,71,75]
   },
   'Sonuscore LUX — Orchestral Strings': {
     // LUX Ensemble: C0 Legato, C#0 Sustain, D0 Marcato, D#0 Tremolo.
@@ -8108,7 +8101,9 @@ function openLibraryPreview(name) {
   setTxt('library-preview-subtitle', `Review changes for ${cfg.banks[activeBank]?.name || `Bank ${activeBank+1}`}.`);
   const note = preset.custom
     ? 'This is your saved setup. Only the parts included when it was saved will change.'
-    : 'Built-in starting point — confirm CC and articulation support for the exact library patch and version before sending.';
+    : Array.isArray(preset.uacc_values)
+      ? 'In the Spitfire plugin, set the articulation lock to "Locked to UACC" – otherwise CC 32 will not switch articulations.'
+      : 'Built-in starting point — confirm CC and articulation support for the exact library patch and version before sending.';
   const body = document.getElementById('library-preview-body');
   if (body) body.innerHTML = libraryPresetPreviewRows(name,preset) + `<div class="library-preview-note">${escHtml(note)}</div>`;
   const articulationBtn = document.getElementById('library-preview-articulations');
