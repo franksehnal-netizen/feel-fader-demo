@@ -1,0 +1,22 @@
+{
+  "latest": "1.3.0",
+  "notes": "Feel Fader firmware 1.3.0 - in-app update support (serial update protocol, safe boot with rollback).",
+  "files": [
+    {
+      "name": "ff_main.py",
+      "size": 34728,
+      "crc": "fe648694"
+    },
+    {
+      "name": "ff_config.py",
+      "size": 17351,
+      "crc": "de954f8a"
+    },
+    {
+      "name": "ff_update.py",
+      "size": 6427,
+      "crc": "995aba79"
+    }
+  ],
+  "rescue_uf2": "feel-fader-1.3.0.uf2"
+}
