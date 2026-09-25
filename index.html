@@ -676,6 +676,8 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
   height:1px;background:var(--border);margin:5px 6px;
 }
 .uacc-note{font-size:12px;color:var(--t2);margin-top:8px}
+.fw-min-note{font-size:12px;color:var(--t1);background:color-mix(in srgb,var(--amber) 14%,transparent);border-radius:var(--r-sm);padding:8px 10px;margin:8px 0}
+.fw-min-note a{color:inherit;font-weight:600}
 .hid-inline-notice{display:flex;align-items:center;gap:10px;margin:8px 0;padding:9px 10px;border:1px solid color-mix(in srgb,var(--amber) 34%,var(--border));border-radius:var(--r-sm);background:color-mix(in srgb,var(--amber) 7%,var(--glass-soft));color:var(--t2)}
 .hid-inline-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;font-size:11px;line-height:1.4}
 .hid-inline-copy strong{color:var(--t1);font-size:11px}
@@ -833,6 +835,10 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .info-row{display:flex;flex-direction:row;align-items:baseline;gap:8px;}
 .info-row.info-row-action{align-items:center;justify-content:flex-start;}
 .info-row.info-row-action .info-lbl{min-width:100px;}
+.fw-update-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+.fw-update-dot[hidden],#fw-update-row[hidden]{display:none}
+#fw-update-progress{width:120px;height:6px;accent-color:var(--green)}
+#fw-update-progress[hidden],#fw-update-btn[hidden]{display:none}
 .response-select{position:relative;min-width:164px;}
 .response-select-trigger{width:100%;min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 10px 6px 12px;border-radius:11px;color:var(--t1);font:600 12px 'Mulish',sans-serif;text-align:left;}
 .response-select-trigger svg{width:14px;height:14px;color:var(--t3);transition:transform .18s var(--ease-out);flex:none;}
@@ -2322,6 +2328,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <div style="display:flex;align-items:center;gap:7px">
         <div class="panel-dot"></div>
         <span class="panel-name" style="margin:0">Device &amp; Settings</span>
+        <span class="fw-update-dot" id="fw-update-dot" hidden title="Firmware update available"></span>
       </div>
       <span id="device-settings-chevron" style="font-size:11px;color:var(--t3)">▼</span>
     </button>
@@ -2333,6 +2340,11 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
         <div class="info-row"><span class="info-lbl"><span data-i18n="device.product">Product</span></span><span class="info-val">Feel Fader</span></div>
         <div class="info-row"><span class="info-lbl">Manufacturer</span><span class="info-val">Acoustic Empire</span></div>
         <div class="info-row"><span class="info-lbl">Firmware</span><span class="info-val" id="di-firmware" style="color:var(--t2)">—</span></div>
+        <div class="info-row info-row-action" id="fw-update-row" hidden>
+          <span class="info-lbl" id="fw-update-label">Firmware update available</span>
+          <button class="btn btn-ghost" id="fw-update-btn" onclick="startFirmwareUpdate()">Update</button>
+          <progress id="fw-update-progress" max="100" value="0" hidden aria-label="Firmware update progress"></progress>
+        </div>
         <div class="info-row"><span class="info-lbl">Serial</span><span class="info-val" id="di-serial" style="color:var(--t2)">—</span></div>
         <div class="info-row info-row-action" data-tip="Enable HID to let the device send keystrokes — required for the Navigation roller mode and the button long-press macro.">
           <span class="info-lbl">Keyboard (HID)</span>
@@ -2859,6 +2871,7 @@ const DEVICE_INFO = {
   schema_version: null,   // z CMD_INFO; < 3 = firmware neumí per-bank makra
   fader_response_presets: false,
   fader_response: null,
+  update: null,           // z CMD_INFO: {supported, slot} — firmware umí in-app update (fw ≥ 1.3.0)
 };
 
 const LS_CFG_KEY        = 'ff-cfg';
@@ -3585,6 +3598,7 @@ function ccRelativeBody(ctrl, bi, errs = validate()) {
   const encErr = errs.find(e => e.field === `b${bi}.encoder`)?.msg || '';
   return `
   <div class="enc-unified-body">
+    ${featureFwWarning('cc_relative')}
     <div class="uacc-note" style="margin:8px 0">Rotating the roller sends a relative CC (1 = step up, 127 = step down) on this CC/channel. The keyswitch note list lives in the Keyswitch Stepper Max for Live device on the track, not here.</div>
     <div class="section-field-row" style="margin-top:10px">
       ${stepperFieldHtml(`b${bi}-encoder-ch`, 'MIDI CHANNEL', ctrl.channel+1, 1, 16,
@@ -3766,6 +3780,14 @@ function openDeviceSettingsAtHid() {
     toggle?.focus({preventScroll:true});
   });
 }
+function openDeviceSettingsAtFirmware() {
+  const body = document.getElementById('device-settings-body');
+  if (body?.style.display === 'none') toggleDeviceSettings();
+  requestAnimationFrame(() => {
+    const row = document.getElementById('di-firmware')?.closest('.info-row');
+    row?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
+  });
+}
 function openHelpAt(anchorId) {
   const body = document.getElementById('help-body');
   if (body?.style.display === 'none') toggleHelp();
@@ -3798,6 +3820,7 @@ function onHidToggle(want){
   });
 }
 async function sendHidRequest(enabled){
+  if (_fwUpdating) { toast('i', 'Firmware update in progress — wait until the device restarts.'); updateHidToggle(); return; }
   // HID set goes via Web Serial (reliable path; MIDI SysEx doesn't get through in some setups).
   try {
     if (protocolVersion === 2) {
@@ -3839,6 +3862,188 @@ function updateDeviceInfo() {
   updateFaderResponseControl();
   updateMacroUI();
   renderMidiDiagnostics();
+}
+// ─── In-app firmware update ─────────────────────────────────────────────────
+// Spec: feel-fader-firmware docs/superpowers/specs/2026-09-24-in-app-firmware-update-design.md
+const FW_MANIFEST_URL = './firmware/manifest.json';
+let FW_MANIFEST = null;     // validovaný manifest | null (offline/404/invalid → žádná nabídka)
+let _fwUpdating = false;
+function cmpFwVersion(a, b) {
+  const pa = String(a || '').split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b || '').split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d < 0 ? -1 : 1;
+  }
+  return 0;
+}
+function isValidFwManifest(m) {
+  return !!m && typeof m.latest === 'string' && /^\d+\.\d+\.\d+$/.test(m.latest)
+    && (m.notes === undefined || typeof m.notes === 'string')
+    && Array.isArray(m.files) && m.files.length > 0 && m.files.length <= 8
+    && m.files.every(f => f && typeof f.name === 'string' && /^[a-z0-9_]+\.py$/.test(f.name) && f.name.length <= 32
+      && Number.isInteger(f.size) && f.size > 0 && f.size <= 200000 && typeof f.crc === 'string' && /^[0-9a-f]{8}$/.test(f.crc))
+    && new Set(m.files.map(f => f.name)).size === m.files.length;
+}
+async function fetchFirmwareManifest() {
+  try {
+    const r = await fetch(FW_MANIFEST_URL, { cache: 'no-cache' });
+    const m = r.ok ? await r.json() : null;
+    FW_MANIFEST = isValidFwManifest(m) ? m : null;
+  } catch (_) {
+    FW_MANIFEST = null;
+  }
+  renderFirmwareOffer();
+}
+function firmwareUpdateAvailable() {
+  return !!(FW_MANIFEST && protocolVersion === 2 && DEVICE_INFO.update?.supported === true
+    && DEVICE_INFO.firmware && cmpFwVersion(DEVICE_INFO.firmware, FW_MANIFEST.latest) < 0
+    && !_fwUpdateTarget);
+}
+function renderFirmwareOffer() {
+  const avail = firmwareUpdateAvailable();
+  const dot = document.getElementById('fw-update-dot');
+  if (dot) dot.hidden = !avail || _fwUpdating;
+  const row = document.getElementById('fw-update-row');
+  if (row) row.hidden = !(avail || _fwUpdating);
+  const lbl = document.getElementById('fw-update-label');
+  if (lbl && FW_MANIFEST) lbl.textContent = `Firmware ${FW_MANIFEST.latest} available`;
+}
+const FEATURE_MIN_FW = { cc_relative: '1.3.0' };
+function featureFwWarning(feature) {
+  const min = FEATURE_MIN_FW[feature];
+  const fw = DEVICE_INFO.firmware;
+  if (!min || !fw || cmpFwVersion(fw, min) >= 0) return '';
+  const text = `Requires firmware ${escHtml(min)} — this device runs ${escHtml(fw)}.`;
+  if (!firmwareUpdateAvailable()) return `<div class="fw-min-note" role="note">${text}</div>`;
+  return `<div class="fw-min-note" role="note">${text} `
+    + `<a href="#" onclick="openDeviceSettingsAtFirmware();return false">Update firmware</a></div>`;
+}
+const FW_CHUNK = 512;
+let FW_CHUNK_TIMEOUT_MS = 3000;   // probe override for the always-timeout retry-exhaustion case
+let FW_END_TIMEOUT_MS = 10000;    // probe override for the CMD_UE ack timeout
+let FW_SERIAL_RECONNECT_GRACE_MS = 1500;   // MIDI reconnect gets first go; probe override
+let _fwUpdateTarget = null;   // {from,to} po CMD_UE; vyhodnotí se při prvním úspěšném CMD_INFO
+const _FW_CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32Hex(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = _FW_CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return ((c ^ 0xFFFFFFFF) >>> 0).toString(16).padStart(8, '0');
+}
+function bytesToB64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+async function downloadFirmwareFiles(m) {
+  const out = [];
+  for (const f of m.files) {
+    let bytes;
+    try {
+      const r = await fetch(`./firmware/${encodeURIComponent(m.latest)}/${encodeURIComponent(f.name)}`, { cache: 'no-cache' });
+      if (!r.ok) throw 0;
+      bytes = new Uint8Array(await r.arrayBuffer());
+    } catch (_) { throw new Error('download'); }
+    if (bytes.length !== f.size || crc32Hex(bytes) !== f.crc) throw new Error('download');
+    out.push({ name: f.name, size: f.size, crc: f.crc, bytes });
+  }
+  return out;
+}
+async function uploadFirmware(m, files, onProgress) {
+  const meta = { version: m.latest, files: files.map(({ name, size, crc }) => ({ name, size, crc })) };
+  await serialRequest('CMD_UB', JSON.stringify(meta), 5000);
+  const total = files.reduce((s, f) => s + f.size, 0);
+  let done = 0;
+  for (const f of files) {
+    let off = 0, retries = 0;
+    while (off < f.size) {
+      const chunk = f.bytes.subarray(off, off + FW_CHUNK);
+      try {
+        const next = Number(await serialRequest('CMD_UC', `${f.name}:${off}:${bytesToB64(chunk)}`, FW_CHUNK_TIMEOUT_MS));
+        if (!Number.isInteger(next) || next <= off || next > f.size) throw new Error('ERR:protocol');
+        done += next - off; off = next; retries = 0;
+      } catch (e) {
+        const resync = /^ERR:offset:(\d+)$/.exec(e.message || '');
+        if (resync) { const exp = +resync[1]; done += exp - off; off = exp; retries = 0; continue; }
+        if (e.message === 'timeout' && ++retries <= 3) continue;
+        throw e;
+      }
+      onProgress(done / total);
+    }
+  }
+  try {
+    await serialRequest('CMD_UE', null, FW_END_TIMEOUT_MS);
+  } catch (e) {
+    const err = new Error(e.message);
+    err.atCmdUE = true;
+    throw err;
+  }
+}
+function setFwProgress(v) {
+  const el = document.getElementById('fw-update-progress');
+  const btn = document.getElementById('fw-update-btn');
+  if (el) { el.hidden = v == null; el.value = Math.round((v || 0) * 100); }
+  if (btn) btn.hidden = v != null;
+}
+function startFirmwareUpdate() {
+  if (!firmwareUpdateAvailable() || _fwUpdating || _fwUpdateTarget) return;
+  const m = FW_MANIFEST;
+  openConfirm({
+    title: `Update firmware to ${m.latest}?`,
+    message: `${m.notes ? m.notes + ' ' : ''}Keep the device connected until it restarts (about 20 seconds). Your settings stay on the device.`,
+    confirmLabel: 'Update',
+    tone: 'primary',
+    onConfirm: () => runFirmwareUpdate(m),
+  });
+}
+async function runFirmwareUpdate(m) {
+  if (_fwUpdating) return;
+  _fwUpdating = true; setFwProgress(0); renderFirmwareOffer();
+  const from = DEVICE_INFO.firmware;
+  try {
+    const files = await downloadFirmwareFiles(m);
+    await uploadFirmware(m, files, setFwProgress);
+    _fwUpdateTarget = { from, to: m.latest };
+    toast('i', 'Device is restarting with the new firmware…');
+  } catch (e) {
+    if (e.message === 'download') {
+      toast('e', 'Could not download the firmware. Check your connection and try again.', null, { sticky: true });
+    } else if (e.atCmdUE && !/^ERR:/.test(e.message || '')) {
+      // Non-ERR failure on the CMD_UE ack (timeout / port closed) — the device
+      // may have already committed and be mid-reset. Don't send CMD_UA (it
+      // would race the reset, or hit ERR:state if the reset already landed);
+      // let the reconnect's CMD_INFO settle it via checkFirmwareUpdateOutcome().
+      _fwUpdateTarget = { from, to: m.latest };
+      toast('i', 'Device is restarting — checking the result…');
+    } else {
+      // Only abort over a still-open port. After an unplug, serialRequest would
+      // re-open via requestPort(), which inside Chrome's 5 s user-activation
+      // window opens a chooser that never settles; an unplugged device has
+      // nothing staged to abort anyway.
+      if (_serialPort && _serialPort.readable) {
+        try { await serialRequest('CMD_UA', null, 2000); } catch (_) {}
+      }
+      toast('e', 'Update failed — the device is unchanged.', null, { sticky: true });
+    }
+  } finally {
+    _fwUpdating = false; setFwProgress(null); renderFirmwareOffer();
+  }
+}
+function checkFirmwareUpdateOutcome() {
+  if (!_fwUpdateTarget) return;
+  const { from, to } = _fwUpdateTarget;
+  _fwUpdateTarget = null;
+  if (DEVICE_INFO.firmware === to) toast('s', `Firmware updated to ${to}`);
+  else toast('e', `Update was rolled back — device runs ${DEVICE_INFO.firmware || from}.`,
+    { label: 'Contact support', onClick: () => window.open('mailto:support@acoustic-empire.cz') }, { sticky: true });
 }
 function updateMacroUI(){
   const el = document.getElementById('macro-capture');
@@ -4950,6 +5155,13 @@ function initSerialDisconnectWatch() {
       renderConnState();
     }
   });
+  // After the post-update reset, Windows often never re-registers the MIDI
+  // port (so connectInputs() never fires), but the granted serial port does
+  // come back — resolve the pending update outcome over serial then.
+  navigator.serial.addEventListener('connect', () => {
+    if (!_fwUpdateTarget) return;
+    setTimeout(() => { if (_fwUpdateTarget) onDeviceConnected(); }, FW_SERIAL_RECONNECT_GRACE_MS);
+  });
 }
 // Feel Fader device name as set in boot.py via supervisor.set_usb_identification
 const DEVICE_NAME = 'Feel Fader';
@@ -4994,6 +5206,7 @@ function connectInputs(){
   } else {
     _ffConnected = false;   // reset so the next physical connect triggers a fresh CMD_R
     DEVICE_INFO.schema_version = null;   // stale value could drive a false/suppressed firmware-mismatch warning for the next device
+    DEVICE_INFO.update = null; renderFirmwareOffer();
     liveSeen.f1 = false; liveSeen.f2 = false; encLiveVal = null; ksLiveNote = null;
     // Don't tear down UI if config is already loaded — device may reconnect shortly
     if (!loaded) {
@@ -5087,6 +5300,7 @@ function showDeviceLoadedFeedback() {
   showSendInlineFeedback('✓ Device loaded');
 }
 async function syncLoadFromDevice() {
+  if (_fwUpdating) { toast('i', 'Firmware update in progress — wait until the device restarts.'); return; }
   hideSyncBanner();
   try { await loadConfigFromDevice(); renderConnState(); showDeviceLoadedFeedback(); }
   catch(e) { toast('e', "Couldn't sync with device — showing local config"); }
@@ -5292,7 +5506,8 @@ function serialRequest(cmd, payload, timeoutMs) {
     await writer.write(new TextEncoder().encode(line + '\n'));
     writer.releaseLock();
     if (!v2 && (cmd === 'CMD_W' || cmd === 'CMD_HID')) return '';   // legacy: bez odpovědi
-    const expect = { CMD_R: 'CFG', CMD_INFO: 'INFO', CMD_W: 'ACK', CMD_HID: 'ACK' }[cmd];
+    const expect = { CMD_R: 'CFG', CMD_INFO: 'INFO', CMD_W: 'ACK', CMD_HID: 'ACK',
+                     CMD_UB: 'ACK', CMD_UC: 'ACK', CMD_UE: 'ACK', CMD_UA: 'ACK' }[cmd];
     return await _readReply(port, v2, expect, rid, timeoutMs);
   };
   const p = _txnChain.then(run, run);
@@ -5356,12 +5571,16 @@ async function serialReadInfo() {
   const info = JSON.parse(line);
   protocolVersion = (info.schema_version >= 2 && typeof info.config_hash === 'string') ? 2 : 1;
   if (info.firmware) DEVICE_INFO.firmware = info.firmware;
+  checkFirmwareUpdateOutcome();   // po restartu zařízení z CMD_UE (jen první úspěšný CMD_INFO)
   if (info.serial)   DEVICE_INFO.serial   = info.serial;
   if (typeof info.hid_available === 'boolean') DEVICE_INFO.hid_available = info.hid_available;
   if (typeof info.hid_enabled   === 'boolean') DEVICE_INFO.hid_enabled   = info.hid_enabled;
   DEVICE_INFO.fader_response_presets = info.fader_response_presets === true;
   if (typeof info.fader_response === 'string') DEVICE_INFO.fader_response = normalizeFaderResponse(info.fader_response);
   DEVICE_INFO.schema_version = Number(info.schema_version) || null;
+  DEVICE_INFO.update = (info.update && typeof info.update === 'object')
+    ? { supported: info.update.supported === true, slot: String(info.update.slot || '') }
+    : null;
   // Sync live-bank indicator to the device's actual current bank on (re)connect,
   // so it isn't stuck at Bank 1 until the next Program Change (firmware reports
   // its bank_index in CMD_INFO; liveBank sync-on-load 2026-07-29).
@@ -5371,6 +5590,7 @@ async function serialReadInfo() {
   storageSet(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId);
   const _faders = applyInfoFaders(info);   // set liveValues BEFORE render (render recreates value spans)
   updateDeviceInfo(); updateHidToggle();
+  fetchFirmwareManifest();   // best effort, bez await — nabídka se dorenderuje sama
   render();   // re-render roller selector — track_nav gating depends on hid_enabled
   if (_faders) {
     positionThumbs();                       // thumbs live in the (persistent) stage, not rebuilt by render
@@ -5449,8 +5669,14 @@ async function doStart() {
   }
 }
 
-// Device detected (via MIDI). Decide: auto-enter (port granted) vs surface Start (gesture needed).
-async function onDeviceConnected() {
+// Device detected (via MIDI, or serial 'connect' after a firmware update).
+// Concurrent triggers share one run.
+let _deviceConnectRun = null;
+function onDeviceConnected() {
+  return _deviceConnectRun ||= _onDeviceConnected().finally(() => { _deviceConnectRun = null; });
+}
+// Decide: auto-enter (port granted) vs surface Start (gesture needed).
+async function _onDeviceConnected() {
   const ws = document.getElementById('welcome-screen');
   const onWelcome = ws && !ws.classList.contains('hidden');
   let granted = false;
@@ -5490,7 +5716,13 @@ async function onDeviceConnected() {
         renderConnState();
       }
     } catch(e) {
-      if (!dirty) {   // audit C4 — desync musí být vidět; header zůstává v „searching"
+      if (_fwUpdateTarget) {
+        // Reconnect after CMD_UE failed to sync — the update may still have
+        // committed and the device may need more than one replug to come
+        // back on the new firmware's USB identity. Keep _fwUpdateTarget set
+        // so the next successful CMD_INFO still runs checkFirmwareUpdateOutcome().
+        toast('e', "Device didn't respond after the update — unplug and reconnect it (twice if needed) to restore the previous firmware.", null, { sticky: true });
+      } else if (!dirty) {   // audit C4 — desync musí být vidět; header zůstává v „searching"
         toast('e', "Couldn't sync with device — showing local config");
       }
       renderConnState();
@@ -5512,6 +5744,7 @@ async function onDeviceConnected() {
 }
 
 async function doSend() {
+  if (_fwUpdating) { toast('i', 'Firmware update in progress — wait until the device restarts.'); return; }
   if (validate().length) { toast('e', t('toast.fix_errors')); return; }
   if (!navigator.serial) { toast('e', 'Web Serial not supported in this browser — use Chrome or Edge to send to your device.'); return; }
   if (!_ffConnected && !_serialPort) toast('i', "No device on MIDI — choose your Feel Fader's USB serial port to continue.");
@@ -6076,7 +6309,7 @@ function toggleStatusReveal(event) {
   status.setAttribute('aria-expanded', revealed ? 'true' : 'false');
 }
 function setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
-function toast(t,m,action=null){
+function toast(t,m,action=null,{sticky=false}={}){
   const icons={s:'✓',e:'✕',i:'i',sent:'✓'},c=document.getElementById('toasts'),el=document.createElement('div');
   el.className='toast '+t;
   el.setAttribute('role', t === 'e' ? 'alert' : 'status');
@@ -6101,7 +6334,7 @@ function toast(t,m,action=null){
   c.appendChild(el);
   [...c.children].filter(item=>!item.classList.contains('is-leaving')).slice(0,-3)
     .forEach(oldToast=>oldToast.querySelector('.tx')?.click());
-  timer=setTimeout(dismiss,action?6500:(t==='e'?5200:3400));
+  if(!sticky) timer=setTimeout(dismiss,action?6500:(t==='e'?5200:3400));
 }
 
 // ════════════════════════════════════════════════════════════════
