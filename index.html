@@ -652,7 +652,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .uacc-tag .tag-remove-btn{margin-left:1px}
 .uacc-tag.ks-live{border-color:rgba(52,199,89,.5);background:rgba(52,199,89,.1)}
 .uacc-add-row{display:flex;align-items:center;gap:8px;margin-top:8px}
-.uacc-add-row input{width:80px;background:var(--bg-input);border:1px solid var(--border-s);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:12px;color:var(--t1);outline:none;-moz-appearance:textfield;box-shadow:inset 0 1px 3px rgba(0,0,0,.13)}
+.uacc-add-row input{width:96px;background:var(--bg-input);border:1px solid var(--border-s);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:12px;color:var(--t1);outline:none;-moz-appearance:textfield;box-shadow:inset 0 1px 3px rgba(0,0,0,.13)}
 .uacc-add-row input::-webkit-inner-spin-button,.uacc-add-row input::-webkit-outer-spin-button{-webkit-appearance:none}
 .uacc-presets-wrap{position:relative}
 .uacc-preset-dropdown{
@@ -2423,7 +2423,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
     <div id="help-body" style="display:none;padding:12px 16px 16px;border-top:1px solid var(--border);font-size:12px;line-height:1.6;color:var(--t2)">
       <button class="btn btn-ghost quick-preset-btn onb-replay-btn ui-control ui-pill ui-glass" onclick="onbReplay()" data-i18n="onb.replay">▶ Show intro again</button>
       <div class="settings-subhead">Getting started</div>
-      <p style="margin:0 0 12px">Connect your Feel Fader via USB and click <b>Connect &amp; load</b>. The configurator reads the device config; after editing, click <b>Send to device</b> to apply your changes.</p>
+      <p style="margin:0 0 12px">Connect your Feel Fader via USB and click <b>Connect &amp; load</b>. The configurator reads the device config; after editing, click <b>Send to device</b> to apply your changes. Shortcuts: <b>Ctrl/⌘ + S</b> sends, <b>Ctrl/⌘ + Z</b> undoes the last change.</p>
       <div class="settings-subhead" id="help-faders">Faders</div>
       <p style="margin:0 0 12px">Each fader sends a MIDI <b>CC</b> on a <b>channel</b> you choose (Expression / Dynamics by default). The on-screen faders <b>mirror the hardware</b> — they are display only and cannot be dragged.</p>
       <div class="settings-subhead" id="help-banks">Banks</div>
@@ -2635,7 +2635,7 @@ const UACC_NAMES = {
 };
 
 function uaccName(v) {
-  return UACC_NAMES[v] || `CC ${v}`;
+  return UACC_NAMES[v] || `Value ${v}`;
 }
 
 // Composer-facing names for common continuous controllers. Raw CC numbers remain
@@ -3105,6 +3105,9 @@ function restoreSyncedConfig() {
 // RENDER
 // ═══════════════════════════════════════════════════════════
 function reflectDirty() {
+  // UX audit 2026-09-25 F-1: a change that is reversed (step up/down, mode
+  // there and back) returns to the synced config — same rule as undo.
+  if (dirty && _syncedConfigSnapshot && configSignature(cfg) === configSignature(_syncedConfigSnapshot)) dirty = false;
   recordConfigCheckpoint();
   if (dirty && _sendConfirmed) {
     _sendConfirmed = false;
@@ -3333,7 +3336,7 @@ function ccEncoderBody(ctrl, bi, errs = validate()) {
   const initName = uaccName(initVal);
   const uaccTags = bankUacc.map((v,i) => `
     <div class="uacc-tag articulation-chip" title="CC ${v}" tabindex="0" draggable="true" data-sequence-kind="uacc" data-sequence-index="${i}"
-      aria-label="${uaccName(v)}, CC ${v}, position ${i+1} of ${bankUacc.length}. Drag or use Alt plus arrow keys to reorder."
+      aria-label="${uaccName(v)}, value ${v}, position ${i+1} of ${bankUacc.length}. Drag or use Alt plus arrow keys to reorder."
       onkeydown="sequenceChipKey(event,'uacc',${bi},${i})" ondragstart="sequenceDragStart(event,'uacc',${bi},${i})" ondragover="sequenceDragOver(event,${i})" ondrop="sequenceDrop(event,${i})" ondragend="sequenceDragEnd()">
       <span class="uacc-num">${v}</span>
       <span class="uacc-label">${uaccName(v)}</span>
@@ -3369,7 +3372,7 @@ function ccEncoderBody(ctrl, bi, errs = validate()) {
         <div class="ks-sequence-head"><span class="field-label">ROLLER ORDER</span><span class="uacc-note">First → last</span></div>
         <div class="uacc-grid ks-sequence-grid" id="uacc-grid">${uaccTags}</div>
         <div class="uacc-add-row" style="margin-top:10px">
-          <input type="number" id="uacc-input" min="0" max="127" placeholder="CC 0–127" aria-label="Articulation MIDI CC"
+          <input type="number" id="uacc-input" min="0" max="127" placeholder="Value 0–127" aria-label="Articulation value (0–127)"
             onkeydown="if(event.key==='Enter')addUacc()"/>
           <button class="btn btn-ghost" onclick="addUacc()">+ Add</button>
           <div class="uacc-presets-wrap">
@@ -4100,6 +4103,7 @@ function rollerModeKey(e, bi, index) {
   requestAnimationFrame(() => document.querySelector(`[data-roller-mode="${modes[next]}"]`)?.focus());
 }
 const _rollerModeTimers = new Map();
+const _ksSeededBanks = new WeakMap();   // bank → ks_notes before Keyswitch seeded its default range
 const _openRollerAdvanced = new Set();
 function rememberRollerAdvanced(bi, open) {
   if (open) _openRollerAdvanced.add(bi); else _openRollerAdvanced.delete(bi);
@@ -4117,9 +4121,19 @@ function setRollerMode(bi, mode) {
   const modes = ROLLER_MODES;
   const current = cfg.banks[bi].roller_mode || 'cc';
   if (!modes.includes(mode) || current === mode) return;
-  cfg.banks[bi].roller_mode = mode;
-  if (mode === 'keyswitch' && (!cfg.banks[bi].ks_notes || cfg.banks[bi].ks_notes.length === 0)) {
-    cfg.banks[bi].ks_notes = ksRange(0, 11);   // default standard C-2..B-2
+  const bank = cfg.banks[bi];
+  bank.roller_mode = mode;
+  if (mode === 'keyswitch' && (!bank.ks_notes || bank.ks_notes.length === 0)) {
+    _ksSeededBanks.set(bank, bank.ks_notes);
+    bank.ks_notes = ksRange(0, 11);   // default standard C-2..B-2
+  } else if (current === 'keyswitch' && _ksSeededBanks.has(bank)) {
+    // UX audit 2026-09-25 F-1: an untouched seeded range is not a user change —
+    // leaving the mode restores the original, so browsing modes stays clean.
+    const original = _ksSeededBanks.get(bank);
+    _ksSeededBanks.delete(bank);
+    if ((bank.ks_notes || []).join() === ksRange(0, 11).join()) {
+      if (original === undefined) delete bank.ks_notes; else bank.ks_notes = original;
+    }
   }
   dirty = true;
   reflectDirty();
@@ -8006,12 +8020,21 @@ function quickSetupMenuHtml(query = '') {
       <span class="quick-setup-option-icon" aria-hidden="true">${escHtml(icon)}</span><span class="quick-setup-option-name">${escHtml(name)}</span><span class="quick-setup-option-kind">${kind}</span>
     </button>`;
   };
+  // UX audit 2026-09-25 F-2: say HOW a built-in setup switches articulations.
+  const mechanism = name => {
+    const preset = LIBRARY_PRESETS[name];
+    if (!preset) return 'My setup';
+    if (preset.roller_mode === 'keyswitch' && preset.ks_notes?.length) {
+      return `Keyswitch ${noteName(Math.min(...preset.ks_notes))}–${noteName(Math.max(...preset.ks_notes))}`;
+    }
+    return `UACC · CC${preset.encoder_cc ?? 32}`;
+  };
   const groups = [];
   const recent = q ? [] : recentQuickSetups.filter(name => quickSetupExists(name));
   const builtIn = Object.keys(LIBRARY_PRESETS).filter(matches);
   const custom = Object.keys(customLibraryPresets).filter(matches).sort((a,b) => a.localeCompare(b));
-  if (recent.length) groups.push(['Recently used',recent.map(name => option(name,'Recent')).join('')]);
-  if (builtIn.length) groups.push(['Libraries',builtIn.map(name => option(name,'Starting point')).join('')]);
+  if (recent.length) groups.push(['Recently used',recent.map(name => option(name,mechanism(name))).join('')]);
+  if (builtIn.length) groups.push(['Libraries',builtIn.map(name => option(name,mechanism(name))).join('')]);
   if (custom.length) groups.push(['My setups',custom.map(name => option(name,'My setup')).join('')]);
   return groups.length ? groups.map(([label,items]) => `<div class="quick-setup-group"><div class="quick-setup-group-label">${label}</div>${items}</div>`).join('')
     : '<div class="quick-setup-empty">No matching setups</div>';
@@ -8162,6 +8185,21 @@ document.addEventListener('pointerdown', event => {
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && document.getElementById('change-popover')?.classList.contains('is-open')) closeChangePopover();
+});
+// UX audit 2026-09-25 C-6: DAW-style Ctrl/Cmd+S (Send) and Ctrl/Cmd+Z (Undo).
+// Active key capture owns every combo — a composer may record Ctrl+S as a macro.
+document.addEventListener('keydown', event => {
+  if (_keyCapture || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+  const key = event.key.toLowerCase();
+  if (key === 's') {
+    event.preventDefault();   // never the browser "Save page" dialog
+    const welcomeHidden = document.getElementById('welcome-screen')?.classList.contains('hidden');
+    if (dirty && welcomeHidden && !document.getElementById('send-btn')?.disabled) handleDirtyAction();
+  } else if (key === 'z') {
+    if (event.target.closest?.('input, textarea, select, [contenteditable="true"]') || !_undoConfigHistory.length) return;
+    event.preventDefault();
+    undoLastConfigChange();
+  }
 });
 let _hoverTipTimer = null, _hoverTipEl = null, _lastPointerX = 0, _lastPointerY = 0;
 document.addEventListener('mousemove', e => { _lastPointerX = e.clientX; _lastPointerY = e.clientY; }, { passive: true });
