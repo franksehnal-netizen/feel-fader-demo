@@ -54,32 +54,27 @@
   --chrome-glass-filter:blur(22px) saturate(170%);
   --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.72),0 8px 28px rgba(31,31,36,.09);
   --chrome-float-border:rgba(255,255,255,.38);
-  /* Was a strong diagonal gradient sheen with no real blur underneath —
-     read as a dated "glossy button" fake-glass instead of the frosted
-     material the header/HUD already use (Frank 2026-08-18, confirmed via
-     visual brainstorm: near-flat fill + real backdrop-filter, option C).
-     --control-glass-filter mirrors --chrome-glass-filter's pattern
-     (theme-independent, one value shared by both themes). */
-  --control-glass-bg:rgba(255,255,255,.38);
-  --control-glass-filter:blur(10px) saturate(160%);
-  --control-glass-border:rgba(255,255,255,.5);
-  --control-glass-shadow:0 1px 3px rgba(34,34,40,.10),inset 0 1px 0 rgba(255,255,255,.55);
-  --control-glass-shadow-hover:0 2px 6px rgba(34,34,40,.15),inset 0 1px 0 rgba(255,255,255,.62);
-  --ambient-accent:rgba(228,87,69,.10);
-  --ambient-cool:rgba(84,118,255,.08);
-  --ambient-green:rgba(52,199,89,.055);
+  /* Compact controls (steppers, segmented, pills, keycaps) are flat since the
+     minimal hybrid pass (spec 2026-09-26 §1): one fill, no blur, no bevel.
+     Names kept so every .ui-glass / control call site follows without edits. */
+  --control-glass-bg:var(--bg-input);
+  --control-glass-filter:none;
+  --control-glass-border:transparent;
+  --control-glass-shadow:none;
+  --control-glass-shadow-hover:none;
   --green:#34c759;
   --green-text:#1e8237;
   --green-bg:rgba(52,199,89,.10);
   --green-border:rgba(52,199,89,.32);
   --highlight-rgb:76,175,105;
-  --highlight-section-fill:rgba(var(--highlight-rgb),.10);
-  --highlight-section-glow:rgba(var(--highlight-rgb),.16);
+  --highlight-section-fill:color-mix(in srgb,var(--t1) 4%,transparent);  /* neutral: green is live-only (spec 2026-09-26 §1) */
+  --highlight-section-glow:transparent;
   --amber:#e6a23c;
   --piano-white:#fbfbfd;
   --piano-black:#303036;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);
   --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow-hud:0 8px 24px rgba(0,0,0,.06);   /* floating HUD lift – the only shadow on a flat surface */
   /* Fader-cap cursor — shape/size chosen via visual brainstorm 2026-08-18
      (option A: plain rounded capsule, 20x32, hotspot top-center). Source
      photo (#thumb-l) intentionally not reused directly — a photo would
@@ -100,6 +95,7 @@
   --fs-xl:16px;
   --fs-2xl:20px;
   --fs-3xl:22px;
+  --fs-display:32px;  /* bank name in the card header only (spec 2026-09-26 §4) */
   --fs-hud-sm:8px;
   /* Spacing scale (K-3): gaps between controls. Half-steps (2/6/10 px) stay raw
      where optical alignment needs them. */
@@ -153,19 +149,13 @@ html.dark{
   --chrome-glass-bg:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
   --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18);
   --chrome-float-border:rgba(255,255,255,.10);
-  --control-glass-bg:rgba(30,30,35,.42);
-  --control-glass-border:rgba(255,255,255,.09);
-  --control-glass-shadow:0 1px 4px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);
-  --control-glass-shadow-hover:0 2px 6px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.12);
-  --ambient-accent:rgba(255,96,75,.12);
-  --ambient-cool:rgba(94,117,255,.12);
-  --ambient-green:rgba(52,199,89,.07);
   --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.2);
   --shadow-sm:0 1px 2px rgba(0,0,0,.2);
+  --shadow-hud:0 8px 24px rgba(0,0,0,.35);
   --green-text:#5dd47a;
   --highlight-rgb:92,190,120;
-  --highlight-section-fill:rgba(var(--highlight-rgb),.12);
-  --highlight-section-glow:rgba(var(--highlight-rgb),.20);
+  --highlight-section-fill:color-mix(in srgb,var(--t1) 6%,transparent);
+  --highlight-section-glow:transparent;
   --piano-white:#d8d8dc;
   --piano-black:#202024;
 }
@@ -190,12 +180,7 @@ html.dark .uacc-preset-dropdown{background:#1a1a1e}
    right at that threshold; localhost happened not to cross it). */
 html{-webkit-font-smoothing:antialiased;scrollbar-gutter:stable}
 body{
-  background:
-    radial-gradient(circle at 84% 12%,var(--ambient-accent),transparent 30rem),
-    radial-gradient(circle at 12% 54%,var(--ambient-cool),transparent 34rem),
-    radial-gradient(circle at 76% 88%,var(--ambient-green),transparent 28rem),
-    var(--bg);
-  background-attachment:fixed;
+  background:var(--bg);
   color:var(--t1);font-family:'Mulish',sans-serif;font-size:var(--fs-base);min-height:100vh;
   display:flex;flex-direction:column;
   -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
@@ -228,10 +213,9 @@ header{
 .live-hud{
   position:fixed;top:64px;z-index:45;width:144px;height:144px;box-sizing:border-box;padding:10px;
   --hud-scale:1;transform-origin:top left;
-  border:1px solid var(--chrome-float-border);border-radius:var(--r-lg);
-  background:var(--chrome-glass-bg);
-  backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);
-  box-shadow:var(--chrome-glass-shadow);
+  border:1px solid var(--border);border-radius:var(--r-lg);
+  background:var(--bg-card);
+  box-shadow:var(--shadow-hud);
   opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-5px) scale(calc(.98 * var(--hud-scale)));
   transition:opacity .28s ease,transform .36s var(--ease-out),left .36s var(--ease-out),top .36s var(--ease-out),width .38s var(--ease-out),height .38s var(--ease-out),padding .38s var(--ease-out),border-radius .38s var(--ease-out),visibility 0s linear .36s;
 }
@@ -244,11 +228,10 @@ header{
    .36s transform transition makes the 1x<->2x toggle glide; move-drag sets
    transition:none and moves via left/top so scale is untouched. */
 .live-hud.is-contextual-visible{opacity:1;visibility:visible;pointer-events:auto;transform:scale(var(--hud-scale));transition-delay:0s}
-/* No idle dimming — the HUD's glass matches the header's translucency exactly
-   (same --chrome-glass-bg + backdrop), so it reads as one surface with the top
-   bar rather than a fainter floating panel (Frank 2026-07-26). Live vs not-live
-   is still conveyed by the content (values vs "—"). The .is-idle class stays as
-   a state hook but no longer changes opacity. */
+/* No idle dimming. Since the minimal hybrid pass (spec 2026-09-26 §3) the HUD is
+   a flat --bg-card card with a hairline and --shadow-hud – the header is the only
+   glass surface. Live vs not-live is conveyed by the content (values vs "–");
+   .is-idle stays as a state hook but no longer changes opacity. */
 .live-hud.is-dragging{cursor:grabbing!important;transform:scale(calc(1.015 * var(--hud-scale)))}
 .live-hud-size-btn{
   position:absolute;right:3px;bottom:3px;width:19px;height:19px;padding:0;
@@ -329,11 +312,10 @@ header{
    otravný"). Overflow is handled by truncation (ellipsis) instead. */
 .live-hud-roller .live-hud-value{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:left;font-size:var(--fs-lg);line-height:17px;letter-spacing:-.02em}
 @media(any-pointer:fine){.live-hud.is-contextual-visible{cursor:grab}}
-.h-left{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0}
-/* Matches the welcome-onboarding wordmark badge exactly (Frank 2026-08-16,
-   reference screenshot) rather than a bespoke header treatment. */
-.h-title{color:var(--t2);font-size:var(--fs-sm);font-weight:700;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;white-space:nowrap;user-select:none}
-.h-right{display:flex;align-items:center;gap:var(--space-2)}
+.h-left{display:flex;align-items:center;gap:var(--space-6);flex:1 1 auto;min-width:0}
+/* Wordmark in normal case (spec 2026-09-26 §2). 700 = heaviest embedded Mulish. */
+.h-title{color:var(--t1);font-size:var(--fs-lg);font-weight:700;letter-spacing:-.01em;flex-shrink:0;white-space:nowrap;user-select:none}
+.h-right{display:flex;align-items:center;gap:var(--space-4)}
 
 /* MAIN */
 main{width:100%;}
@@ -414,21 +396,6 @@ main{width:100%;}
   z-index:10;
 }
 .send-anchor{min-height:68px;display:flex;align-items:flex-start;justify-content:center;width:100%}
-/* Frosted halo lives on a pseudo-element and fades out with distance from the button
-   (radial mask) instead of a hard-edged offset pill (Frank 2026-07-09). */
-.send-callout::before{
-  content:'';
-  position:absolute;
-  inset:-16px;
-  z-index:-1;
-  pointer-events:none;
-  border-radius:var(--r-pill);
-  background:rgba(245,245,247,.55);
-  backdrop-filter:blur(9px);
-  -webkit-backdrop-filter:blur(9px);
-  -webkit-mask-image:radial-gradient(ellipse closest-side, #000 36%, transparent 100%);
-  mask-image:radial-gradient(ellipse closest-side, #000 36%, transparent 100%);
-}
 .send-arrow{display:none}
 .send-btn{
   background:var(--red);color:#fff;border:none;border-radius:var(--r-pill);
@@ -491,6 +458,24 @@ main{width:100%;}
   opacity:0;filter:blur(2px);transform:translate(-4px,-50%) scale(.985);
   transition-duration:.18s,.18s,.18s,.18s,0s;
 }
+/* Desktop, controller visible: the note is one quiet line under Send (spec
+   2026-09-26 §8). .send-anchor already reserves 68px (38 button + 30 below),
+   so the note fits inside the reserved height and nothing moves. The docked
+   Send (.send-anchor.docked) keeps the left-of-button placement above. */
+@media(min-width:601px){
+  .send-anchor:not(.docked) .send-change-note{
+    right:auto;left:50%;top:calc(100% + 6px);max-width:240px;
+    font-size:var(--fs-md);font-weight:400;color:var(--t2);
+    transform:translate(-50%,-4px) scale(.975);transform-origin:center top;
+  }
+  .send-anchor:not(.docked) .send-change-note.is-visible{transform:translate(-50%,0) scale(1)}
+  .send-anchor:not(.docked) .send-change-note.is-visible.is-swapping{transform:translate(-50%,2px) scale(.985)}
+  /* .send-change-note.is-feedback (line ~454) sets --green-text for "✓ Config
+     sent" / "Already in sync" / "✓ Device loaded"; it must outrank the grey
+     .t2 above (review finding, fix round 1) — success stays green everywhere. */
+  .send-anchor:not(.docked) .send-change-note.is-feedback{color:var(--green-text)}
+  .send-anchor:not(.docked) .change-popover{top:calc(100% + 34px)}
+}
 .change-popover{
   position:absolute;left:50%;top:calc(100% + 12px);z-index:30;width:min(300px,calc(100vw - 32px));padding:11px;
   transform:translate(-50%,-4px);border:1px solid var(--glass-border);border-radius:var(--r);
@@ -534,20 +519,20 @@ html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.the
 header,.live-hud{view-transition-name:none}
 @media(prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
 .panel{
-  background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));
-  border:1px solid var(--glass-border);border-radius:var(--r);padding:16px;flex:1;min-width:160px;
-  box-shadow:var(--glass-shadow);backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
+  background:var(--bg-card);
+  border:0;border-radius:var(--r);padding:16px;flex:1;min-width:160px;
+  box-shadow:none;
 }
 .panel-wide{width:100%;max-width:none;box-sizing:border-box;}
 /* .panel carries flex:1 for the side-by-side config panels inside .panels-row
-   (equal widths in that flex ROW). But the standalone wide panels (Device &
-   Settings, Help & Guide) are direct children of .center-col, a flex COLUMN
-   with flex:1 — there flex:1 makes them GROW vertically and balloon into the
-   reclaimed space when the controller is hidden on a tall window (Frank
-   2026-07-26). Pin them to their natural (collapsed) height; the footer still
-   sits at the bottom via its own margin-top:auto. */
-.center-col>.panel-wide{flex:0 0 auto;}
-.panel-dot{display:none;}
+   (equal widths in that flex ROW). But the standalone wide "Feel Fader" group
+   (Device & Settings and Help & Guide, now two rows of one .settings-group)
+   is a direct child of .center-col, a flex COLUMN with flex:1 — there flex:1
+   makes it GROW vertically and balloon into the reclaimed space when the
+   controller is hidden on a tall window (Frank 2026-07-26). Pin it to its
+   natural (collapsed) height; the footer still sits at the bottom via its
+   own margin-top:auto. */
+.center-col>.panel-wide,.center-col>.settings-group{flex:0 0 auto;}
 
 .panel-name{font-size:var(--fs-base);font-weight:600;color:var(--t1);letter-spacing:-.01em;}
 
@@ -555,16 +540,15 @@ header,.live-hud{view-transition-name:none}
 .roller-mode-row{
   --roller-index:0;
   position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;
-  margin:10px 0 12px;padding:3px;border:1px solid var(--border-s);border-radius:var(--r-pill);
-  background:color-mix(in srgb,var(--bg-input) 88%,transparent);
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.10);
+  margin:10px 0 12px;padding:3px;border:0;border-radius:var(--r-pill);
+  background:var(--bg-input);
+  box-shadow:none;
 }
 .roller-mode-row::before{
   content:'';position:absolute;z-index:0;left:3px;top:3px;bottom:3px;pointer-events:none;
-  width:calc((100% - 12px)/4);border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);
-  backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);
+  width:calc((100% - 12px)/4);border-radius:var(--r-pill);background:var(--bg-card);
   transform:translateX(calc(var(--roller-index) * (100% + 2px)));
-  box-shadow:var(--control-glass-shadow);
+  box-shadow:var(--shadow-sm);
   transition:transform .46s var(--ease-out),background-color .22s ease,box-shadow .22s ease;
 }
 .roller-mode-btn{
@@ -576,8 +560,8 @@ header,.live-hud{view-transition-name:none}
 .roller-mode-btn:hover{color:var(--t1)}
 .roller-mode-btn:active{transform:scale(.98)}
 .roller-mode-btn.active,.roller-mode-btn.active:hover{color:var(--t1)}
-html.dark .roller-mode-row{background:color-mix(in srgb,var(--bg-input) 80%,transparent)}
-html.dark .roller-mode-row::before{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow)}
+html.dark .roller-mode-row{background:var(--bg-input)}
+html.dark .roller-mode-row::before{background:var(--bg-card);box-shadow:var(--shadow-sm)}
 .roller-mode-content{opacity:1;transform:translateY(0);transition:opacity var(--dur-fast) ease,transform var(--dur-fast) var(--ease-out)}
 .roller-mode-content.is-leaving{opacity:0;transform:translateY(3px)}
 .roller-mode-content.is-entering{animation:rollerContentIn .30s var(--ease-out)}
@@ -596,7 +580,7 @@ html.dark .roller-mode-row::before{background:var(--control-glass-bg);backdrop-f
 
 
 /* STEPPER */
-.stepper{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border-s);border-radius:var(--r-pill);overflow:visible;background:color-mix(in srgb,var(--bg-input) 86%,transparent);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.18)}
+.stepper{display:flex;align-items:center;gap:0;padding:2px;border:0;border-radius:var(--r-pill);overflow:visible;background:var(--bg-input);box-shadow:none}
 .stepper-sep{display:none}
 .stepper input{width:34px;height:24px;text-align:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow);font-family:'IBM Plex Mono',monospace;font-size:var(--fs-md);color:var(--t1);padding:0;outline:none;-moz-appearance:textfield;font-weight:600;}
 .stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none}
@@ -614,7 +598,7 @@ html.dark .roller-mode-row::before{background:var(--control-glass-bg);backdrop-f
 .ui-keycap{min-height:32px;padding:6px 16px;color:var(--t1);font-size:var(--fs-md);font-weight:600;white-space:nowrap}
 .ui-keycap.is-empty{color:var(--t3)}
 .ui-keycap.capturing{border-color:var(--red);color:var(--red);animation:cap-pulse 1.2s ease-in-out infinite}
-html.dark .stepper{background:color-mix(in srgb,var(--bg-input) 80%,transparent)}
+html.dark .stepper{background:var(--bg-input)}
 html.dark .stepper input{border-color:var(--control-glass-border);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow)}
 @keyframes cap-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.35)}50%{box-shadow:0 0 0 4px rgba(255,59,48,0)}}
 /* Keyswitch piano range picker */
@@ -643,7 +627,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 @media(max-width:540px){.ks-keyboard-hint{display:none}.ks-keyboard{height:70px}.ks-key-black{height:43px}.ks-key-scroll-btn{min-height:70px}}
 .ks-bound-stepper .ks-stepval{min-width:66px;height:24px;padding:0 8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);box-shadow:var(--control-glass-shadow);transition:background-color .18s ease,box-shadow .18s ease}
 .ks-convention-stepper .step-btn{width:auto;min-width:44px;padding:0 9px;white-space:nowrap}
-.ks-convention-stepper .step-btn.active,.ks-convention-stepper .step-btn.active:hover{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);border:1px solid var(--control-glass-border);color:var(--t1);box-shadow:var(--control-glass-shadow)}
+.ks-convention-stepper .step-btn.active,.ks-convention-stepper .step-btn.active:hover{background:var(--bg-card);border:0;box-shadow:var(--shadow-sm);color:var(--t1)}
 /* Custom listbox for RANGE PRESET (UX audit 2026-07-22, V-4) — same pattern as
    the Library setup picker's .quick-setup-menu/.quick-setup-option, just
    without the search input: KEYSWITCH_PRESETS only has 2 static entries. */
@@ -658,23 +642,6 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .field-block{display:flex;flex-direction:column;gap:var(--space-1)}
 .field-label{font-size:var(--fs-sm);color:var(--t2);letter-spacing:.03em;text-transform:uppercase}
 
-/* ENCODER */
-.enc-chip{font-family:'IBM Plex Mono',monospace;font-size:var(--fs-xs);padding:2px 6px;border-radius:var(--r-sm);background:var(--bg-input);border:1px solid var(--border);color:var(--t3);transition:all .12s}
-.enc-chip.active{background:var(--t1);color:var(--bg);border-color:var(--t1)}
-
-/* UACC */
-.uacc-grid{display:flex;flex-wrap:wrap;gap:var(--space-1);margin-top:2px}
-.uacc-tag{display:flex;align-items:center;gap:var(--space-1);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);border:1px solid var(--control-glass-border);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:var(--fs-sm);color:var(--t1);box-shadow:var(--control-glass-shadow);transition:border-color var(--dur-fast) ease,background-color var(--dur-fast) ease,box-shadow var(--dur-fast) ease}
-.uacc-tag button{background:none;border:none;cursor:pointer;color:var(--t3);font-size:var(--fs-sm);padding:0 0 0 2px;line-height:1;transition:color .12s}
-.uacc-tag button:hover{color:var(--danger)}
-.uacc-tag .tag-order-btn{padding:0 1px;color:var(--t3);font-size:var(--fs-md)}
-.uacc-tag .tag-order-btn:hover{color:var(--t1)}
-.uacc-tag .tag-order-btn:disabled{opacity:.22;cursor:default;color:var(--t3)}
-.uacc-tag .tag-remove-btn{margin-left:1px}
-.uacc-tag.ks-live{border-color:rgba(52,199,89,.5);background:rgba(52,199,89,.1)}
-.uacc-add-row{display:flex;align-items:center;gap:var(--space-2);margin-top:8px}
-.uacc-add-row input{width:96px;background:var(--bg-input);border:1px solid var(--border-s);border-radius:var(--r-sm);padding:4px 8px;font-family:'Mulish',sans-serif;font-size:var(--fs-md);color:var(--t1);outline:none;-moz-appearance:textfield;box-shadow:inset 0 1px 3px rgba(0,0,0,.13)}
-.uacc-add-row input::-webkit-inner-spin-button,.uacc-add-row input::-webkit-outer-spin-button{-webkit-appearance:none}
 .uacc-presets-wrap{position:relative}
 .uacc-preset-dropdown{
   position:absolute;bottom:calc(100% + 6px);left:0;
@@ -728,6 +695,9 @@ html.dark .icon-picker-trigger svg{opacity:.7;}
 .bank-name-input:focus{border-bottom-color:var(--t2);}
 .bank-name-input:focus-visible{outline:none;border-radius:var(--r-sm);border-bottom-color:var(--t2);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 20%,transparent)}
 .bank-name-input::placeholder{color:var(--t3);font-weight:400}
+/* Bank name as the card title (spec 2026-09-26 §4). Same input, same limits,
+   display size; .fader-title-input shares .bank-name-input and stays small. */
+.bank-title-input{font-size:var(--fs-display);font-weight:700;letter-spacing:-.025em;line-height:1.15;max-width:100%;padding:0}
 .btn-remove-bank{
   position:relative;z-index:1;pointer-events:auto;touch-action:manipulation;
   background:transparent;border:none;
@@ -738,30 +708,15 @@ html.dark .icon-picker-trigger svg{opacity:.7;}
 }
 .btn-remove-bank:hover{color:var(--danger);background:var(--danger-bg);border-style:solid;border-color:var(--danger);}
 html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,transparent);}
-.bank-actions{position:relative;z-index:2;isolation:isolate;display:flex;align-items:center;gap:3px;flex-shrink:0}
-.bank-action-btn{
-  position:relative;z-index:1;pointer-events:auto;touch-action:manipulation;
-  width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;color:var(--t2);
-}
-.bank-action-btn::before,.btn-remove-bank::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:auto}
-.bank-action-btn svg{position:relative;z-index:1;width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
-/* On desktop the bank title is a short editable field, so its utility
-   actions belong to the card's far edge instead of reading as part of the
-   title. Keep the larger, easier-to-hit controls on compact/touch layouts. */
-@media (min-width:768px) and (hover:hover){
-  .bank-actions{margin-left:auto;gap:2px;opacity:.72;transition:opacity .14s ease}
-  .bank-block-name-top:hover .bank-actions,.bank-actions:focus-within{opacity:1}
-  .bank-action-btn,.btn-remove-bank{width:24px;height:24px}
-  .btn-remove-bank{font-size:var(--fs-lg)}
-  .bank-action-btn svg{width:12px;height:12px}
-}
+.btn-remove-bank::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:auto}
 
 /* PANEL NAME EDITABLE */
-.fader-side-cap{font-size:var(--fs-sm);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
-/* Section stays on its own softer, frosty-green highlight — no onboarding
+.section-mark{width:22px;flex:none;display:flex;justify-content:center;font:500 var(--fs-md) 'IBM Plex Mono',monospace;color:var(--t3)}
+/* Section stays on its own neutral tint (--highlight-section-fill is --t1-based,
+   not green – green is live-only, spec 2026-09-26 §1); no onboarding
    equivalent to match (onboarding never shows settings panels), scope
    confirmed with Frank 2026-08-18. */
-.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:var(--r-sm);box-shadow:0 0 12px 0 var(--highlight-section-glow);}
+.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:var(--r-sm);}
 /* Hardware-zone highlight now matches onboarding's own glow EXACTLY (same
    rgba(52,199,89,...) triple-layer values, per element) instead of the
    softer --highlight-rgb system — Frank 2026-08-18: "chci aby byly ty
@@ -798,19 +753,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   .h-status-text{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
   header{padding:5px 16px;}
   .bank-block-tab .bank-tab-name{max-width:72px;}
-  /* Was flex-wrap:wrap, dropping .bank-actions to its own row under the
-     icon/name (with width:100%;padding-left:31px to re-align it there).
-     Frank 2026-08-17: "bych chtěl mít buttony... na stejné výškové úrovni
-     jako Bank ikonu" — .bank-name-input already has flex:1;min-width:0
-     (line ~694), so it can compress to make room instead of forcing a
-     wrap; no longer needed now the action buttons are also smaller (28px,
-     see the pointer:coarse block above). */
-  .bank-quick-setup{padding-left:0;flex-wrap:wrap;}
-  .bank-quick-setup-label{width:100%;}
-  .quick-setup-picker{max-width:none;}
-  .section-summary{max-width:145px;}
   .btn.btn-ghost{padding:6px 12px;font-size:var(--fs-md);color:var(--t2);}
-  .uacc-tag{font-size:var(--fs-sm);padding:3px 6px;}
 }
 .enc-unified-body{
   display:flex;
@@ -828,26 +771,41 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   width:100%;
   min-width:0;
 }
-/* UACC TAG WITH NAME */
-.uacc-num{font-family:'IBM Plex Mono',monospace;font-size:var(--fs-sm);font-weight:500;color:var(--t2);min-width:20px}
-.uacc-label{font-size:var(--fs-sm);color:var(--t2);font-family:'Mulish',sans-serif;}
-
 /* Composer-first keyswitch sequence chips — scoped away from articulation tags */
 .ks-sequence-head{display:flex;align-items:center;justify-content:space-between;margin:14px 2px 6px}
-.ks-sequence-grid{gap:6px}
-.ks-note-chip{min-height:30px;gap:0;padding:3px 4px 3px 9px;border-radius:var(--r-sm)}
-.ks-note-chip:hover{border-color:var(--border-s)}
-.ks-note-name{font-size:var(--fs-sm);font-weight:600;color:var(--t1);white-space:nowrap}
 .ks-name-input{width:112px;height:22px;padding:0 8px;border:1px solid var(--border-s);border-radius:var(--r-pill);background:var(--bg-input);font:600 var(--fs-sm) 'Mulish',sans-serif;color:var(--t1)}
-.ks-midi-number{min-width:22px;margin-left:6px;padding:2px 5px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--bg-input) 86%,transparent);font:500 var(--fs-xs) 'IBM Plex Mono',monospace;color:var(--t3);text-align:center}
-.ks-note-actions{display:flex;align-items:center;gap:1px;margin-left:5px;padding-left:4px;border-left:1px solid var(--border);opacity:.58;transition:opacity var(--dur-fast) ease}
-.ks-note-chip:hover .ks-note-actions,.ks-note-chip:focus-within .ks-note-actions{opacity:1}
-.ks-note-chip .ks-note-actions button{display:inline-flex;align-items:center;justify-content:center;width:18px;height:20px;padding:0;border-radius:var(--r-pill);font-size:var(--fs-md)}
-.ks-note-chip .ks-note-actions .tag-order-btn:hover{background:color-mix(in srgb,var(--bg-input) 76%,transparent);color:var(--t1)}
-.ks-note-chip .ks-note-actions .tag-remove-btn{margin-left:1px}
-.ks-note-chip .ks-note-actions .tag-remove-btn:hover{background:var(--danger-bg);color:var(--danger)}
-.ks-note-chip.ks-live{border-color:var(--green-border);background:linear-gradient(var(--green-bg),var(--green-bg)),var(--glass-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--green-border) 48%,transparent),inset 0 1px 0 var(--glass-border)}
-@media(pointer:coarse){.ks-note-actions{opacity:1}.ks-note-chip .ks-note-actions button{width:32px;height:32px}}
+/* In the roller order row (final review 9) .ks-name-input replaces the flex:1
+   .seq-name span – without flex:1 the fixed 112px width shifts the value and
+   drag handle left while editing. */
+.seq-row .ks-name-input{flex:1;min-width:0}
+
+/* Roller order list (spec 2026-09-26 §6) – shared by articulations and keyswitches. */
+.seq-list{border-top:1px solid var(--border)}
+.seq-row{position:relative;display:flex;align-items:center;gap:var(--space-3);min-height:38px;padding:0 2px;border-bottom:1px solid var(--border);font-size:var(--fs-lg);color:var(--t1);cursor:grab}
+.seq-row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.seq-index{width:20px;flex:none;text-align:right;font:400 var(--fs-md) 'IBM Plex Mono',monospace;color:var(--t3)}
+.seq-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}
+.seq-value{flex:none;font:400 var(--fs-md) 'IBM Plex Mono',monospace;color:var(--t2);font-variant-numeric:tabular-nums}
+.seq-handle{width:14px;flex:none;text-align:center;color:var(--t3);font-size:var(--fs-lg)}
+.seq-actions{display:flex;align-items:center;gap:2px;opacity:0;transition:opacity var(--dur-fast) ease}
+.seq-row:hover .seq-actions,.seq-row:focus-within .seq-actions{opacity:1}
+.seq-actions button{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--r-pill);background:none;color:var(--t3);font-size:var(--fs-md);cursor:pointer}
+.seq-actions .tag-order-btn:hover{background:var(--bg-input);color:var(--t1)}
+.seq-actions .tag-order-btn:disabled{opacity:.3;cursor:default;background:none;color:var(--t3)}
+.seq-actions .tag-remove-btn:hover{background:var(--danger-bg);color:var(--danger)}
+.seq-row.is-live .seq-name{font-weight:700}
+.seq-row.is-live .seq-index{color:var(--green)}
+.seq-row.is-live::before{content:'';position:absolute;left:-12px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--green)}
+.seq-row.is-sequence-dragging{opacity:.42;cursor:grabbing}
+.seq-row.sequence-drop-before{box-shadow:inset 0 2px 0 var(--red)}
+.seq-row.sequence-drop-after{box-shadow:inset 0 -2px 0 var(--red)}
+.seq-add-row{display:flex;align-items:center;gap:var(--space-4);margin-top:var(--space-3)}
+.seq-add-row input{width:110px;height:30px;padding:0 10px;border:0;border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);font:var(--fs-md) 'Mulish',sans-serif;outline:none;-moz-appearance:textfield}
+.seq-add-row input::-webkit-inner-spin-button,.seq-add-row input::-webkit-outer-spin-button{-webkit-appearance:none}
+.seq-add-row input:focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 30%,transparent)}
+.seq-link{border:0;background:none;padding:0;color:var(--red);font:600 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer}
+.seq-link:hover{color:var(--red2)}
+@media(pointer:coarse){.seq-actions{opacity:1}.seq-actions button{width:32px;height:32px}}
 
 /* DEVICE INFO */
 .info-grid{display:flex;flex-direction:column;gap:var(--space-2);}
@@ -863,16 +821,16 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .response-select{position:relative;min-width:164px;}
 .response-select-trigger{width:100%;min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 10px 6px 12px;border-radius:var(--r);color:var(--t1);font:600 var(--fs-md) 'Mulish',sans-serif;text-align:left;}
 .response-select-trigger svg{width:14px;height:14px;color:var(--t3);transition:transform .18s var(--ease-out);flex:none;}
-.response-select.is-open .response-select-trigger{border-color:color-mix(in srgb,var(--green) 48%,var(--control-glass-border));box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 13%,transparent),var(--control-glass-shadow);}
+.response-select.is-open .response-select-trigger{border-color:var(--border-s);box-shadow:0 0 0 3px color-mix(in srgb,var(--t1) 6%,transparent);}
 .response-select.is-open .response-select-trigger svg{transform:rotate(180deg);}
 .response-select-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;gap:3px;padding:5px;border:1px solid var(--control-glass-border);border-radius:var(--r);background:color-mix(in srgb,var(--bg) 83%,white);box-shadow:0 10px 24px rgba(32,32,40,.13),inset 0 1px 0 rgba(255,255,255,.58);}
 .response-select.is-open .response-select-menu{display:grid;}
 html.dark .response-select-menu{background:color-mix(in srgb,var(--bg) 90%,white);box-shadow:0 10px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);}
 .response-select-option{display:flex;flex-direction:column;gap:1px;width:100%;padding:7px 9px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--t1);font:600 var(--fs-md) 'Mulish',sans-serif;text-align:left;cursor:pointer;transition:background .14s ease,color .14s ease,transform var(--dur-press) ease;}
 .response-select-option small{font-size:var(--fs-xs);font-weight:400;line-height:1.25;color:var(--t3);}
-.response-select-option:hover,.response-select-option:focus-visible{background:color-mix(in srgb,var(--green) 12%,transparent);outline:none;}
-.response-select-option[aria-selected="true"]{background:var(--green);color:#fff;box-shadow:0 2px 7px color-mix(in srgb,var(--green) 30%,transparent);}
-.response-select-option[aria-selected="true"] small{color:rgba(255,255,255,.78);}
+.response-select-option:hover,.response-select-option:focus-visible{background:var(--bg-input);outline:none;}
+.response-select-option[aria-selected="true"]{background:var(--bg-card);color:var(--t1);box-shadow:var(--shadow-sm);}
+.response-select-option[aria-selected="true"] small{color:var(--t3);}
 .response-select-option:active{transform:scale(.98);}
 .hid-switch{display:inline-flex;align-items:center;gap:var(--space-2);cursor:pointer;position:relative}
 .hid-switch input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
@@ -900,7 +858,6 @@ html.dark .hid-switch-thumb{background:rgba(245,245,247,.90)}
 .info-val{font-family:'Mulish',sans-serif;font-size:var(--fs-base);color:var(--t1);font-weight:400;user-select:none;}
 html.dark .info-lbl{color:var(--t2)}
 html.dark .info-val{color:var(--t1)}
-html.dark #device-settings-chevron{color:var(--t3)}
 
 /* BOTTOM */
 .btn{display:inline-flex;align-items:center;gap:var(--space-1);padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:var(--fs-md);font-weight:600;cursor:pointer;border:1px solid;transition:color .13s ease,background-color .13s ease,border-color .13s ease,transform var(--dur-press) ease,box-shadow .13s ease;white-space:nowrap}
@@ -952,7 +909,7 @@ html.dark #device-settings-chevron{color:var(--t3)}
 
 /* FOOTER */
 .site-footer{
-  margin-top:auto;
+  margin-top:auto;color:var(--t3);
   border-top:1px solid var(--border);padding:18px 0 14px;
 }
 .footer-top{
@@ -1045,9 +1002,9 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
      go further still ("chci subtilnější, zmenšit") and align them with the
      Bank icon next to them — dropped to 28px, which is simply the base
      (non-touch) size these buttons already use elsewhere in the file
-     (.btn-remove-bank/.bank-action-btn below), so touch and mouse now
+     (.btn-remove-bank below), so touch and mouse now
      render identically instead of touch being enlarged. */
-  .btn-remove-bank,.bank-action-btn{width:28px;height:28px}
+  .btn-remove-bank{width:28px;height:28px}
   .icon-picker-trigger{min-width:44px;min-height:44px}
   /* .dark-toggle's own width/height/min-* moved out of this block entirely
      — see the dedicated @media(pointer:coarse) rule placed AFTER its base
@@ -1064,7 +1021,6 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
      order dance needed. */
   .bank-block-tab{min-height:22px}
   .bank-block-tab-add,.send-btn,.btn,.ks-preset-trigger{min-height:44px}
-  .uacc-tag button{min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
   .tx{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   /* Keep toast chrome compact while the close button retains a 44px hit area. */
   .toast .tx{position:relative;width:26px;height:26px;min-width:26px;min-height:26px}
@@ -1103,8 +1059,8 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .h-status-dot.err{background:var(--red)}
 .h-status-dot.warn{background:var(--amber)}
 .h-status-text{
-  font-size:var(--fs-sm);color:var(--t3);
-  letter-spacing:.02em;
+  font-size:var(--fs-md);color:var(--t2);
+  letter-spacing:0;
   margin-left:4px;
   max-width:20ch;overflow:hidden;white-space:nowrap;
   transition:opacity .4s,max-width .4s ease,margin-left .4s ease;
@@ -1118,7 +1074,6 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .h-status.reveal-on-interact:hover .h-status-text,
 .h-status.reveal-on-interact:focus-visible .h-status-text,
 .h-status.reveal-on-interact.is-revealed .h-status-text{max-width:20ch;opacity:1;margin-left:4px;}
-.h-div{width:1px;height:16px;background:var(--border);flex:0 0 auto;}
 
 
 
@@ -1876,11 +1831,10 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 
 /* ── BANK CARD ── */
 .bank-card{
-  background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));
-  border:1px solid var(--glass-border);
+  background:var(--bg-card);
+  border:0;
   border-radius:var(--r);
-  box-shadow:var(--glass-shadow);
-  backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:none;
   overflow:hidden;
   isolation:isolate;
 }
@@ -1904,14 +1858,14 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   }
 }
 .bank-section{
-  padding:11px 14px;
+  padding:0 18px;
   transition:background .2s, box-shadow .2s;
 }
-.section-head.section-toggle{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--border);font-family:'Mulish',sans-serif;color:inherit}
+.bank-section.is-open>.section-collapse-body{padding:4px 0 18px 36px}
+.section-head.section-toggle{width:100%;text-align:left;background:none;border:0;font-family:'Mulish',sans-serif;color:inherit}
 .section-head.section-toggle{cursor:pointer}
-.section-toggle-title{display:flex;flex-direction:column;gap:3px;min-width:0}
+.section-toggle-title{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .section-toggle-meta{margin-left:auto;display:flex;align-items:center;gap:var(--space-3);min-width:0}
-.section-head-editable .section-toggle-title{flex:1}
 .section-toggle-action{display:flex;align-items:center;gap:var(--space-3);min-width:0;margin-left:auto;padding:5px 0 5px 12px;border:0;background:transparent;color:inherit;cursor:pointer;font-family:'Mulish',sans-serif}
 .section-toggle-action:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
 /* Šířka podle obsahu, ne pevných 190 px: prázdné místo napravo od názvu
@@ -1920,65 +1874,51 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
    Web Serial. max-width drží nejhorší případ na dosavadní šířce.
    align-self:flex-start zabraňuje flex-parent stretch (section-toggle-title
    je flex column s align-items:stretch, které by input natáhlo na 190px). */
-.fader-title-input{field-sizing:content;width:auto;min-width:5ch;max-width:min(190px,100%);font-size:var(--fs-base);padding:0;flex:0 1 auto;align-self:flex-start;cursor:text}
-.section-summary{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:260px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-sm);line-height:1.25}
-.section-summary-label{font:600 var(--fs-sm) 'Mulish',sans-serif;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
-.section-summary-meta{font:500 var(--fs-sm) 'IBM Plex Mono',monospace;letter-spacing:0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.fader-title-input{field-sizing:content;width:auto;min-width:5ch;max-width:min(190px,100%);font-size:var(--fs-xl);font-weight:600;padding:0;flex:0 1 auto;align-self:flex-start;cursor:text}
+.section-toggle-title .panel-name{font-size:var(--fs-xl);font-weight:600;letter-spacing:-.005em}
+.section-summary{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:100%;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-md);line-height:1.25}
+.section-summary-label{font:500 var(--fs-md) 'IBM Plex Mono',monospace;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
+.section-summary-meta{font:500 var(--fs-md) 'IBM Plex Mono',monospace;letter-spacing:0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .section-summary-sep{color:var(--t3);font:600 var(--fs-xs) 'Mulish',sans-serif}
-.section-chevron{font-size:var(--fs-xs);color:var(--t3);transition:transform .25s var(--ease-out)}
-.bank-section.is-open .section-chevron{transform:rotate(180deg)}
-.bank-section.is-collapsed .section-head{padding-bottom:0;margin-bottom:0;border-bottom-color:transparent}
+.section-chevron{width:9px;height:14px;flex:none;color:var(--t3);transition:transform .25s var(--ease-out)}
+.bank-section.is-open .section-chevron{transform:rotate(90deg)}
 .section-collapse-body[hidden]{display:none}
 @media(min-width:601px){
   .bank-card{overflow:clip}
-  .bank-section.is-open{
-    position:relative;
-    background:linear-gradient(90deg,color-mix(in srgb,var(--bg-input) 46%,transparent),transparent 62%);
-    box-shadow:none;
-  }
+  .bank-section.is-open{position:relative}
   /* Keep the controller-to-section hover link visible on an expanded section.
      This state rule must follow .is-open because both selectors have equal
      specificity and the open-section background otherwise wins the cascade. */
   .bank-section.is-open.fader-linked{
     background:var(--highlight-section-fill);
-    box-shadow:0 0 12px 0 var(--highlight-section-glow);
-  }
-  .bank-section.is-open::before{
-    content:'';position:absolute;z-index:0;top:0;bottom:0;left:0;width:18px;pointer-events:none;
-    background:linear-gradient(90deg,color-mix(in srgb,var(--t3) 16%,transparent),color-mix(in srgb,var(--t3) 5%,transparent) 36%,transparent 100%);
-    opacity:.72;
   }
   .bank-section.is-open>*{position:relative;z-index:1}
   .bank-section.is-open>.section-head{z-index:18}
-  html.dark .bank-section.is-open::before{
-    background:linear-gradient(90deg,rgba(255,255,255,.10),rgba(255,255,255,.025) 38%,transparent 100%);
-    opacity:.58;
-  }
   .bank-section.is-open>.section-head{
     position:sticky;top:var(--section-sticky-top,42px);z-index:18;
     background:transparent;box-shadow:none;
     transition:background .18s ease,box-shadow .18s ease;
   }
   .bank-section.is-open>.section-head.is-stuck{
-    background:linear-gradient(180deg,color-mix(in srgb,var(--bg-card) 88%,transparent),color-mix(in srgb,var(--bg-input) 82%,transparent));
-    backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
-    box-shadow:0 8px 16px -14px rgba(20,20,26,.45);
+    background:var(--bg-card);
+    box-shadow:0 1px 0 var(--border);
   }
 }
 .cc-meaning{font-size:var(--fs-xs);color:var(--t2);min-height:12px;white-space:nowrap}
 .bank-section-divider{
   height:1px;
   background:var(--border);
-  margin:0;
+  margin:0 0 0 18px;
 }
 .bank-section-encoder{
-  padding:11px 14px;
+  padding:0 18px;
 }
 .section-head{
-  display:flex;align-items:center;gap:var(--space-2);
-  padding-bottom:8px;
-  border-bottom:1px solid var(--border);
-  margin-bottom:9px;
+  display:flex;align-items:center;gap:14px;
+  padding-bottom:0;
+  border-bottom:0;
+  margin-bottom:0;
+  min-height:60px;
 }
 .section-fields{}
 .section-field-row{
@@ -2023,15 +1963,15 @@ button:focus-visible{outline-offset:3px;}
   flex:0 0 auto;
   appearance:none;-webkit-appearance:none;
   position:relative;
-  padding:2px 9px;
+  padding:2px 12px;
   border-radius:var(--r-pill);
   border:1px solid transparent;
   background:transparent;
   box-shadow:none;
   cursor:pointer;
   font-family:'Mulish',sans-serif;
-  font-size:var(--fs-md);font-weight:600;
-  color:var(--t3);
+  font-size:var(--fs-base);font-weight:600;
+  color:var(--t2);
   transition:all .15s;
   white-space:nowrap;
   display:flex;align-items:center;gap:var(--space-1);
@@ -2072,19 +2012,18 @@ button:focus-visible{outline-offset:3px;}
 }
 .bank-block-tab.drag-before::before{left:-1px}
 .bank-block-tab.drag-after::after{right:-1px}
-/* The selected edit bank is the primary local-working context, so give its
-   glass pill a little more depth than an inactive chip. Device-live context
-   deliberately lives in the floating HUD, not in this tab strip. */
+/* The edited bank is a flat card-white pill with a hairline (spec 2026-09-26 §2);
+   the bank the hardware is on gets a small green dot (.is-on-device). */
 .bank-block-tabs .bank-block-tab.active{
   color:var(--t1);
   font-weight:600;
-  background:var(--control-glass-bg);
-  backdrop-filter:var(--control-glass-filter);
-  -webkit-backdrop-filter:var(--control-glass-filter);
-  border-color:var(--control-glass-border);
+  background:var(--bg-card);
+  border-color:transparent;
   border-radius:var(--r-pill);
-  box-shadow:var(--control-glass-shadow);
+  box-shadow:0 0 0 1px var(--border);
 }
+.bank-tab-device-dot{display:none;width:5px;height:5px;border-radius:50%;background:var(--green);flex:0 0 auto;margin-left:var(--space-1)}
+.bank-block-tab.is-on-device .bank-tab-device-dot{display:inline-block}
 @media(max-width:600px){
   .bank-block-tab{padding:2px 8px}
   .bank-block-tab .bank-tab-name{max-width:0;opacity:0;margin-left:0}
@@ -2113,15 +2052,20 @@ button:focus-visible{outline-offset:3px;}
 }
 .bank-block-tab-add:hover{color:var(--t1);background:var(--bg-input);}
 .bank-block-name{
-  display:flex;flex-direction:column;gap:var(--space-1);
-  padding:11px 14px 4px;
+  display:flex;flex-direction:column;gap:2px;
+  padding:18px 18px 14px;
 }
+.bank-eyebrow{font-size:var(--fs-base);color:var(--t2)}
 .bank-block-name-top{
   display:flex;align-items:center;gap:var(--space-2);
 }
-.bank-quick-setup{display:flex;align-items:center;gap:var(--space-2);padding:6px 0 7px 31px;min-width:0}
-.bank-quick-setup-label{font-size:var(--fs-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t2);white-space:nowrap}
-.quick-setup-picker{position:relative;flex:1;min-width:150px;max-width:300px}
+.bank-quick-setup{position:relative;display:flex;align-items:baseline;gap:6px;min-width:0;font-size:var(--fs-lg)}
+.bank-quick-setup-label{color:var(--t2);white-space:nowrap}
+.library-browse-link{border:1px solid transparent;border-radius:var(--r-pill);background:none;padding:0 4px;margin-left:-4px;color:var(--red);font:600 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer}
+.library-browse-link:hover{color:var(--red2)}
+.library-popover{position:absolute;top:calc(100% + 6px);left:0;z-index:120;width:min(360px,calc(100vw - 40px));padding:8px;border-radius:var(--r);background:var(--bg-card);box-shadow:0 0 0 1px var(--border),var(--shadow)}
+.library-popover[hidden]{display:none}
+.quick-setup-picker{position:relative;width:100%}
 /* iOS Safari/Chrome auto-zooms the whole page on focusing an <input> with
    font-size under 16px (Frank 2026-08-17: "otevře se dropdown menu a celé
    se mi to přiblíží"). Real font-size raised to 16px to disable that, then
@@ -2133,12 +2077,12 @@ button:focus-visible{outline-offset:3px;}
 .library-quick-input-scale{display:block;width:100%;height:29px;overflow:hidden;border-radius:var(--r-pill)}
 .library-quick-input{width:133.333%;height:38.667px;border:1px solid var(--border-s);border-radius:var(--r-pill);background:color-mix(in srgb,var(--bg-input) 88%,transparent);color:var(--t1);padding:8px 13.333px;font:var(--fs-xl) 'Mulish',sans-serif;outline:none;transform:scale(.75);transform-origin:top left}
 .library-quick-input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
-.bank-quick-setup.is-first-run-highlight .library-quick-input{animation:library-setup-cue 1.65s var(--ease-out)}
+.bank-quick-setup.is-first-run-highlight .library-browse-link{animation:library-setup-cue 1.65s var(--ease-out)}
 @keyframes library-setup-cue{
-  0%,100%{border-color:var(--border-s);box-shadow:0 0 0 0 transparent}
+  0%,100%{border-color:transparent;box-shadow:0 0 0 0 transparent}
   28%{border-color:color-mix(in srgb,var(--red) 52%,var(--border-s));box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 14%,transparent),0 8px 24px color-mix(in srgb,var(--red) 9%,transparent)}
 }
-@media(prefers-reduced-motion:reduce){.bank-quick-setup.is-first-run-highlight .library-quick-input{animation:none;border-color:color-mix(in srgb,var(--red) 42%,var(--border-s));box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 12%,transparent)}}
+@media(prefers-reduced-motion:reduce){.bank-quick-setup.is-first-run-highlight .library-browse-link{animation:none;border-color:color-mix(in srgb,var(--red) 42%,var(--border-s));box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 12%,transparent)}}
 .bank-card.quick-menu-open{overflow:visible;position:relative;z-index:60}
 .quick-setup-menu{
   position:absolute;top:calc(100% + 6px);z-index:120;padding:6px;border:1px solid var(--glass-border);border-radius:var(--r);
@@ -2147,6 +2091,7 @@ button:focus-visible{outline-offset:3px;}
 }
 .quick-setup-menu{left:0;width:min(360px,calc(100vw - 40px));max-height:310px;overflow-y:auto}
 .quick-setup-menu[hidden]{display:none}
+.library-popover .quick-setup-menu{position:static;margin-top:6px;width:100%;max-height:310px;padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 .quick-setup-group+.quick-setup-group{margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
 .quick-setup-group-label{padding:4px 8px 4px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
 .quick-setup-option{
@@ -2201,34 +2146,44 @@ button:focus-visible{outline-offset:3px;}
 }
 /* ADVANCED TOGGLE - clean */
 .advanced-toggle-btn{
-  display:flex;align-items:center;justify-content:space-between;
-  width:100%;padding:12px 16px;
-  background:none;border:none;
+  display:flex;align-items:center;gap:var(--space-3);
+  width:100%;background:none;border:none;
   cursor:pointer;font-family:'Mulish',sans-serif;
-  font-size:var(--fs-base);font-weight:600;color:var(--t1);letter-spacing:-.01em;
-  -webkit-tap-highlight-color:transparent;
-  text-align:left;
+  -webkit-tap-highlight-color:transparent;text-align:left;
 }
+.advanced-toggle-btn.is-open .section-chevron{transform:rotate(90deg)}
 
+/* Settings-style groups under the controls (spec 2026-09-26 §7). */
+.group-cap{margin:var(--space-4) 18px calc(-1 * var(--space-2));font-size:var(--fs-base);color:var(--t2)}
+/* .panels-row has gap:0 (unlike .center-col's 16px), so the negative bottom
+   margin above pulls the next group up into the caption text instead of just
+   closing the flex gap – "Bank" caption ends up half hidden (final review 1). */
+.panels-row>.group-cap{margin:var(--space-6) 18px var(--space-2)}
+.settings-group{background:var(--bg-card);border-radius:var(--r);overflow:hidden;box-shadow:none}
+.group-row{position:relative;display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:50px;padding:0 18px;border:0;background:none;color:var(--t1);font:400 var(--fs-xl) 'Mulish',sans-serif;text-align:left;cursor:pointer;box-sizing:border-box}
+.group-row+.group-row::before,.group-row+div:not(.group-row)::before,div:not(.group-row)+.group-row::before{content:'';position:absolute;top:0;left:18px;right:0;border-top:1px solid var(--border)}
+.settings-group>div:not(.group-row){position:relative}
+.group-row:hover{background:color-mix(in srgb,var(--t1) 3%,transparent)}
+.group-row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.group-row-label{flex:1;min-width:0;display:flex;align-items:center;gap:var(--space-2)}
+.group-row-value{font-size:var(--fs-lg);color:var(--t2)}
+.group-row-danger{color:var(--danger)}
+.group-row-split{cursor:default}
+.group-row-split:hover{background:none}
+.group-row-split>span:first-child{flex:1}
+.group-row-actions{display:flex;gap:var(--space-4)}
+.group-row-inline{border:0;background:none;padding:4px 0;color:var(--t2);font:400 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer}
+.group-row-inline:hover{color:var(--t1)}
+.group-row-inline:disabled{opacity:.35;cursor:default}
 
 .onb-replay-btn{margin:0 0 12px;}
 
-.uacc-tag[draggable="true"]{cursor:grab}
-.uacc-tag.is-sequence-dragging{opacity:.42;cursor:grabbing}
-.uacc-tag.sequence-drop-before{box-shadow:-3px 0 0 var(--red),var(--shadow-sm)}
-.uacc-tag.sequence-drop-after{box-shadow:3px 0 0 var(--red),var(--shadow-sm)}
-
 /* ── NEW DARK MODE RULES ── */
-html.dark .send-callout::before{background:rgba(15,15,17,.5);}
-html.dark .bank-card{background:linear-gradient(145deg,var(--glass-card),var(--glass-soft));}
 html.dark .bank-block-tab{color:var(--t2);border-color:transparent;}  /* inactive tabs stay visually open; only the active pill gets a glass border */
-html.dark .bank-block-tabs .bank-block-tab.active{color:var(--t1);}
-html.dark .section-head{border-bottom-color:var(--border);}
 html.dark .bank-section-divider{background:var(--border);}
-html.dark .stepper{background:var(--bg-input);border-color:var(--border);}
+html.dark .stepper{background:var(--bg-input);}
 html.dark .stepper input{color:var(--t1);}
 html.dark .stepper-sep{background:var(--border);}
-html.dark .uacc-tag{color:var(--t1);}
 html.dark .bank-name-input{color:var(--t1);}
 /* .bank-block-name: no background in either theme — it sits on .bank-card (var(--bg-card) both themes),
    so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
@@ -2237,11 +2192,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 /* Glass fallback + lighter compositor load on small screens. Inputs and steppers
    deliberately remain opaque so configuration values retain maximum contrast. */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .panel,.bank-card,.modal,.icon-picker-modal,.toast,.sync-banner,.live-hud{background:var(--bg-card)}
-}
-@media(max-width:600px){
-  .panel{backdrop-filter:blur(14px) saturate(135%);-webkit-backdrop-filter:blur(14px) saturate(135%)}
-  .bank-card{backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%)}
+  .modal,.icon-picker-modal,.toast,.sync-banner{background:var(--bg-card)}
 }
 </style>
 </head>
@@ -2250,17 +2201,16 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 <div class="top-sticky">
 <header>
   <div class="h-left">
+    <span class="h-title">Feel Fader</span>
+    <div class="bank-block-tabs" id="bank-tabs"></div>
+  </div>
+  <div class="h-right">
     <div class="h-status-wrap">
       <span class="h-status" id="h-status" aria-live="polite" tabindex="0" onclick="toggleStatusReveal(event)">
         <span class="h-status-dot" id="h-status-dot" aria-hidden="true"></span>
         <span class="h-status-text" id="h-status-text"></span>
       </span>
     </div>
-    <span class="h-title">Feel Fader</span>
-    <span class="h-div" aria-hidden="true"></span>
-    <div class="bank-block-tabs" id="bank-tabs"></div>
-  </div>
-  <div class="h-right">
 
     <div class="controller-toggle-wrap" title="Show/hide the controller view">
       <svg class="controller-toggle-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" aria-hidden="true">
@@ -2339,7 +2289,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       </div>
       <div class="send-anchor" id="send-anchor"><div class="send-callout">
         <div class="send-arrow"></div>
-        <button class="send-change-note" id="send-change-note" type="button" aria-live="polite" aria-hidden="true" aria-expanded="false" aria-controls="change-popover" onclick="toggleChangePopover()">Unsaved changes</button>
+        <button class="send-change-note" id="send-change-note" type="button" aria-live="polite" aria-hidden="true" aria-expanded="false" aria-controls="change-popover" onclick="toggleChangePopover()">Changes · Review</button>
         <button class="send-btn" id="send-btn" data-send-button onclick="handlePrimaryAction()">Send to device</button>
         <div class="change-popover" id="change-popover" aria-hidden="true">
           <strong>Pending changes</strong>
@@ -2365,17 +2315,15 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 
   
 
-  <!-- DEVICE & SETTINGS (sloučené Device Info + Advanced) -->
-  <div class="panel panel-wide" style="padding:0;overflow:hidden;width:100%">
-    <button class="advanced-toggle-btn" onclick="toggleDeviceSettings()" id="device-settings-toggle-btn" aria-expanded="false" aria-controls="device-settings-body">
-      <div style="display:flex;align-items:center;gap:7px">
-        <div class="panel-dot"></div>
-        <span class="panel-name" style="margin:0">Device &amp; Settings</span>
-        <span class="fw-update-dot" id="fw-update-dot" hidden title="Firmware update available"></span>
-      </div>
-      <span id="device-settings-chevron" style="font-size:var(--fs-sm);color:var(--t3)">▼</span>
+  <!-- DEVICE & SETTINGS + HELP (Feel Fader group, sloučené Device Info + Advanced) -->
+  <div class="group-cap">Feel Fader</div>
+  <div class="settings-group panel-wide" data-group="feel-fader">
+    <button class="advanced-toggle-btn group-row" onclick="toggleDeviceSettings()" id="device-settings-toggle-btn" aria-expanded="false" aria-controls="device-settings-body">
+      <span class="group-row-label">Device &amp; Settings<span class="fw-update-dot" id="fw-update-dot" hidden title="Firmware update available"></span></span>
+      <span class="group-row-value" id="di-firmware-summary">–</span>
+      <span id="device-settings-chevron" aria-hidden="true"><svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </button>
-    <div id="device-settings-body" style="display:none;padding:12px 16px 16px;border-top:1px solid var(--border)">
+    <div id="device-settings-body" style="display:none;padding:12px 18px 18px">
 
       <!-- Subsekce: Device -->
       <div class="settings-subhead">Device</div>
@@ -2452,29 +2400,22 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- HELP / GUIDE -->
-  <div class="panel panel-wide" style="padding:0;overflow:hidden;width:100%">
-    <button class="advanced-toggle-btn" onclick="toggleHelp()" id="help-toggle-btn" aria-expanded="false" aria-controls="help-body">
-      <div style="display:flex;align-items:center;gap:7px">
-        <div class="panel-dot"></div>
-        <span class="panel-name" style="margin:0">Help &amp; Guide</span>
-      </div>
-      <span id="help-chevron" style="font-size:var(--fs-sm);color:var(--t3)">▼</span>
+    <button class="advanced-toggle-btn group-row" onclick="toggleHelp()" id="help-toggle-btn" aria-expanded="false" aria-controls="help-body">
+      <span class="group-row-label">Help &amp; Guide</span>
+      <span id="help-chevron" aria-hidden="true"><svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </button>
-    <div id="help-body" style="display:none;padding:12px 16px 16px;border-top:1px solid var(--border);font-size:var(--fs-md);line-height:1.6;color:var(--t2)">
+    <div id="help-body" style="display:none;padding:12px 18px 18px;font-size:var(--fs-md);line-height:1.6;color:var(--t2)">
       <button class="btn btn-ghost quick-preset-btn onb-replay-btn ui-control ui-pill ui-glass" onclick="onbReplay()" data-i18n="onb.replay">▶ Show intro again</button>
       <div class="settings-subhead">Getting started</div>
       <p style="margin:0 0 12px">Connect your Feel Fader via USB and click <b>Connect &amp; load</b>. The configurator reads the device config; after editing, click <b>Send to device</b> to apply your changes. Shortcuts: <b>Ctrl/⌘ + S</b> sends, <b>Ctrl/⌘ + Z</b> undoes the last change.</p>
       <div class="settings-subhead" id="help-faders">Faders</div>
       <p style="margin:0 0 12px">Each fader sends a MIDI <b>CC</b> on a <b>channel</b> you choose (Expression / Dynamics by default). The on-screen faders <b>mirror the hardware</b> – they are display only and cannot be dragged.</p>
       <div class="settings-subhead" id="help-banks">Banks</div>
-      <p style="margin:0 0 12px">Bank names and icons are saved in this browser and – with firmware 1.1.0+ – also on the device, so they follow it between computers. The frosty pill is the bank you're editing; the small controller icon marks the bank currently active on the hardware. Library setups show a review before changing the bank; built-in setups are starting points and should be checked against the exact library patch.</p>
+      <p style="margin:0 0 12px">Bank names and icons are saved in this browser and – with firmware 1.1.0+ – also on the device, so they follow it between computers. The flat pill is the bank you're editing; a small green dot marks the bank currently active on the hardware. Library setups show a review before changing the bank; built-in setups are starting points and should be checked against the exact library patch.</p>
       <div class="settings-subhead" id="help-roller">Roller modes</div>
       <p style="margin:0 0 12px"><b>Articulation</b> – the roller steps through articulations (UACC). <b>Keyswitch</b> – the roller sends note keyswitches selected on a piano keyboard (see below). <b>Navigation</b> – the roller sends a keyboard key per detent (e.g. arrows) to navigate your DAW; requires Keyboard (HID). <b>Relative CC</b> – the roller sends a relative step (value 1 = up, 127 = down) on the configured CC/channel, for external MIDI processing (e.g. a per-track keyswitch mapper).</p>
       <div class="settings-subhead" id="help-keyswitch">Keyswitch mode</div>
-      <p style="margin:0 0 12px">In Keyswitch mode the roller sends MIDI note keyswitches on the configured channel. Click one piano key or drag across a range; rotating the roller steps through the selected notes. Reorder long sequences by dragging chips or with Alt + arrow keys.</p>
+      <p style="margin:0 0 12px">In Keyswitch mode the roller sends MIDI note keyswitches on the configured channel. Click one piano key or drag across a range; rotating the roller steps through the selected notes. Reorder long sequences by dragging rows or with Alt + arrow keys.</p>
       <div class="settings-subhead" id="help-macro">Button macro (long-press)</div>
       <p style="margin:0 0 12px">A <b>long-press</b> (≥ 0.5 s) of the device button sends a defined key combo – e.g. play/stop or a DAW shortcut. Requires Keyboard (HID). A <b>short press</b> still cycles banks. The Button Macro panel remains visible while HID is off and offers a direct Enable Keyboard action.</p>
       <div class="settings-subhead" id="help-hid">Keyboard (HID)</div>
@@ -2754,29 +2695,43 @@ function setSectionSummary(id, summary) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = sectionSummaryHtml(summary);
 }
-function sectionHeaderHtml(bi, key, cap, title, summary, tip, extra) {
+// Section marks (spec 2026-09-26 §5): quiet glyph on the left instead of the
+// old uppercase LEFT FADER / RIGHT FADER / ROLLER / BUTTON caption.
+const SECTION_MARKS = {
+  fader1: 'L',
+  fader2: 'R',
+  roller: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="2.5" y="1.5" width="9" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5h5M4.5 7h5M4.5 9h5" stroke="currentColor" stroke-width="1.1"/></svg>',
+  macro: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>',
+};
+const SECTION_CHEVRON = '<svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function sectionHeaderHtml(bi, key, title, summary, tip, extra) {
   const open = isSectionOpen(key);
   const tipAttr = tip ? ` data-tip="${escHtml(tip)}"` : '';
+  const mark = `<span class="section-mark" aria-hidden="true">${SECTION_MARKS[key]}</span>`;
+  const summaryHtml = summary ? `<span class="section-summary" id="section-summary-${bi}-${key}">${sectionSummaryHtml(summary)}</span>` : '';
   if (key === 'fader1' || key === 'fader2') {
     const side = key === 'fader1' ? 'Left' : 'Right';
     return `<div class="section-head section-toggle section-head-editable" data-fader="${key}"${tipAttr}
       onclick="if(!event.target.closest('input,button'))toggleSection('${key}',event)">
-      <span class="section-toggle-title"><span class="fader-side-cap">${escHtml(cap)}</span>
+      ${mark}
+      <span class="section-toggle-title">
         <input class="bank-name-input fader-title-input" id="section-title-${bi}-${key}" value="${escHtml(title)}" maxlength="12"
           oninput="onFaderName(${bi},'${key}',this.value)"
           onblur="if(!this.value.trim()){this.value='${defaultFaderName(key)}';onFaderName(${bi},'${key}',this.value)}"
           onkeydown="if(event.key==='Enter')this.blur()" aria-label="${side} fader display name" />
+        ${summaryHtml}
       </span>
       <button type="button" class="section-toggle-action" id="section-toggle-${bi}-${key}"
         onclick="toggleSection('${key}',event)" aria-expanded="${open}" aria-controls="section-body-${bi}-${key}" aria-label="${open?'Collapse':'Expand'} ${escHtml(title)} settings">
-        ${summary?`<span class="section-summary" id="section-summary-${bi}-${key}">${sectionSummaryHtml(summary)}</span>`:''}<span class="section-chevron" aria-hidden="true">▼</span>
+        ${SECTION_CHEVRON}
       </button>
     </div>`;
   }
   return `<button type="button" class="section-head section-toggle" id="section-toggle-${bi}-${key}" data-fader="${key}"${tipAttr}
     onclick="toggleSection('${key}',event)" aria-expanded="${open}" aria-controls="section-body-${bi}-${key}">
-      <span class="section-toggle-title"><span class="fader-side-cap">${escHtml(cap)}</span><span class="panel-name${key==='roller'?' roller-mode-title':''}" id="section-title-${bi}-${key}">${escHtml(title)}</span></span>
-      <span class="section-toggle-meta">${extra||''}${summary?`<span class="section-summary" id="section-summary-${bi}-${key}">${sectionSummaryHtml(summary)}</span>`:''}<span class="section-chevron" aria-hidden="true">▼</span></span>
+      ${mark}
+      <span class="section-toggle-title"><span class="panel-name${key==='roller'?' roller-mode-title':''}" id="section-title-${bi}-${key}">${escHtml(title)}</span>${summaryHtml}</span>
+      <span class="section-toggle-meta">${extra||''}${SECTION_CHEVRON}</span>
     </button>`;
 }
 // Collapsed-header summaries (UX audit 2026-09-25 C-5): each section says what
@@ -3077,7 +3032,7 @@ function updateChangeSummary() {
   const undo = document.getElementById('change-undo-btn');
   let items = dirty ? configChangeItems() : [];
   if (dirty && !items.length) items = ['Configuration'];
-  if (note && dirty) setSendChangeNoteText(`${items.length} unsaved change${items.length===1?'':'s'}`);
+  if (note && dirty) setSendChangeNoteText(`${items.length} change${items.length===1?'':'s'} · Review`);
   if (list) list.innerHTML = items.slice(0,7).map(item => `<li>${escHtml(item)}</li>`).join('') + (items.length>7?`<li>+ ${items.length-7} more</li>`:'');
   if (undo) {
     undo.disabled = !_undoConfigHistory.length;
@@ -3227,12 +3182,13 @@ function renderBankTabs() {
     const nm = escHtml(b.name || 'Bank '+(i+1));
     const defaultName = !b.icon && /^Bank \d+$/.test(b.name || 'Bank '+(i+1));   // K-7: "1 Bank 1" → "Bank 1"
     return `<button class="bank-block-tab ${i===activeBank?'active':''}${defaultName?' is-default-name':''}" onclick="selectBank(${i},event)" aria-label="Edit ${nm}" ${i===activeBank?'aria-current="true"':''}
-      draggable="true" data-bank-index="${i}" ondragstart="onBankDragStart(event,${i})" ondragover="onBankDragOver(event,${i})" ondragleave="onBankDragLeave(event)" ondrop="onBankDrop(event,${i})" ondragend="onBankDragEnd()">${iconHtml}<span class="bank-tab-name">${nm}</span></button>`;
+      draggable="true" data-bank-index="${i}" ondragstart="onBankDragStart(event,${i})" ondragover="onBankDragOver(event,${i})" ondragleave="onBankDragLeave(event)" ondrop="onBankDrop(event,${i})" ondragend="onBankDragEnd()">${iconHtml}<span class="bank-tab-name">${nm}</span><span class="bank-tab-device-dot" aria-hidden="true"></span></button>`;
   }).join('');
   const addHtml = cfg.banks.length < MAX_BANKS
     ? `<button class="bank-block-tab-add" onclick="addBank()" title="Add bank" aria-label="Add bank">+</button>`
     : '';
   el.innerHTML = tabsHtml + addHtml;
+  syncDeviceBankMarkers();
   const act = el.querySelector('.bank-block-tab.active');
   if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   _updateTabsFade(el);
@@ -3285,42 +3241,36 @@ function renderPanels(errs = validate()) {
   _lastRenderedBank = bi;
 
   // Name row is now the first child inside .bank-card (fades with the card on bank change)
+  const bankLabel = escHtml(b.name || 'Bank '+(bi+1));
   const bankNameRowHtml = `
     <div class="bank-block-name">
+      <div class="bank-eyebrow">Bank ${bi+1} of ${cfg.banks.length}<span id="bank-eyebrow-device" ${deviceBankIndex() === bi ? '' : 'hidden'}> · active on device</span></div>
       <div class="bank-block-name-top">
         <button class="icon-picker-trigger ui-control ui-pill ui-glass" onclick="openIconPicker(${bi}, 'icon')" aria-label="Choose icon for bank ${bi+1}">
           ${b.icon
             ? `<span class="bank-icon-display">${escHtml(b.icon)}</span>`
             : `<span class="bank-icon-empty"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 2"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>`}
         </button>
-        <input class="bank-name-input" value="${escHtml(b.name || 'Bank '+(bi+1))}"
+        <input class="bank-name-input bank-title-input" value="${bankLabel}"
           onchange="onBankRename(${bi}, this.value)" maxlength="24"
           placeholder="Bank name..." aria-label="Bank ${bi+1} name" />
-        <div class="bank-actions" aria-label="Bank actions">
-          <button type="button" class="bank-action-btn ui-control ui-pill ui-glass" data-bank-action="left" data-bank-index="${bi}" onclick="moveBank(${bi},-1,'left')" title="Move bank left" aria-label="Move ${escHtml(b.name || 'Bank '+(bi+1))} left" ${bi===0?'disabled':''}>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>
-          </button>
-          <button type="button" class="bank-action-btn ui-control ui-pill ui-glass" data-bank-action="right" data-bank-index="${bi}" onclick="moveBank(${bi},1,'right')" title="Move bank right" aria-label="Move ${escHtml(b.name || 'Bank '+(bi+1))} right" ${bi===cfg.banks.length-1?'disabled':''}>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg>
-          </button>
-          <button type="button" class="bank-action-btn ui-control ui-pill ui-glass" data-bank-action="duplicate" data-bank-index="${bi}" onclick="duplicateBank(${bi})" title="Duplicate bank" aria-label="Duplicate ${escHtml(b.name || 'Bank '+(bi+1))}">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="8" rx="2"/><path d="M3 10.5H2.5A1.5 1.5 0 0 1 1 9V2.5A1.5 1.5 0 0 1 2.5 1H9a1.5 1.5 0 0 1 1.5 1.5V3"/></svg>
-          </button>
-          ${cfg.banks.length > 1 ? `<button type="button" class="btn-remove-bank ui-control ui-pill" onclick="removeBank(${bi})" title="Remove bank" aria-label="Remove ${escHtml(b.name || 'Bank '+(bi+1))}">✕</button>` : ''}
-        </div>
       </div>
       <div class="bank-quick-setup">
         <span class="bank-quick-setup-label">Library setup</span>
-        <div class="quick-setup-picker" id="quick-setup-picker-${bi}">
-          <span class="library-quick-input-scale">
-            <input class="library-quick-input" id="quick-setup-input-${bi}" placeholder="Search setups…" autocomplete="off"
-              role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quick-setup-menu-${bi}"
-              aria-label="Search library and custom setups" onfocus="openQuickSetupMenu(${bi})"
-              oninput="renderQuickSetupMenu(${bi},this.value)" onkeydown="quickSetupInputKey(event,${bi})" />
-          </span>
-          <div class="quick-setup-menu" id="quick-setup-menu-${bi}" role="listbox" hidden>${quickSetupMenuHtml('')}</div>
+        <button type="button" class="library-browse-link" id="library-browse-${bi}"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="library-popover-${bi}"
+          onclick="toggleLibraryPopover(${bi})">Browse…</button>
+        <div class="library-popover" id="library-popover-${bi}" role="dialog" aria-label="Library setup" hidden>
+          <div class="quick-setup-picker" id="quick-setup-picker-${bi}">
+            <span class="library-quick-input-scale">
+              <input class="library-quick-input" id="quick-setup-input-${bi}" placeholder="Search setups…" autocomplete="off"
+                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quick-setup-menu-${bi}"
+                aria-label="Search library and custom setups" onfocus="openQuickSetupMenu(${bi})"
+                oninput="renderQuickSetupMenu(${bi},this.value)" onkeydown="quickSetupInputKey(event,${bi})" />
+            </span>
+            <div class="quick-setup-menu" id="quick-setup-menu-${bi}" role="listbox" hidden>${quickSetupMenuHtml('')}</div>
+          </div>
         </div>
-        <button class="btn btn-ghost quick-preset-btn ui-control ui-pill ui-glass" onclick="openCustomPresetDialog()" aria-label="Save or manage custom library setups">Save setup</button>
       </div>
     </div>
   `;
@@ -3344,6 +3294,19 @@ function renderPanels(errs = validate()) {
       <div class="bank-section bank-section-macro ${isSectionOpen('macro')?'is-open':'is-collapsed'}" data-fader="macro" onmouseenter="hoverFaderLink('macro',true)" onmouseleave="hoverFaderLink('macro',false)">
         ${macroSectionContent(bi)}
       </div>
+    </div>
+    <div class="group-cap">Bank</div>
+    <div class="settings-group" data-group="bank">
+      <button type="button" class="group-row" data-bank-action="save-setup" data-bank-index="${bi}" onclick="openCustomPresetDialog()">Save as setup…</button>
+      <button type="button" class="group-row" data-bank-action="duplicate" data-bank-index="${bi}" onclick="duplicateBank(${bi})" aria-label="Duplicate ${bankLabel}">Duplicate bank</button>
+      <div class="group-row group-row-split">
+        <span>Move</span>
+        <span class="group-row-actions">
+          <button type="button" class="group-row-inline" data-bank-action="left" data-bank-index="${bi}" onclick="moveBank(${bi},-1,'left')" aria-label="Move ${bankLabel} earlier" ${bi===0?'disabled':''}>‹ Earlier</button>
+          <button type="button" class="group-row-inline" data-bank-action="right" data-bank-index="${bi}" onclick="moveBank(${bi},1,'right')" aria-label="Move ${bankLabel} later" ${bi===cfg.banks.length-1?'disabled':''}>Later ›</button>
+        </span>
+      </div>
+      ${cfg.banks.length > 1 ? `<button type="button" class="group-row group-row-danger" data-bank-action="delete" data-bank-index="${bi}" onclick="removeBank(${bi})" aria-label="Delete ${bankLabel}">Delete bank…</button>` : ''}
     </div>
   `;
   if ((b.roller_mode || 'cc') === 'keyswitch' && isSectionOpen('roller')) {
@@ -3383,10 +3346,9 @@ function faderSectionContent(key, ctrl, bi, errs = validate()) {
   const displayLabel = faderDisplayName(ctrl,key);
   const ariaDisplayLabel = escHtml(displayLabel);
   const ccMeaning = musicalCcName(ctrl.cc,`CC ${ctrl.cc}`);
-  const sideCap = key==='fader1' ? 'LEFT FADER' : 'RIGHT FADER';
   const open = isSectionOpen(key);
   return `
-    ${sectionHeaderHtml(bi,key,sideCap,displayLabel,faderSectionSummary(ctrl),'Sends a MIDI CC on a channel you choose. The on-screen fader mirrors the hardware and can\'t be dragged.')}
+    ${sectionHeaderHtml(bi,key,displayLabel,faderSectionSummary(ctrl),'Sends a MIDI CC on a channel you choose. The on-screen fader mirrors the hardware and can\'t be dragged.')}
     <div class="section-collapse-body" id="section-body-${bi}-${key}" ${open?'':'hidden'}>
     <div class="section-fields">
       <div class="section-field-row">
@@ -3405,21 +3367,41 @@ function faderSectionContent(key, ctrl, bi, errs = validate()) {
     </div></div>`;
 }
 
+// Roller order row shared by articulations and keyswitches (spec 2026-09-26 §6):
+// index · name · value · ≡, Move/× revealed on hover/focus but always in the
+// tab order. Class names inside (.uacc-label/.uacc-num, .ks-note-name/
+// .ks-midi-number) are kept because probes and startKsNameEdit() use them.
+function sequenceRowHtml({kind, bi, index, count, name, value, live, nameClass, valueClass, aria, extraAttrs = '', moveLabel, removeLabel, onMove, onRemove}) {
+  return `
+    <div class="seq-row${live ? ' is-live' : ''}" tabindex="0" draggable="true" data-sequence-kind="${kind}" data-sequence-index="${index}" ${extraAttrs}
+      aria-label="${aria}"
+      ondragstart="sequenceDragStart(event,'${kind}',${bi},${index})" ondragover="sequenceDragOver(event,${index})" ondrop="sequenceDrop(event,${index})" ondragend="sequenceDragEnd()">
+      <span class="seq-index" aria-hidden="true">${index+1}</span>
+      <span class="seq-name ${nameClass}">${name}</span>
+      <span class="seq-value ${valueClass}">${value}</span>
+      <span class="seq-actions" role="group" aria-label="Sequence controls">
+        <button class="tag-order-btn" onclick="${onMove(-1)}" title="Move earlier" aria-label="Move ${moveLabel} earlier" ${index===0?'disabled':''}>‹</button>
+        <button class="tag-order-btn" onclick="${onMove(1)}" title="Move later" aria-label="Move ${moveLabel} later" ${index===count-1?'disabled':''}>›</button>
+        <button class="tag-remove-btn" onclick="${onRemove}" title="Remove" aria-label="${removeLabel}">✕</button>
+      </span>
+      <span class="seq-handle" aria-hidden="true">≡</span>
+    </div>`;
+}
+
 function ccEncoderBody(ctrl, bi, errs = validate()) {
   const encErr  = errs.find(e => e.field === `b${bi}.encoder`)?.msg || '';
   const bankUacc = cfg.banks[bi].uacc_values || [];
   const initVal  = bankUacc[0] ?? 0;
   const initName = uaccName(initVal);
-  const uaccTags = bankUacc.map((v,i) => `
-    <div class="uacc-tag articulation-chip" title="CC ${v}" tabindex="0" draggable="true" data-sequence-kind="uacc" data-sequence-index="${i}"
-      aria-label="${uaccName(v)}, value ${v}, position ${i+1} of ${bankUacc.length}. Drag or use Alt plus arrow keys to reorder."
-      onkeydown="sequenceChipKey(event,'uacc',${bi},${i})" ondragstart="sequenceDragStart(event,'uacc',${bi},${i})" ondragover="sequenceDragOver(event,${i})" ondrop="sequenceDrop(event,${i})" ondragend="sequenceDragEnd()">
-      <span class="uacc-num">${v}</span>
-      <span class="uacc-label">${uaccName(v)}</span>
-      <button class="tag-order-btn" onclick="moveUacc(${i},-1)" title="Move earlier" aria-label="Move ${uaccName(v)} earlier" ${i===0?'disabled':''}>‹</button>
-      <button class="tag-order-btn" onclick="moveUacc(${i},1)" title="Move later" aria-label="Move ${uaccName(v)} later" ${i===bankUacc.length-1?'disabled':''}>›</button>
-      <button class="tag-remove-btn" onclick="removeUacc(${i})" title="Remove" aria-label="Remove articulation CC ${v}">✕</button>
-    </div>`).join('');
+  const uaccTags = bankUacc.map((v,i) => sequenceRowHtml({
+    kind:'uacc', bi, index:i, count:bankUacc.length,
+    name:uaccName(v), value:v, live: encLiveVal !== null && v === encLiveVal,
+    nameClass:'uacc-label', valueClass:'uacc-num',
+    aria:`${uaccName(v)}, value ${v}, position ${i+1} of ${bankUacc.length}. Drag or use Alt plus arrow keys to reorder.`,
+    extraAttrs:`data-value="${v}" title="Value ${v}" onkeydown="sequenceChipKey(event,'uacc',${bi},${i})"`,
+    moveLabel:uaccName(v), removeLabel:`Remove articulation value ${v}`,
+    onMove:d => `moveUacc(${i},${d})`, onRemove:`removeUacc(${i})`,
+  })).join('');
 
   return `
   <div class="enc-unified-body">
@@ -3445,14 +3427,14 @@ function ccEncoderBody(ctrl, bi, errs = validate()) {
 
       <!-- Right: articulation list -->
       <div class="enc-right">
-        <div class="ks-sequence-head"><span class="field-label">ROLLER ORDER</span><span class="uacc-note">First → last</span></div>
-        <div class="uacc-grid ks-sequence-grid" id="uacc-grid">${uaccTags}</div>
-        <div class="uacc-add-row" style="margin-top:10px">
+        <div class="ks-sequence-head"><span class="field-label">ROLLER ORDER</span><span class="uacc-note">Drag or Alt + ↑↓</span></div>
+        <div class="seq-list" id="uacc-grid">${uaccTags}</div>
+        <div class="seq-add-row">
           <input type="number" id="uacc-input" min="0" max="127" placeholder="Value 0–127" aria-label="Articulation value (0–127)"
             onkeydown="if(event.key==='Enter')addUacc()"/>
-          <button class="btn btn-ghost" onclick="addUacc()">+ Add</button>
+          <button type="button" class="seq-link" onclick="addUacc()">Add articulation…</button>
           <div class="uacc-presets-wrap">
-            <button class="btn btn-ghost" onclick="toggleUaccPresets()" id="uacc-preset-btn">Articulation templates ▾</button>
+            <button type="button" class="seq-link" onclick="toggleUaccPresets()" id="uacc-preset-btn">Templates…</button>
             <div class="uacc-preset-dropdown" id="uacc-preset-dropdown" style="display:none">
               <div class="uacc-dropdown-section">Library articulation lists</div>
               <button onclick="applyArticulationList('Spitfire BBC Symphony Orchestra')">🎻 Spitfire BBC Symphony Orchestra</button>
@@ -3480,18 +3462,15 @@ function keyswitchTagsHtml(bi) {
   const tags = notes.map((n,i) => {
     // UX audit C-1: a named keyswitch leads with its articulation, note second.
     const name = bank.ks_names?.[n] ? escHtml(bank.ks_names[n]) : '';
-    return `
-    <div class="uacc-tag ks-note-chip${n === ksLiveNote ? ' ks-live' : ''}" data-ksnote="${n}" tabindex="0" draggable="true" data-sequence-kind="keyswitch" data-sequence-index="${i}" title="${name ? `${name} · ` : ''}${noteName(n)} · MIDI ${n} · double-click to name"
-      aria-label="${name ? `${name}, ` : ''}${noteName(n)}, MIDI ${n}, position ${i+1} of ${notes.length}. Press F2 to name. Drag or use Alt plus arrow keys to reorder."
-      ondblclick="if(!event.target.closest('button, input'))startKsNameEdit(${bi},${i})" onkeydown="if(event.key==='F2'&&event.target===this){event.preventDefault();startKsNameEdit(${bi},${i});}else sequenceChipKey(event,'keyswitch',${bi},${i})" ondragstart="sequenceDragStart(event,'keyswitch',${bi},${i})" ondragover="sequenceDragOver(event,${i})" ondrop="sequenceDrop(event,${i})" ondragend="sequenceDragEnd()">
-      <span class="ks-note-name">${name || noteName(n)}</span>
-      <span class="ks-midi-number" aria-label="MIDI note ${n}">${name ? `${noteName(n)} · ${n}` : n}</span>
-      <span class="ks-note-actions" role="group" aria-label="Sequence controls">
-        <button class="tag-order-btn" onclick="moveKsNote(${bi},${i},-1)" title="Move earlier" aria-label="Move ${noteName(n)} earlier" ${i===0?'disabled':''}>‹</button>
-        <button class="tag-order-btn" onclick="moveKsNote(${bi},${i},1)" title="Move later" aria-label="Move ${noteName(n)} later" ${i===notes.length-1?'disabled':''}>›</button>
-        <button class="tag-remove-btn" onclick="removeKsNote(${bi},${i})" title="Remove" aria-label="Remove keyswitch MIDI note ${n}">✕</button>
-      </span>
-    </div>`;
+    return sequenceRowHtml({
+      kind:'keyswitch', bi, index:i, count:notes.length,
+      name: name || noteName(n), value: name ? `${noteName(n)} · ${n}` : n,
+      live: n === ksLiveNote, nameClass:'ks-note-name', valueClass:'ks-midi-number',
+      aria:`${name ? `${name}, ` : ''}${noteName(n)}, MIDI ${n}, position ${i+1} of ${notes.length}. Press F2 to name. Drag or use Alt plus arrow keys to reorder.`,
+      extraAttrs:`data-ksnote="${n}" title="${name ? `${name} · ` : ''}${noteName(n)} · MIDI ${n} · double-click to name" ondblclick="if(!event.target.closest('button, input'))startKsNameEdit(${bi},${i})" onkeydown="if(event.key==='F2'&&event.target===this){event.preventDefault();startKsNameEdit(${bi},${i});}else sequenceChipKey(event,'keyswitch',${bi},${i})"`,
+      moveLabel:noteName(n), removeLabel:`Remove keyswitch MIDI note ${n}`,
+      onMove:d => `moveKsNote(${bi},${i},${d})`, onRemove:`removeKsNote(${bi},${i})`,
+    });
   }).join('');
   return tags || '<span class="uacc-note">No keyswitches – set a range or add a note.</span>';
 }
@@ -3588,11 +3567,11 @@ function keyswitchBody(bi) {
             </div>
           </div>
         </div>
-        <div class="ks-sequence-head"><span class="field-label">ROLLER ORDER</span><span class="uacc-note">First → last</span></div>
-        <div class="uacc-grid ks-sequence-grid" id="ks-tags-${bi}">${keyswitchTagsHtml(bi)}</div>
-        <div class="uacc-add-row" style="margin-top:8px">
+        <div class="ks-sequence-head"><span class="field-label">ROLLER ORDER</span><span class="uacc-note">Drag or Alt + ↑↓</span></div>
+        <div class="seq-list" id="ks-tags-${bi}">${keyswitchTagsHtml(bi)}</div>
+        <div class="seq-add-row">
           <input type="number" id="ks-note-input-${bi}" placeholder="MIDI 0–127" min="0" max="127" aria-label="Keyswitch MIDI note" />
-          <button class="step-btn" style="width:auto;padding:0 12px;border:1px solid var(--border-s);border-radius:var(--r-sm)" onclick="addKsNote(${bi})" aria-label="Add keyswitch note">+ note</button>
+          <button type="button" class="seq-link" onclick="addKsNote(${bi})" aria-label="Add keyswitch note">Add note…</button>
         </div>
         <div class="uacc-note">Manual exceptions are preserved. The displayed order is the roller stepping order.</div>
       </div>
@@ -3621,7 +3600,7 @@ function encoderPanel(ctrl, bi, errs = validate()) {
 
   return `
   <div class="panel panel-wide">
-    ${sectionHeaderHtml(bi,'roller','ROLLER',rollerModeTitle(rmode),rollerSectionSummary(cfg.banks[bi]),'Sends MIDI CC (Articulation), note keyswitches, HID navigation keys, or relative CC, depending on the mode selected below.')}
+    ${sectionHeaderHtml(bi,'roller',rollerModeTitle(rmode),rollerSectionSummary(cfg.banks[bi]),'Sends MIDI CC (Articulation), note keyswitches, HID navigation keys, or relative CC, depending on the mode selected below.')}
     <div class="section-collapse-body" id="section-body-${bi}-roller" ${open?'':'hidden'}>
       <div class="roller-mode-row" role="group" aria-label="Roller mode" data-mode="${rmode}" style="--roller-index:${ROLLER_MODES.indexOf(rmode)}">
         ${ROLLER_MODES.map((m,mi) => {
@@ -3723,7 +3702,7 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
     ? `<span class="section-issue-dot warn" aria-hidden="true" title="Connected firmware only supports one macro for all banks"></span><span class="sr-only">Warning: connected firmware only supports one macro for all banks – this bank's macro will be ignored until it's updated.</span>`
     : '';
   return `
-    ${sectionHeaderHtml(bi,'macro','BUTTON','Macro',summary,'A long-press (≥ 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks.',headerWarn)}
+    ${sectionHeaderHtml(bi,'macro','Button',summary,'A long-press (≥ 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks.',headerWarn)}
     <div class="section-collapse-body" id="section-body-${bi}-macro" ${open?'':'hidden'}>
     <div class="section-fields">
       ${hidEnableNotice('Button Macro')}
@@ -3760,12 +3739,20 @@ function encoderSectionContent(ctrl, bi, errs = validate()) {
 
 
 
-function renderEncChips() {
-  const el = document.getElementById('enc-chips');
-  if (!el) return;
-  el.innerHTML = cfg.banks[activeBank].uacc_values.map((v,i) =>
-    `<div class="enc-chip ${i===encIndex?'active':''}">${v}</div>`
-  ).join('');
+// Live articulation row (spec 2026-09-26 §6): the row whose value the roller
+// last sent is marked, same idiom as the keyswitch live row.
+function syncUaccLiveRow() {
+  document.querySelectorAll('#uacc-grid .seq-row').forEach(el => el.classList.toggle('is-live', encLiveVal !== null && +el.dataset.value === encLiveVal));
+}
+// Final review 2: the live value belongs to whichever bank is live on the
+// device. Bank switch (Program Change) and disconnect must drop BOTH the
+// in-memory live value and any stale .is-live marker before the next render,
+// or a row from the previous bank/session keeps reading as live.
+function clearLiveRows() {
+  encLiveVal = null;
+  ksLiveNote = null;
+  syncUaccLiveRow();
+  document.querySelectorAll('.seq-row.is-live[data-ksnote]').forEach(el => el.classList.remove('is-live'));
 }
 
 function renderUacc() {
@@ -3942,6 +3929,7 @@ function updateDeviceInfo() {
   };
   setVal('di-serial',   serial);
   setVal('di-firmware', firmware);
+  setTxt('di-firmware-summary', firmware ? `Firmware ${firmware}` : '–');
   updateHidToggle();
   updateFaderResponseControl();
   updateMacroUI();
@@ -4542,15 +4530,15 @@ function removeBank(bi) {
   if (cfg.banks.length <= 1) { toast('e', t('toast.bank_min')); return; }
   const bankName = cfg.banks[bi].name || `Bank ${bi+1}`;
   openConfirm({
-    title: `Remove “${bankName}”?`,
+    title: `Delete “${bankName}”?`,
     message: 'This removes the bank from the local configuration. You can undo it from the change summary.',
-    confirmLabel: 'Remove bank',
+    confirmLabel: 'Delete bank',
     onConfirm: () => {
       const removed = JSON.parse(JSON.stringify(cfg.banks[bi]));
       cfg.banks.splice(bi, 1);
       if (activeBank >= cfg.banks.length) activeBank = cfg.banks.length - 1;
       dirty = true; render();
-      toast('i', `“${bankName}” removed`, {
+      toast('i', `“${bankName}” deleted`, {
         label: 'Undo',
         onClick: () => {
           cfg.banks.splice(Math.min(bi, cfg.banks.length), 0, removed);
@@ -4720,7 +4708,7 @@ function sequenceDragOver(event, targetIndex) {
   event.preventDefault();
   document.querySelectorAll('.sequence-drop-before,.sequence-drop-after').forEach(el => el.classList.remove('sequence-drop-before','sequence-drop-after'));
   const rect = event.currentTarget.getBoundingClientRect();
-  event.currentTarget.classList.add(event.clientX > rect.left + rect.width/2 ? 'sequence-drop-after' : 'sequence-drop-before');
+  event.currentTarget.classList.add(event.clientY > rect.top + rect.height/2 ? 'sequence-drop-after' : 'sequence-drop-before');
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
 }
 function sequenceDrop(event, targetIndex) {
@@ -4970,7 +4958,7 @@ function focusValidationError(index = 0) {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const target = document.getElementById(err.target) || document.getElementById(`section-toggle-${bi}-${section}`);
     if (!target) return;
-    const visual = target.closest('.stepper,.uacc-add-row,.bank-section') || target;
+    const visual = target.closest('.stepper,.seq-add-row,.bank-section') || target;
     visual.classList.add('validation-target');
     target.scrollIntoView({ behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center' });
     try { target.focus({ preventScroll:true }); } catch (_) { target.focus?.(); }
@@ -5347,7 +5335,8 @@ function connectInputs(){
     _ffConnected = false;   // reset so the next physical connect triggers a fresh CMD_R
     DEVICE_INFO.schema_version = null;   // stale value could drive a false/suppressed firmware-mismatch warning for the next device
     DEVICE_INFO.update = null; renderFirmwareOffer();
-    liveSeen.f1 = false; liveSeen.f2 = false; encLiveVal = null; ksLiveNote = null;
+    liveSeen.f1 = false; liveSeen.f2 = false;
+    clearLiveRows();
     // Don't tear down UI if config is already loaded — device may reconnect shortly
     if (!loaded) {
       showWelcome();
@@ -5387,7 +5376,8 @@ function onMidiMsg(event){
       setTxt('enc-artic-name', uaccName(val));
       renderLiveStrip();
       const idx = bank.uacc_values.indexOf(val);
-      if(idx !== -1){ encIndex = idx; renderEncChips(); }
+      if(idx !== -1) encIndex = idx;
+      syncUaccLiveRow();
     }
 
   }
@@ -5396,9 +5386,8 @@ function onMidiMsg(event){
     const note = data[1];
     if(ch === (bank.ks_channel ?? 0) && (bank.ks_notes||[]).includes(note)){
       ksLiveNote = note;
-      document.querySelectorAll('.uacc-tag.ks-live').forEach(el => el.classList.remove('ks-live'));
-      const cell = document.querySelector(`.uacc-tag[data-ksnote="${note}"]`);
-      if (cell) cell.classList.add('ks-live');
+      document.querySelectorAll('.seq-row.is-live[data-ksnote]').forEach(el => el.classList.remove('is-live'));
+      document.querySelector(`.seq-row[data-ksnote="${note}"]`)?.classList.add('is-live');
       renderLiveStrip();
     }
   }
@@ -5407,12 +5396,12 @@ function onMidiMsg(event){
     const pc=data[1];
     if(pc < cfg.banks.length){
       liveBank = pc;
+      clearLiveRows();   // drop the previous bank's live marker before any repaint
       if (!dirty) {
         if (_keyCapture) cancelKeyCapture();   // in-flight capture no longer matches the bank about to be shown
         activeBank = pc;   // sync UI to hardware — but not while the user has unsaved edits open
         renderPanels();
       }
-      encLiveVal = null; ksLiveNote = null;
       setActiveTab(activeBank);
       renderUacc();
       renderLiveStrip();
@@ -6031,22 +6020,18 @@ function dlJson(d,n){
 
 function toggleDeviceSettings(){
   const body    = document.getElementById('device-settings-body');
-  const chevron = document.getElementById('device-settings-chevron');
   const btn     = document.getElementById('device-settings-toggle-btn');
   const open    = body.style.display !== 'none';
   body.style.display  = open ? 'none' : 'block';
-  chevron.textContent = open ? '▼' : '▲';
   btn && btn.classList.toggle('is-open', !open);
   btn && btn.setAttribute('aria-expanded', String(!open));
   btn && btn.blur && btn.blur();
 }
 function toggleHelp(){
   const body    = document.getElementById('help-body');
-  const chevron = document.getElementById('help-chevron');
   const btn     = document.getElementById('help-toggle-btn');
   const open    = body.style.display !== 'none';
   body.style.display  = open ? 'none' : 'block';
-  chevron.textContent = open ? '▼' : '▲';
   btn && btn.classList.toggle('is-open', !open);
   btn && btn.setAttribute('aria-expanded', String(!open));
   btn && btn.blur && btn.blur();
@@ -6329,6 +6314,25 @@ function renderLiveFaderValues(changed = {l:true,r:true}){
   if (changed.r) setLiveValue('live-f2-value', 'live-f2-item', liveValues.f2, liveSeen.f2);
 }
 
+// Device context in the editor (spec 2026-09-26 §2/§4, Frank reversed the
+// "HUD only" rule): the bank the hardware is on gets a green dot in its tab
+// and "· active on device" in the card eyebrow. Same condition as the HUD bank
+// dots (any CONNECTED_* state), so the three markers never disagree.
+function deviceBankIndex() {
+  return connState().startsWith('CONNECTED') ? liveBank : -1;
+}
+function syncDeviceBankMarkers() {
+  const onDevice = deviceBankIndex();
+  document.querySelectorAll('#bank-tabs .bank-block-tab').forEach((tab, i) => {
+    const on = i === onDevice;
+    const name = cfg.banks[i]?.name || `Bank ${i+1}`;
+    tab.classList.toggle('is-on-device', on);
+    tab.setAttribute('aria-label', `Edit ${name}${on ? ' (active on device)' : ''}`);
+    if (on) tab.title = 'Active on device'; else tab.removeAttribute('title');
+  });
+  const eyebrow = document.getElementById('bank-eyebrow-device');
+  if (eyebrow) eyebrow.hidden = activeBank !== onDevice;
+}
 function renderLiveHudBankDots(bankCount, activeIndex){
   const bankHud = document.getElementById('live-hud-bank');
   if (!bankHud) return;
@@ -6361,6 +6365,7 @@ function renderLiveStrip(errs = validate()){
   const bank = cfg.banks[liveBank] || cfg.banks[activeBank];
   if (!bank) { updateContextualLiveStrip(); return; }
   renderLiveHudBankDots(cfg.banks.length, liveBank);
+  syncDeviceBankMarkers();
   setTxt('live-f1-label-long', 'L');
   setTxt('live-f1-label-short', 'L');
   setTxt('live-f2-label-long', 'R');
@@ -8195,7 +8200,7 @@ function quickSetupMenuHtml(query = '') {
     : '<div class="quick-setup-empty">No matching setups</div>';
 }
 function refreshBankMenuLayer() {
-  const open = document.querySelector('.quick-setup-menu:not([hidden])');
+  const open = document.querySelector('.quick-setup-menu:not([hidden]), .library-popover:not([hidden])');
   document.querySelector('.bank-card')?.classList.toggle('quick-menu-open', !!open);
 }
 function renderQuickSetupMenu(bi, query = '') {
@@ -8205,6 +8210,20 @@ function renderQuickSetupMenu(bi, query = '') {
   menu.innerHTML = quickSetupMenuHtml(query);
   menu.hidden = false;
   input.setAttribute('aria-expanded','true');
+  refreshBankMenuLayer();
+}
+// Library setup lives in a popover anchored to "Browse…" (spec 2026-09-26 §4).
+// The picker inside (search, groups, keyboard, preview dialog, Apply) is the
+// same component as before – this only owns open/close and focus return.
+function toggleLibraryPopover(bi, force) {
+  const pop = document.getElementById(`library-popover-${bi}`);
+  const link = document.getElementById(`library-browse-${bi}`);
+  if (!pop || !link) return;
+  const open = force ?? pop.hidden;
+  pop.hidden = !open;
+  link.setAttribute('aria-expanded', String(open));
+  if (open) document.getElementById(`quick-setup-input-${bi}`)?.focus();   // onfocus opens the list
+  else closeQuickSetupMenu(bi);
   refreshBankMenuLayer();
 }
 function openQuickSetupMenu(bi) {
@@ -8269,8 +8288,8 @@ function openLibraryPreview(name) {
   const preset = LIBRARY_PRESETS[name] || customLibraryPresets[name];
   if (!preset) return;
   _libraryPreviewName = name;
-  _libraryPreviewReturnFocus = document.getElementById(`quick-setup-input-${activeBank}`) || document.activeElement;
-  closeQuickSetupMenu(activeBank);
+  _libraryPreviewReturnFocus = document.getElementById(`library-browse-${activeBank}`) || document.activeElement;
+  toggleLibraryPopover(activeBank, false);
   setTxt('library-preview-title', name);
   setTxt('library-preview-subtitle', `Review changes for ${cfg.banks[activeBank]?.name || `Bank ${activeBank+1}`}.`);
   const note = preset.custom
@@ -8310,7 +8329,12 @@ function chooseQuickSetup(name) {
 }
 function quickSetupInputKey(event, bi) {
   const menu = document.getElementById(`quick-setup-menu-${bi}`);
-  if (event.key === 'Escape') { event.preventDefault(); closeQuickSetupMenu(bi); event.currentTarget.blur(); return; }
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    toggleLibraryPopover(bi, false);
+    document.getElementById(`library-browse-${bi}`)?.focus();
+    return;
+  }
   if (event.key !== 'ArrowDown' && event.key !== 'Enter') return;
   event.preventDefault();
   if (!menu || menu.hidden) openQuickSetupMenu(bi);
@@ -8339,6 +8363,10 @@ function refreshLibraryPresetOptions() {
   });
 }
 document.addEventListener('pointerdown', event => {
+  document.querySelectorAll('.library-popover:not([hidden])').forEach(pop => {
+    const bi = Number(pop.id.split('-').pop());
+    if (!pop.contains(event.target) && !event.target.closest(`#library-browse-${bi}`)) toggleLibraryPopover(bi, false);
+  });
   document.querySelectorAll('.quick-setup-picker').forEach(picker => {
     if (!picker.contains(event.target)) closeQuickSetupMenu(Number(picker.id.split('-').pop()));
   });
@@ -8351,6 +8379,16 @@ document.addEventListener('pointerdown', event => {
     statusEl.classList.remove('is-revealed');
     statusEl.setAttribute('aria-expanded', 'false');
   }
+});
+// Tabbing (or Shift+Tab) out of an open library popover closes it – otherwise it
+// stays open over the fader sections while focus moves elsewhere (final review 3).
+// Covers both directions: focus leaving to something after the popover, and
+// Shift+Tab from the search field back onto Browse… itself.
+document.addEventListener('focusout', event => {
+  const pop = event.target.closest('.library-popover:not([hidden])');
+  if (!pop) return;
+  const bi = Number(pop.id.split('-').pop());
+  if (!pop.contains(event.relatedTarget)) toggleLibraryPopover(bi, false);
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && document.getElementById('change-popover')?.classList.contains('is-open')) closeChangePopover();
@@ -8732,6 +8770,7 @@ window.sequenceDragOver = sequenceDragOver;
 window.sequenceDrop = sequenceDrop;
 window.sequenceDragEnd = sequenceDragEnd;
 window.rememberRollerAdvanced = rememberRollerAdvanced;
+window.toggleLibraryPopover = toggleLibraryPopover;
 window.openQuickSetupMenu = openQuickSetupMenu;
 window.renderQuickSetupMenu = renderQuickSetupMenu;
 window.chooseQuickSetup = chooseQuickSetup;
