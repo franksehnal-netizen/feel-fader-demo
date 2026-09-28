@@ -329,7 +329,7 @@ main{width:100%;}
    controlleru"). --stage-col animates to 0 when the controller is hidden.
    Only once the welcome is closed: the sticky column is a stacking context
    and would trap the shared controller (z 205) under the welcome overlay. */
-@media(min-width:1100px){
+@media(min-width:900px){
   body:has(#welcome-screen.hidden) .center-col{--stage-col:420px;max-width:1180px;display:grid;grid-template-columns:var(--stage-col) minmax(0,680px);justify-content:center;column-gap:clamp(32px,4vw,64px);align-items:stretch}
   /* Animate the columns only while the controller toggle runs – otherwise the
      welcome exit would tween the flex gap into the grid gap. */
@@ -346,6 +346,21 @@ main{width:100%;}
   body:has(#welcome-screen.hidden) .center-col>.stage-collapse>.stage{padding-left:160px;padding-right:40px}
   body:has(#welcome-screen.hidden) .center-col>.settings-col{grid-column:2;grid-row:1;padding-top:32px}
   @media(prefers-reduced-motion:reduce){.center-col{transition:none}}
+}
+/* 900–1099 px (a 1920px monitor split with the DAW = 960): two columns with
+   a smaller controller instead of the editor starting below the photo
+   (UX audit 2026-09-28, N-4, variant A). HUD slot and shadow room as above. */
+@media(min-width:900px) and (max-width:1099px){
+  body:has(#welcome-screen.hidden) .center-col{--stage-col:366px;column-gap:28px}
+  body:has(#welcome-screen.hidden) .device-home{width:min(166px,clamp(120px,calc(44.24vh - 126px),220px))}
+}
+/* Single-column desktop: the change note under Send ends ~11px below .stage,
+   which clipped it (UX audit 2026-09-28, N-3). It still fits inside the 32px
+   gap above the bank card, so extend the clip instead of the padding – more
+   padding would break the centred Send (mobile-ux-probe). Mobile keeps its
+   own note placement. */
+@media(min-width:601px) and (max-width:899px){
+  body:has(#welcome-screen.hidden) .center-col>.stage-collapse>.stage{overflow:clip;overflow-clip-margin:24px}
 }
 
 /* STAGE
@@ -473,7 +488,8 @@ main{width:100%;}
    old-firmware notice) — not driven by markSectionIssues()/validate(), so it can't
    block Send; see macroSectionContent() (final whole-branch review, 2026-08-08, F1). */
 .section-issue-dot.warn{background:var(--amber)}
-.bank-tab-issue{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger);flex-shrink:0;margin-right:4px}
+/* "!" – the green dot on the tab means "active on device" (UX audit 2026-09-28 N-12). */
+.bank-tab-issue{display:inline-block;flex-shrink:0;margin-right:4px;color:var(--danger);font:800 var(--fs-sm)/1 'Mulish',sans-serif}
 .send-btn.blocked{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t2);box-shadow:var(--control-glass-shadow);border:1px solid color-mix(in srgb,var(--danger) 30%,var(--glass-border))}
 .send-btn.blocked:hover{background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow-hover);color:var(--t1)}
 .send-change-note.is-feedback,.send-change-note.is-feedback:disabled{
@@ -607,7 +623,7 @@ html.dark .roller-mode-row::before{background:var(--bg-card);box-shadow:var(--sh
 /* STEPPER */
 .stepper{display:flex;align-items:center;gap:0;padding:2px;border:0;border-radius:var(--r-pill);overflow:visible;background:var(--bg-input);box-shadow:none}
 .stepper-sep{display:none}
-.stepper input{width:34px;height:24px;text-align:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow);font-family:'DM Mono',monospace;font-size:var(--fs-md);color:var(--t1);padding:0;outline:none;-moz-appearance:textfield;font-weight:600;}
+.stepper input{width:34px;height:24px;text-align:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow);font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;font-size:var(--fs-md);color:var(--t1);padding:0;outline:none;-moz-appearance:textfield;font-weight:600;}
 .stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none}
 .stepper input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 20%,transparent),inset 0 1px 0 rgba(255,255,255,.78)}
 .step-btn{width:28px;height:32px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:var(--fs-lg);line-height:1;transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease;font-weight:400;font-family:'Mulish',sans-serif;}
@@ -633,7 +649,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-keyboard-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 88%,transparent);box-shadow:inset 0 1px 2px var(--border);scrollbar-width:thin;overscroll-behavior-x:contain}
 .ks-keyboard{--white-w:26px;position:relative;width:1950px;height:78px;user-select:none;touch-action:none}
 .ks-white-keys{display:flex;height:100%}
-.ks-key{appearance:none;padding:0;font-family:'DM Mono',monospace;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,transform var(--dur-press) ease}
+.ks-key{appearance:none;padding:0;font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,transform var(--dur-press) ease}
 .ks-key-white{position:relative;flex:0 0 var(--white-w);height:100%;border:0;border-right:1px solid var(--border-s);background:var(--piano-white);color:var(--piano-black);z-index:1}
 .ks-key-white:last-child{border-right:0}
 .ks-key-black{position:absolute;top:0;width:16px;height:48px;border:1px solid color-mix(in srgb,var(--piano-black) 78%,transparent);border-radius:0 0 4px 4px;background:var(--piano-black);color:var(--piano-white);z-index:3;box-shadow:0 2px 3px var(--border-s)}
@@ -661,7 +677,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-preset-chevron{font-size:var(--fs-xs);color:var(--t3);transition:transform .2s var(--ease-out)}
 .ks-preset-trigger[aria-expanded="true"] .ks-preset-chevron{transform:rotate(180deg)}
 .quick-setup-menu.ks-preset-menu{left:0;width:max(180px,100%);max-height:none}
-.ks-stepval{padding:0 10px;font-family:'DM Mono',monospace;font-size:var(--fs-md);min-width:66px;text-align:center;color:var(--t1)}
+.ks-stepval{padding:0 10px;font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;font-size:var(--fs-md);min-width:66px;text-align:center;color:var(--t1)}
 
 /* TWO-ROW FIELD (label + controls stacked) */
 .field-block{display:flex;flex-direction:column;gap:var(--space-1)}
@@ -696,6 +712,8 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .hid-inline-copy strong{color:var(--t1);font-size:var(--fs-sm)}
 .hid-inline-help{color:var(--t1);text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
 .hid-inline-action{flex-shrink:0;min-height:28px;padding:4px 10px;color:var(--t1);font:600 var(--fs-sm) 'Mulish',sans-serif}
+/* Visible edge in dark mode, where the glass fill matches the notice (N-13). */
+.hid-inline-action.ui-control{border-color:var(--border-s)}
 @media(max-width:540px){.hid-inline-notice{align-items:flex-start;flex-wrap:wrap}.hid-inline-action{margin-left:auto}}
 
 .icon-picker-trigger{
@@ -755,7 +773,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .ctrl-zone{position:absolute;border-radius:10px;outline:1px solid transparent;outline-offset:1px;transition:background .2s,box-shadow .2s,outline-color .2s;}
 /* Roller: matches onboarding's #zone-roller[data-onb-feature="roller"] exactly. */
 #zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 5px 2px rgba(52,199,89,.95),0 0 14px 7px rgba(52,199,89,.72),0 0 29px 14px rgba(52,199,89,.38);}
-#zone-macro{border-radius:0 var(--r-pill) var(--r-pill) 0;clip-path:inset(-24px -24px -24px 0);}   /* půlkruh na hraně těla, oblouk ven; clip-path utne glow na ploché straně → čisté zalícování s hranou */
+#zone-macro{border-radius:0 var(--r-pill) var(--r-pill) 0;clip-path:inset(-50px -50px -50px 0);}   /* půlkruh na hraně těla, oblouk ven; clip-path utne glow na ploché straně → čisté zalícování s hranou */
 /* The top render only shows the BUTTON as a tiny point on the device edge.
    Keep that precise visual glow, but give its hover target a usable 28px
    footprint; otherwise a normal mouse pass almost never reaches the 8px
@@ -809,9 +827,10 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .seq-list{border-top:1px solid var(--border)}
 .seq-row{position:relative;display:flex;align-items:center;gap:var(--space-3);min-height:38px;padding:0 2px;border-bottom:1px solid var(--border);font-size:var(--fs-lg);color:var(--t1);cursor:grab}
 .seq-row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
-.seq-index{width:20px;flex:none;text-align:right;font:400 var(--fs-md) 'DM Mono',monospace;color:var(--t3)}
+/* Plain numbers in Mulish: the embedded DM Mono only has a slashed zero ("2Ø", "CØ"; N-9). */
+.seq-index{width:20px;flex:none;text-align:right;font:400 var(--fs-md) 'Mulish',sans-serif;font-variant-numeric:tabular-nums;color:var(--t3)}
 .seq-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}
-.seq-value{flex:none;font:400 var(--fs-md) 'DM Mono',monospace;color:var(--t2);font-variant-numeric:tabular-nums}
+.seq-value{flex:none;font:400 var(--fs-md) 'Mulish',sans-serif;color:var(--t2);font-variant-numeric:tabular-nums}
 .seq-handle{width:14px;flex:none;text-align:center;color:var(--t3);font-size:var(--fs-lg)}
 .seq-actions{display:flex;align-items:center;gap:2px;opacity:0;transition:opacity var(--dur-fast) ease}
 .seq-row:hover .seq-actions,.seq-row:focus-within .seq-actions{opacity:1}
@@ -1804,7 +1823,9 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   display:flex;align-items:center;justify-content:center;padding:20px;
   animation:fi var(--dur-fast) ease;
 }
-@media(max-width:980px){
+/* 899 (was 980): two columns start at 900 px and keep the 144 px desktop
+   HUD (UX audit 2026-09-25 C-2); the compact square is for narrower screens. */
+@media(max-width:899px){
   .live-hud{left:16px;width:112px;height:112px;padding:8px;border-radius:var(--r-lg)}
   .live-hud[data-side]{left:16px;right:auto}
   .live-hud-inner{grid-template-rows:minmax(0,1fr) 28px;gap:var(--space-1)}
@@ -1912,7 +1933,8 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 .fader-title-input{field-sizing:content;width:auto;min-width:5ch;max-width:min(190px,100%);font-size:var(--fs-lg);font-weight:600;padding:0;flex:0 1 auto;align-self:flex-start;cursor:text}
 .section-toggle-title .panel-name{font-size:var(--fs-lg);font-weight:600;letter-spacing:-.005em}
 .section-summary{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:100%;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-md);line-height:1.25}
-.section-summary-label{font:500 var(--fs-sm) 'DM Mono',monospace;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
+/* Prose in Mulish, Ch/CC and note tokens (meta) in DM Mono – UX audit 2026-09-28 N-9. */
+.section-summary-label{font:400 var(--fs-sm) 'Mulish',sans-serif;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
 .section-summary-meta{font:500 var(--fs-sm) 'DM Mono',monospace;letter-spacing:0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .section-summary-sep{color:var(--t3);font:600 var(--fs-xs) 'Mulish',sans-serif}
 .section-chevron{width:9px;height:14px;flex:none;color:var(--t3);transition:transform .25s var(--ease-out)}
@@ -2098,6 +2120,8 @@ button:focus-visible{outline-offset:3px;}
 .bank-quick-setup-label{color:var(--t2);white-space:nowrap}
 .library-browse-link{border:1px solid transparent;border-radius:var(--r-pill);background:none;padding:0 4px;margin-left:-4px;color:var(--red);font:600 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer}
 .library-browse-link:hover{color:var(--red2)}
+/* The pill pulls 4px left, so the default ring covered "setup" (N-13). */
+.library-browse-link:focus-visible{outline-offset:-1px}
 .library-popover{position:absolute;top:calc(100% + 6px);left:0;z-index:120;width:min(360px,calc(100vw - 40px));padding:8px;border-radius:var(--r);background:var(--bg-card);box-shadow:0 0 0 1px var(--border),var(--shadow)}
 .library-popover[hidden]{display:none}
 .quick-setup-picker{position:relative;width:100%}
@@ -2126,7 +2150,10 @@ button:focus-visible{outline-offset:3px;}
 }
 .quick-setup-menu{left:0;width:min(360px,calc(100vw - 40px));max-height:310px;overflow-y:auto}
 .quick-setup-menu[hidden]{display:none}
-.library-popover .quick-setup-menu{position:static;margin-top:6px;width:100%;max-height:310px;padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.library-popover .quick-setup-menu{position:static;margin-top:6px;width:100%;max-height:min(560px,calc(100vh - 240px));padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+/* All 14 libraries fit a 900px window; below that the list scrolls and the
+   bottom edge fades while more options follow (UX audit 2026-09-28, N-7). */
+.quick-setup-menu.has-more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 32px),transparent)}
 .quick-setup-group+.quick-setup-group{margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
 .quick-setup-group-label{padding:4px 8px 4px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
 .quick-setup-option{
@@ -2253,6 +2280,18 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
         <span class="controller-toggle-text" aria-hidden="true">Controller</span>
       </label>
     </div>
+    <!-- Both view options sit together here (UX audit 2026-09-28 N-10); the
+         Application settings group held only this switch. -->
+    <div class="controller-toggle-wrap live-monitor-toggle-wrap" title="Show/hide the live monitor (saved in this browser, not on the device)">
+      <svg class="controller-toggle-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" aria-hidden="true">
+        <rect x="2" y="2.5" width="10" height="9" rx="2"/><path d="M5 9V6.5M7 9V5M9 9V7.5"/>
+      </svg>
+      <label class="hid-switch controller-switch">
+        <input type="checkbox" id="live-hud-switch" checked onchange="setLiveHudEnabled(this.checked)" aria-label="Show live monitor">
+        <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
+        <span class="controller-toggle-text" aria-hidden="true">Live monitor</span>
+      </label>
+    </div>
 
     <button class="dark-toggle ui-control ui-pill ui-glass" onclick="toggleDark()" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">
       <svg class="theme-icon theme-icon-sun" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -2356,24 +2395,9 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <span aria-hidden="true"><svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </button>
     <div class="bank-actions-body" id="bank-actions-body" data-group="bank" style="display:none"></div>
-    <button class="advanced-toggle-btn group-row" onclick="toggleAppSettings()" id="app-settings-toggle-btn" aria-expanded="false" aria-controls="app-settings-body">
-      <span class="group-row-label">Application settings</span>
-      <span aria-hidden="true"><svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    </button>
-    <div id="app-settings-body" style="display:none;padding:12px 18px 18px">
-      <div class="info-grid">
-        <div class="info-row info-row-action" data-tip="Shows the floating live values card (faders and roller). Saved in this browser only, not on the device.">
-          <span class="info-lbl">Live monitor</span>
-          <label class="hid-switch" title="Show the live values card">
-            <input type="checkbox" id="live-hud-switch" onchange="setLiveHudEnabled(this.checked)" aria-label="Show live monitor">
-            <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
-          </label>
-        </div>
-      </div>
-    </div>
     <button class="advanced-toggle-btn group-row" onclick="toggleDeviceSettings()" id="device-settings-toggle-btn" aria-expanded="false" aria-controls="device-settings-body">
-      <span class="group-row-label">Device &amp; Settings<span class="fw-update-dot" id="fw-update-dot" hidden title="Firmware update available"></span></span>
-      <span class="group-row-value" id="di-firmware-summary">–</span>
+      <span class="group-row-label">Device<span class="fw-update-dot" id="fw-update-dot" hidden title="Firmware update available"></span></span>
+      <span class="group-row-value" id="di-firmware-summary">Not connected</span>
       <span id="device-settings-chevron" aria-hidden="true"><svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </button>
     <div id="device-settings-body" style="display:none;padding:12px 18px 18px">
@@ -2473,9 +2497,9 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <div class="settings-subhead" id="help-macro">Button macro (long-press)</div>
       <p style="margin:0 0 12px">A <b>long-press</b> (≥ 0.5 s) of the device button sends a defined key combo – e.g. play/stop or a DAW shortcut. Requires Keyboard (HID). A <b>short press</b> still cycles banks. The Button Macro panel remains visible while HID is off and offers a direct Enable Keyboard action.</p>
       <div class="settings-subhead" id="help-hid">Keyboard (HID)</div>
-      <p style="margin:0 0 12px">Enable HID (in Device &amp; Settings) to let the device send keystrokes – required for the Navigation roller mode and the button long-press macro.</p>
+      <p style="margin:0 0 12px">Enable HID (under Device) to let the device send keystrokes – required for the Navigation roller mode and the button long-press macro.</p>
       <div class="settings-subhead">MIDI diagnostics</div>
-      <p style="margin:0 0 12px">Open MIDI diagnostics in Device &amp; Settings to inspect the active bank mapping, last received MIDI event, firmware, HID state and config hash, or copy a support snapshot.</p>
+      <p style="margin:0 0 12px">Open MIDI diagnostics under Device to inspect the active bank mapping, last received MIDI event, firmware, HID state and config hash, or copy a support snapshot.</p>
       <div class="settings-subhead">Switching banks</div>
       <p style="margin:0">On the hardware, the button cycles through your banks. You can define up to 8 banks.</p>
     </div>
@@ -2700,7 +2724,7 @@ const CC_MUSICAL_NAMES = {
   72:'Release',73:'Attack',74:'Brightness',91:'Reverb',93:'Chorus'
 };
 function musicalCcName(cc, fallback = '') {
-  return CC_MUSICAL_NAMES[Number(cc)] || fallback || `CC ${cc}`;
+  return CC_MUSICAL_NAMES[Number(cc)] || fallback || `CC${cc}`;
 }
 function defaultFaderName(key) { return key === 'fader1' ? 'Expression' : 'Dynamics'; }
 function faderDisplayName(ctrl, key) { return String(ctrl?.label || '').trim() || defaultFaderName(key); }
@@ -2797,7 +2821,7 @@ function rollerSectionSummary(bank) {
   const enc = `Ch ${bank.encoder.channel+1} · CC${bank.encoder.cc}`;
   if (mode === 'keyswitch') {
     const notes = bank.ks_notes || [];
-    const range = notes.length ? ` · ${noteName(Math.min(...notes))}–${noteName(Math.max(...notes))}` : '';
+    const range = notes.length ? ` · ${noteRangeText(notes)}` : '';
     return {label: notes.length ? `${notes.length} keyswitches` : 'No keyswitches', meta:`Ch ${(bank.ks_channel ?? 0)+1}${range}`};
   }
   if (mode === 'track_nav') return {label:'Keys', meta:`${keyComboLabel(bank.nav_keys_cw || [0x52])} / ${keyComboLabel(bank.nav_keys_ccw || [0x51])}`};
@@ -2818,7 +2842,7 @@ function refreshSectionSemantics(bi, key) {
     const toggle = document.getElementById(`section-toggle-${bi}-${key}`);
     if (toggle) toggle.setAttribute('aria-label', `${isSectionOpen(key)?'Collapse':'Expand'} ${name} settings`);
     setSectionSummary(`section-summary-${bi}-${key}`, faderSectionSummary(ctrl));
-    setTxt(`cc-meaning-${bi}-${key}`, musicalCcName(ctrl.cc,`CC ${ctrl.cc}`));
+    setTxt(`cc-meaning-${bi}-${key}`, musicalCcName(ctrl.cc,`CC${ctrl.cc}`));
   }
   renderLiveStrip();
 }
@@ -2842,6 +2866,11 @@ function storageSet(key, value) {
 let noteConvention = storageGet('ff_note_convention', 'C-2');
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
+// "C0 → G0": an en-dash between notes read as a negative octave in DM Mono
+// ("C-2–B-2", UX audit 2026-09-28 N-8). The HUD passes a compact '→'.
+function noteRangeText(notes, sep = ' → ') {
+  return `${noteName(Math.min(...notes))}${sep}${noteName(Math.max(...notes))}`;
+}
 function noteName(num, convention = noteConvention) {
   if (num == null || num < 0 || num > 127) return '–';
   const baseOctave = (convention === 'C-1') ? -1 : -2;
@@ -3050,27 +3079,62 @@ function recordConfigCheckpoint() {
     _lastRenderedConfig = cloneConfig(cfg);
   }
 }
+// "CC11 → CC7" / "Ch 1 → Ch 2" / both – Review shows values, not categories
+// (UX audit 2026-09-28, N-5).
+function mappingChangeText(name, now = {}, before = {}) {
+  const cc = now.cc !== before.cc, ch = now.channel !== before.channel;
+  if (cc && ch) return `${name} Ch ${before.channel+1} · CC${before.cc} → Ch ${now.channel+1} · CC${now.cc}`;
+  if (cc) return `${name} CC${before.cc} → CC${now.cc}`;
+  if (ch) return `${name} Ch ${before.channel+1} → Ch ${now.channel+1}`;
+  return '';
+}
+function listChangeText(noun, now = [], before = []) {
+  return now.length !== before.length ? `${noun} ${before.length} → ${now.length}` : noun;
+}
 function configChangeItems(base = _syncedConfigSnapshot, current = cfg) {
   const items = [], same = (a,b) => configSignature(a) === configSignature(b);
   const oldBanks = base?.banks || [], newBanks = current?.banks || [];
-  const oldOrder = oldBanks.map(bank => bank.name || '').join('\u0000');
-  const newOrder = newBanks.map(bank => bank.name || '').join('\u0000');
+  const names = banks => banks.map(bank => bank.name || '');
   if (oldBanks.length !== newBanks.length) items.push(`Banks: ${oldBanks.length} → ${newBanks.length}`);
-  else if (oldOrder !== newOrder) items.push('Bank order or names');
+  else if (names(oldBanks).join('\u0000') !== names(newBanks).join('\u0000')
+    && [...names(oldBanks)].sort().join('\u0000') === [...names(newBanks)].sort().join('\u0000')) items.push('Bank order');
   newBanks.forEach((bank,index) => {
     const label = bank.name || `Bank ${index+1}`;
     const sameName = oldBanks.filter(item => (item.name || '') === (bank.name || ''));
     const before = sameName.length === 1 ? sameName[0] : oldBanks[index];
     if (!before) { items.push(`${label}: new bank`); return; }
+    // Renames are per bank, independent of a bank count change.
+    if ((before.name || '') !== (bank.name || '')) items.push(`${before.name || `Bank ${index+1}`} renamed → ${label}`);
     if (bank.icon !== before.icon) items.push(`${label}: icon`);
-    if (!same(bank.fader1,before.fader1)) items.push(`${label}: ${faderDisplayName(bank.fader1,'fader1')} mapping`);
-    if (!same(bank.fader2,before.fader2)) items.push(`${label}: ${faderDisplayName(bank.fader2,'fader2')} mapping`);
-    const rollerNow = {encoder:bank.encoder,roller_mode:bank.roller_mode,nav_keys_cw:bank.nav_keys_cw,nav_keys_ccw:bank.nav_keys_ccw,nav_invert:bank.nav_invert};
-    const rollerBefore = {encoder:before.encoder,roller_mode:before.roller_mode,nav_keys_cw:before.nav_keys_cw,nav_keys_ccw:before.nav_keys_ccw,nav_invert:before.nav_invert};
-    if (!same(rollerNow,rollerBefore)) items.push(`${label}: Roller`);
-    const articulationsNow = {uacc_values:bank.uacc_values,ks_notes:bank.ks_notes,ks_names:bank.ks_names,ks_channel:bank.ks_channel,ks_velocity:bank.ks_velocity};
-    const articulationsBefore = {uacc_values:before.uacc_values,ks_notes:before.ks_notes,ks_names:before.ks_names,ks_channel:before.ks_channel,ks_velocity:before.ks_velocity};
-    if (!same(articulationsNow,articulationsBefore)) items.push(`${label}: articulations / keyswitches`);
+    ['fader1','fader2'].forEach(key => {
+      if (same(bank[key],before[key])) return;
+      const name = faderDisplayName(bank[key],key), oldName = faderDisplayName(before[key],key);
+      const parts = [];
+      if (name !== oldName) parts.push(`${oldName} renamed → ${name}`);
+      const mapping = mappingChangeText(name, bank[key], before[key]);
+      if (mapping) parts.push(mapping);
+      if (!parts.length) parts.push(`${name} mapping`);
+      parts.forEach(part => items.push(`${label}: ${part}`));
+    });
+    const modeNow = bank.roller_mode || 'cc', modeBefore = before.roller_mode || 'cc';
+    const navNow = {nav_keys_cw:bank.nav_keys_cw,nav_keys_ccw:bank.nav_keys_ccw,nav_invert:bank.nav_invert};
+    const navBefore = {nav_keys_cw:before.nav_keys_cw,nav_keys_ccw:before.nav_keys_ccw,nav_invert:before.nav_invert};
+    const rollerParts = [];
+    if (modeNow !== modeBefore) rollerParts.push(`Roller ${rollerModeTitle(modeBefore)} → ${rollerModeTitle(modeNow)}`);
+    const rollerMapping = mappingChangeText('Roller', bank.encoder, before.encoder);
+    if (rollerMapping) rollerParts.push(rollerMapping);
+    else if (!same(bank.encoder,before.encoder)) rollerParts.push('Roller');
+    if (!same(navNow,navBefore)) rollerParts.push('Roller navigation keys');
+    rollerParts.forEach(part => items.push(`${label}: ${part}`));
+    // A mode switch auto-fills the new mode's list – it is part of that one
+    // item, not a separate "articulations / keyswitches" change.
+    if (modeNow === modeBefore) {
+      if (!same(bank.uacc_values,before.uacc_values)) items.push(`${label}: ${listChangeText('articulations', bank.uacc_values, before.uacc_values)}`);
+      if (!same(bank.ks_notes,before.ks_notes)) items.push(`${label}: ${listChangeText('keyswitches', bank.ks_notes, before.ks_notes)}`);
+      if (!same(bank.ks_names,before.ks_names)) items.push(`${label}: keyswitch names`);
+      if (bank.ks_channel !== before.ks_channel) items.push(`${label}: keyswitch Ch ${before.ks_channel+1} → Ch ${bank.ks_channel+1}`);
+      if (bank.ks_velocity !== before.ks_velocity) items.push(`${label}: keyswitch velocity ${before.ks_velocity} → ${bank.ks_velocity}`);
+    }
   });
   if (!same(base?.macro_keys || [],current?.macro_keys || [])) items.push('Button macro');
   if ((base?.macro_global !== false) !== (current?.macro_global !== false)) items.push('Button macro scope');
@@ -3323,7 +3387,7 @@ function renderPanels(errs = validate()) {
                 aria-label="Search library and custom setups" onfocus="openQuickSetupMenu(${bi})"
                 oninput="renderQuickSetupMenu(${bi},this.value)" onkeydown="quickSetupInputKey(event,${bi})" />
             </span>
-            <div class="quick-setup-menu" id="quick-setup-menu-${bi}" role="listbox" hidden>${quickSetupMenuHtml('')}</div>
+            <div class="quick-setup-menu" id="quick-setup-menu-${bi}" role="listbox" onscroll="syncQuickSetupFade(this)" hidden>${quickSetupMenuHtml('')}</div>
           </div>
         </div>
       </div>
@@ -3407,7 +3471,7 @@ function faderSectionContent(key, ctrl, bi, errs = validate()) {
   const err   = errs.find(e => e.field === `b${bi}.${key}`)?.msg || '';
   const displayLabel = faderDisplayName(ctrl,key);
   const ariaDisplayLabel = escHtml(displayLabel);
-  const ccMeaning = musicalCcName(ctrl.cc,`CC ${ctrl.cc}`);
+  const ccMeaning = musicalCcName(ctrl.cc,`CC${ctrl.cc}`);
   const open = isSectionOpen(key);
   return `
     ${sectionHeaderHtml(bi,key,displayLabel,faderSectionSummary(ctrl),'Sends a MIDI CC on a channel you choose. The on-screen fader mirrors the hardware and can\'t be dragged.')}
@@ -3614,8 +3678,18 @@ function keyswitchBody(bi) {
       </div>
     </div>
 
+    <!-- Note → articulation list is the main content, as in Articulation mode
+         (UX audit 2026-09-28, N-2); Advanced keeps only Velocity and naming. -->
+    <div class="ks-sequence-head"><span class="field-label">ROLLER ORDER</span><span class="uacc-note">Double-click to name · Drag or Alt + ↑↓</span></div>
+    <div class="seq-list" id="ks-tags-${bi}">${keyswitchTagsHtml(bi)}</div>
+    <div class="seq-add-row">
+      <input type="number" id="ks-note-input-${bi}" placeholder="MIDI 0–127" min="0" max="127" aria-label="Keyswitch MIDI note" />
+      <button type="button" class="seq-link" onclick="addKsNote(${bi})" aria-label="Add keyswitch note">Add note…</button>
+    </div>
+    <div class="uacc-note">Manual exceptions are preserved. The displayed order is the roller stepping order.</div>
+
     <details class="roller-advanced" ${_openRollerAdvanced.has(bi)?'open':''} ontoggle="rememberRollerAdvanced(${bi},this.open)">
-      <summary><span>Advanced keyswitch settings</span><span class="roller-advanced-summary">Velocity · naming · manual order</span></summary>
+      <summary><span>Advanced keyswitch settings</span><span class="roller-advanced-summary">Velocity · note naming</span></summary>
       <div class="roller-advanced-body">
         <div class="section-field-row">
           ${stepperFieldHtml(`b${bi}-ks-vel`, 'VELOCITY', b.ks_velocity ?? 100, 1, 127,
@@ -3629,13 +3703,6 @@ function keyswitchBody(bi) {
             </div>
           </div>
         </div>
-        <div class="ks-sequence-head"><span class="field-label">ROLLER ORDER</span><span class="uacc-note">Drag or Alt + ↑↓</span></div>
-        <div class="seq-list" id="ks-tags-${bi}">${keyswitchTagsHtml(bi)}</div>
-        <div class="seq-add-row">
-          <input type="number" id="ks-note-input-${bi}" placeholder="MIDI 0–127" min="0" max="127" aria-label="Keyswitch MIDI note" />
-          <button type="button" class="seq-link" onclick="addKsNote(${bi})" aria-label="Add keyswitch note">Add note…</button>
-        </div>
-        <div class="uacc-note">Manual exceptions are preserved. The displayed order is the roller stepping order.</div>
       </div>
     </details>
   </div>`;
@@ -3978,6 +4045,11 @@ async function sendHidRequest(enabled){
   }
 }
 
+// "Not connected" / "Firmware 1.3.0" instead of a bare "–" (UX audit 2026-09-28 N-10).
+function deviceSummaryText() {
+  if (!_ffConnected) return 'Not connected';
+  return DEVICE_INFO.firmware ? `Firmware ${DEVICE_INFO.firmware}` : 'Connected';
+}
 function updateDeviceInfo() {
   const serial   = DEVICE_INFO.serial;
   const firmware = DEVICE_INFO.firmware;
@@ -3991,7 +4063,7 @@ function updateDeviceInfo() {
   };
   setVal('di-serial',   serial);
   setVal('di-firmware', firmware);
-  setTxt('di-firmware-summary', firmware ? `Firmware ${firmware}` : '–');
+  setTxt('di-firmware-summary', deviceSummaryText());
   updateHidToggle();
   updateFaderResponseControl();
   updateMacroUI();
@@ -4317,7 +4389,7 @@ function cancelKeyCapture(){   // Esc / klik mimo / blur (audit I4)
 }
 function startKeyCapture(bi, which){ _captureBegin({ bi, which }); }
 function startMacroCapture(bi = activeBank){
-  if (!DEVICE_INFO.hid_enabled) { toast('i','Macro requires Keyboard (HID) – enable it in Device & Settings'); return; }
+  if (!DEVICE_INFO.hid_enabled) { toast('i','Macro requires Keyboard (HID) – enable it under Device'); return; }
   _captureBegin({ macro: true, bi });
 }
 window.addEventListener('keydown', e => {
@@ -4554,39 +4626,33 @@ function closeConfirm(accepted) {
 }
 
 function nextBankName() {
-  // Find the lowest number not already used by any "Bank N" name
+  // Named by the new bank's position (appended last); a taken number moves
+  // on to the next free one. Filling the lowest freed number named the 4th
+  // bank "Bank 2" after a rename (Frank 2026-09-28).
   const used = new Set(
     cfg.banks
       .map(b => b.name?.match(/^Bank (\d+)$/))
       .filter(Boolean)
       .map(m => parseInt(m[1], 10))
   );
-  let n = 1;
+  let n = cfg.banks.length + 1;
   while (used.has(n)) n++;
   return 'Bank ' + n;
 }
 
 function addBank() {
   if (cfg.banks.length >= MAX_BANKS) { toast('i', t('toast.bank_max')); return; }
-  const bi   = cfg.banks.length;
-  const name = nextBankName();
-  cfg.banks.push({
-    name,
-    icon:        '',
-    uacc_values: [...DEFAULT_UACC],
-    fader1:      {cc:1,  channel:bi%16, label:'Expression'},
-    fader2:      {cc:2,  channel:bi%16, label:'Dynamics'},
-    encoder:     {cc:32, channel:bi%16},
-    roller_mode: 'cc',
-    ks_notes:    [],
-    ks_channel:  bi % 16,
-    ks_velocity: 100,
-    nav_keys_cw:  [0x52],
-    nav_keys_ccw: [0x51],
-    nav_invert:   false,
-    macro_keys:   [],
-  });
-  dirty = true; render();
+  // "+" = next bank as a copy of the one being edited (same mapping, channel
+  // and labels), appended as "Bank N" and selected. The old fixed defaults
+  // (CC1 "Expression", channel = index) contradicted the CC names and shifted
+  // the channel (UX audit 2026-09-28, N-1).
+  const copy = JSON.parse(JSON.stringify(cfg.banks[activeBank]));
+  copy.name = nextBankName();
+  cfg.banks.push(copy);
+  activeBank = cfg.banks.length - 1;
+  dirty = true;
+  _lastRenderedBank = -1;
+  render();
 }
 function removeBank(bi) {
   if (cfg.banks.length <= 1) { toast('e', t('toast.bank_min')); return; }
@@ -4998,10 +5064,13 @@ function validate() {
     for (let a = 0; a < ctrls.length - 1; a++) {
       for (let bb = a + 1; bb < ctrls.length; bb++) {
         const ca = b[ctrls[a]], cb = b[ctrls[bb]];
-        if (ca && cb && ca.cc === cb.cc && ca.channel === cb.channel)
-          errs.push({field:`b${i}.${ctrls[a]}`, target:`b${i}-${ctrls[a]}-cc`, msg:t('validate.cc_conflict')
-            .replace('{b}', b.name||i+1).replace('{k1}', controlFriendlyName(b,ctrls[a])).replace('{k2}', controlFriendlyName(b,ctrls[bb]))
-            .replace('{cc}', ca.cc).replace('{ch}', ca.channel+1)});
+        if (!(ca && cb && ca.cc === cb.cc && ca.channel === cb.channel)) continue;
+        // Both sides of the pair, each named first from its own section – the
+        // one being edited used to stay silent (UX audit 2026-09-28, N-6).
+        [[ctrls[a], ctrls[bb]], [ctrls[bb], ctrls[a]]].forEach(([own, other]) =>
+          errs.push({field:`b${i}.${own}`, target:`b${i}-${own}-cc`, msg:t('validate.cc_conflict')
+            .replace('{b}', b.name||i+1).replace('{k1}', controlFriendlyName(b,own)).replace('{k2}', controlFriendlyName(b,other))
+            .replace('{cc}', ca.cc).replace('{ch}', ca.channel+1)}));
       }
     }
   });
@@ -5149,7 +5218,7 @@ function markSectionIssues(errs = validate()) {
     btn.querySelector('.bank-tab-issue')?.remove();
     if (bad.has(idx)) {
       const d = document.createElement('span');
-      d.className = 'bank-tab-issue'; d.setAttribute('aria-hidden','true');
+      d.className = 'bank-tab-issue'; d.setAttribute('aria-hidden','true'); d.textContent = '!';
       btn.insertBefore(d, btn.children[0] || null);
     }
   });
@@ -5232,12 +5301,12 @@ function diagnosticRollerMapping(bank) {
   const mode = bank.roller_mode || 'cc';
   if (mode === 'keyswitch') {
     const notes = bank.ks_notes || [];
-    const range = notes.length ? `${noteName(Math.min(...notes))}–${noteName(Math.max(...notes))}` : 'No notes';
+    const range = notes.length ? noteRangeText(notes) : 'No notes';
     return `Keyswitch · Ch ${(bank.ks_channel ?? 0)+1} · ${range}`;
   }
   if (mode === 'track_nav') return `Navigation · ${keyComboLabel(bank.nav_keys_cw || [0x52])} / ${keyComboLabel(bank.nav_keys_ccw || [0x51])} · HID ${DEVICE_INFO.hid_enabled?'on':'off'}`;
-  if (mode === 'cc_relative') return `Relative CC · Ch ${(bank.encoder?.channel ?? 0)+1} · CC ${bank.encoder?.cc ?? 32}`;
-  return `Articulation · Ch ${(bank.encoder?.channel ?? 0)+1} · CC ${bank.encoder?.cc ?? 32}`;
+  if (mode === 'cc_relative') return `Relative CC · Ch ${(bank.encoder?.channel ?? 0)+1} · CC${bank.encoder?.cc ?? 32}`;
+  return `Articulation · Ch ${(bank.encoder?.channel ?? 0)+1} · CC${bank.encoder?.cc ?? 32}`;
 }
 function midiDiagnosticsData() {
   const bi = (_ffConnected && cfg.banks[liveBank]) ? liveBank : activeBank;
@@ -5249,8 +5318,8 @@ function midiDiagnosticsData() {
     connection: diagnosticConnectionLabel(),
     input: _midiInputNames.length ? _midiInputNames.join(', ') : 'No Feel Fader MIDI input',
     bank: bank ? `B${bi+1} · ${bank.name || `Bank ${bi+1}`}` : '–',
-    left: bank?.fader1 ? `Ch ${bank.fader1.channel+1} · CC ${bank.fader1.cc} · ${faderDisplayName(bank.fader1,'fader1')}` : '–',
-    right: bank?.fader2 ? `Ch ${bank.fader2.channel+1} · CC ${bank.fader2.cc} · ${faderDisplayName(bank.fader2,'fader2')}` : '–',
+    left: bank?.fader1 ? `Ch ${bank.fader1.channel+1} · CC${bank.fader1.cc} · ${faderDisplayName(bank.fader1,'fader1')}` : '–',
+    right: bank?.fader2 ? `Ch ${bank.fader2.channel+1} · CC${bank.fader2.cc} · ${faderDisplayName(bank.fader2,'fader2')}` : '–',
     roller: diagnosticRollerMapping(bank),
     lastEvent: _lastMidiDiagnostic ? `${_lastMidiDiagnostic.text} · ${lastTime}` : 'Waiting for MIDI…',
     device: `${DEVICE_INFO.firmware || 'Firmware unknown'} · HID ${DEVICE_INFO.hid_enabled?'on':'off'}`,
@@ -5272,7 +5341,7 @@ function recordMidiDiagnostic(data, coalesceHighRate = false) {
   const bytes = Array.from(data || []), status = bytes[0] || 0, type = status & 0xF0, ch = (status & 0x0F)+1;
   let text;
   if (status === 0xF0) text = `SysEx · ${bytes.length} bytes`;
-  else if (type === 0xB0) text = `CC · Ch ${ch} · CC ${bytes[1]} · value ${bytes[2]}`;
+  else if (type === 0xB0) text = `CC · Ch ${ch} · CC${bytes[1]} · value ${bytes[2]}`;
   else if (type === 0x90 && bytes[2] > 0) text = `Note On · Ch ${ch} · ${noteName(bytes[1])} · velocity ${bytes[2]}`;
   else if (type === 0x80 || (type === 0x90 && bytes[2] === 0)) text = `Note Off · Ch ${ch} · ${noteName(bytes[1])}`;
   else if (type === 0xC0) text = `Bank change · B${(bytes[1] ?? 0)+1}`;
@@ -6098,15 +6167,6 @@ function toggleBankActions(){
   btn && btn.setAttribute('aria-expanded', String(!open));
   btn && btn.blur && btn.blur();
 }
-function toggleAppSettings(){
-  const body    = document.getElementById('app-settings-body');
-  const btn     = document.getElementById('app-settings-toggle-btn');
-  const open    = body.style.display !== 'none';
-  body.style.display  = open ? 'none' : 'block';
-  btn && btn.classList.toggle('is-open', !open);
-  btn && btn.setAttribute('aria-expanded', String(!open));
-  btn && btn.blur && btn.blur();
-}
 function toggleHelp(){
   const body    = document.getElementById('help-body');
   const btn     = document.getElementById('help-toggle-btn');
@@ -6385,7 +6445,7 @@ function updateContextualLiveStrip(){
   // Two-column layout: the default HUD docks into a slot left of the sticky
   // controller (body.hud-docked pads the stage), so it never covers the device.
   const docked = visible && !liveHudHasCustomPos() && !_liveHudState.large && !_controllerHidden
-    && window.matchMedia('(min-width:1100px)').matches;
+    && window.matchMedia('(min-width:900px)').matches;
   document.body.classList.toggle('hud-docked', docked);
   // Only drive the default position — a user's custom drag position
   // (inline top, set by applyLiveHudState) must not be overwritten on every
@@ -6396,7 +6456,10 @@ function updateContextualLiveStrip(){
     const m = new DOMMatrix(getComputedStyle(stageEl).transform);
     const col = stageEl.getBoundingClientRect();
     const dev = document.getElementById('device-home').getBoundingClientRect();
-    strip.style.left = `${Math.round(col.left - m.m41)}px`;
+    // The glide may also scale (origin = the controller's top-left, so the
+    // top discount stays m42); the left edge sits originX·(1−scale) off.
+    const originX = parseFloat(getComputedStyle(stageEl).transformOrigin) || 0;
+    strip.style.left = `${Math.round(col.left - m.m41 - originX * (1 - m.a))}px`;
     strip.style.top = `${Math.round(dev.top - m.m42)}px`;
   } else if (!liveHudHasCustomPos()) {
     strip.style.removeProperty('left');
@@ -6501,7 +6564,7 @@ function renderLiveStrip(errs = validate()){
   setTxt('live-roller-label', mode === 'keyswitch' ? 'ROLLER · KEYSWITCH' : mode === 'track_nav' ? 'ROLLER · NAVIGATION' : mode === 'cc_relative' ? 'ROLLER · RELATIVE CC' : 'ROLLER · ARTICULATION');
   setTxt('live-roller-label-short', mode === 'keyswitch' ? 'KS' : mode === 'track_nav' ? 'NAV' : mode === 'cc_relative' ? 'REL' : 'ART');
   const ksNotes = bank.ks_notes || [];
-  const ksRange = ksNotes.length ? `${noteName(Math.min(...ksNotes))}–${noteName(Math.max(...ksNotes))}` : 'no notes';
+  const ksRange = ksNotes.length ? noteRangeText(ksNotes, '→') : 'no notes';
   setTxt('live-roller-tech', mode === 'keyswitch'
     ? `Ch${(bank.ks_channel ?? bank.encoder.channel ?? 0)+1}·${ksRange}`
     : mode === 'track_nav' ? 'HID·keys' : `Ch${bank.encoder.channel+1}·CC${bank.encoder.cc}`);
@@ -6511,7 +6574,7 @@ function renderLiveStrip(errs = validate()){
     const readableValue = mode === 'cc' && encLiveVal !== null ? uaccName(encLiveVal) : rollerValue;
     rollerValueEl.classList.toggle('is-long', readableValue.length > 12);
     rollerValueEl.classList.toggle('is-very-long', readableValue.length > 20);
-    rollerValueEl.title = mode === 'cc' && encLiveVal !== null ? `${readableValue} · CC ${encLiveVal}`
+    rollerValueEl.title = mode === 'cc' && encLiveVal !== null ? `${readableValue} · CC${encLiveVal}`
       : mode === 'keyswitch' && ksLiveNote !== null && bank.ks_names?.[ksLiveNote] ? `${readableValue} · ${noteName(ksLiveNote)}` : readableValue;
     rollerValueEl.setAttribute('aria-label', readableValue);
   }
@@ -6533,6 +6596,7 @@ function renderConnState(){
   if (!dot || !txt) return;
   const s = connState();
   _lastConnState = s;
+  setTxt('di-firmware-summary', deviceSummaryText());
   const revealOnInteract = (s === 'CONNECTED_LIVE' || s === 'CONNECTED_BLIND');
   if (s === 'CONNECTED_LIVE'){
     dot.className = 'h-status-dot on';
@@ -7206,15 +7270,25 @@ function restoreDeviceHomeNative() {
 // controller moves from the welcome center to the left column here – FLIP it
 // so it glides instead of jumping.
 function glideStageIntoColumn(closeWelcome) {
+  // FLIP on the controller itself, not the stage box: the stage's padding
+  // changes with the column (HUD slot), which made the controller jump ~64px
+  // on the first frame, and 900–1099 px also shrinks it 220 → 166px (UX audit
+  // 2026-09-28, N-4) – so glide position AND scale from the welcome spot.
   const stage = document.getElementById('stage-collapse');
-  const before = stage?.getBoundingClientRect();
+  const device = document.getElementById('device-home');
+  const before = device?.getBoundingClientRect();
   closeWelcome();
+  // Closing the welcome can resize the controller (900–1099 px); the tracks
+  // were laid out in finalizeWelcomeExit() for the welcome size.
+  layoutFaders();
+  positionThumbs();
   if (!stage || !before || _controllerHidden) return;
-  const after = stage.getBoundingClientRect();
-  const dx = before.left - after.left, dy = before.top - after.top;
-  if ((Math.abs(dx) < 1 && Math.abs(dy) < 1) || window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  const after = device.getBoundingClientRect(), stageBox = stage.getBoundingClientRect();
+  const dx = before.left - after.left, dy = before.top - after.top, scale = before.width / after.width;
+  if ((Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(scale - 1) < 0.005) || window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
   stage.style.transition = 'none';
-  stage.style.transform = `translate(${dx}px,${dy}px)`;
+  stage.style.transformOrigin = `${after.left - stageBox.left}px ${after.top - stageBox.top}px`;
+  stage.style.transform = `translate(${dx}px,${dy}px) scale(${scale})`;
   void stage.offsetWidth;
   stage.style.transition = 'transform var(--dur-stage) var(--ease-out)';
   stage.style.transform = '';
@@ -7224,6 +7298,7 @@ function glideStageIntoColumn(closeWelcome) {
     finished = true;
     stage.removeEventListener('transitionend', onEnd);
     stage.style.removeProperty('transition');
+    stage.style.removeProperty('transform-origin');
     updateContextualLiveStrip();
   };
   const onEnd = e => { if (e.target === stage && e.propertyName === 'transform') done(); };
@@ -8209,6 +8284,38 @@ var LIBRARY_PRESETS = {
     ks_channel: 0,
     ks_velocity: 100
   },
+  // Curated order: ensemble first, then Violins 1 → Basses, as in the LUX set
+  // (UX audit 2026-09-28, N-7).
+  'Spitfire Symphony Orchestra – Ensembles (All techniques)': {
+    // SSO Ensembles All techniques: contiguous keyswitches C-1 through A#-1.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–22.
+    icon: '🎻',
+    bank_name: 'SSO Ensembles',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:11}, (_, index) => index + 12),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Spitfire Symphony Orchestra – Violins 1 (All techniques)': {
+    // SSO Violins 1 All techniques: contiguous keyswitches C-2 through G0.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 0–31.
+    icon: '🎻',
+    bank_name: 'SSO Violins 1',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:32}, (_, index) => index),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
+  'Spitfire Symphony Orchestra – Violas (All techniques)': {
+    // SSO Violas All techniques: contiguous keyswitches C-1 through B-1.
+    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–23.
+    icon: '🎻',
+    bank_name: 'SSO Violas',
+    roller_mode: 'keyswitch',
+    ks_notes: Array.from({length:12}, (_, index) => index + 12),
+    ks_channel: 0,
+    ks_velocity: 100
+  },
   'Spitfire Symphony Orchestra – Celli (All techniques)': {
     // SSO Celli All techniques: contiguous keyswitches C-1 through A#-1.
     // Feel Fader's default C-2 naming convention maps that range to MIDI 12–22.
@@ -8226,36 +8333,6 @@ var LIBRARY_PRESETS = {
     bank_name: 'SSO Basses',
     roller_mode: 'keyswitch',
     ks_notes: Array.from({length:11}, (_, index) => index + 12),
-    ks_channel: 0,
-    ks_velocity: 100
-  },
-  'Spitfire Symphony Orchestra – Ensembles (All techniques)': {
-    // SSO Ensembles All techniques: contiguous keyswitches C-1 through A#-1.
-    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–22.
-    icon: '🎻',
-    bank_name: 'SSO Ensembles',
-    roller_mode: 'keyswitch',
-    ks_notes: Array.from({length:11}, (_, index) => index + 12),
-    ks_channel: 0,
-    ks_velocity: 100
-  },
-  'Spitfire Symphony Orchestra – Violas (All techniques)': {
-    // SSO Violas All techniques: contiguous keyswitches C-1 through B-1.
-    // Feel Fader's default C-2 naming convention maps that range to MIDI 12–23.
-    icon: '🎻',
-    bank_name: 'SSO Violas',
-    roller_mode: 'keyswitch',
-    ks_notes: Array.from({length:12}, (_, index) => index + 12),
-    ks_channel: 0,
-    ks_velocity: 100
-  },
-  'Spitfire Symphony Orchestra – Violins 1 (All techniques)': {
-    // SSO Violins 1 All techniques: contiguous keyswitches C-2 through G0.
-    // Feel Fader's default C-2 naming convention maps that range to MIDI 0–31.
-    icon: '🎻',
-    bank_name: 'SSO Violins 1',
-    roller_mode: 'keyswitch',
-    ks_notes: Array.from({length:32}, (_, index) => index),
     ks_channel: 0,
     ks_velocity: 100
   },
@@ -8327,7 +8404,7 @@ function quickSetupMenuHtml(query = '') {
     const preset = LIBRARY_PRESETS[name];
     if (!preset) return 'My setup';
     if (preset.roller_mode === 'keyswitch' && preset.ks_notes?.length) {
-      return `Keyswitch ${noteName(Math.min(...preset.ks_notes))}–${noteName(Math.max(...preset.ks_notes))}`;
+      return `Keyswitch ${noteRangeText(preset.ks_notes)}`;
     }
     return `UACC · CC${preset.encoder_cc ?? 32}`;
   };
@@ -8336,7 +8413,13 @@ function quickSetupMenuHtml(query = '') {
   const builtIn = Object.keys(LIBRARY_PRESETS).filter(matches);
   const custom = Object.keys(customLibraryPresets).filter(matches).sort((a,b) => a.localeCompare(b));
   if (recent.length) groups.push(['Recently used',recent.map(name => option(name,mechanism(name))).join('')]);
-  if (builtIn.length) groups.push(['Libraries',builtIn.map(name => option(name,mechanism(name))).join('')]);
+  // One group per maker (first word of the name), in curated source order –
+  // "Libraries" hid SSO below the fold (UX audit 2026-09-28, N-7).
+  const maker = name => name.split(' ')[0];
+  [...new Set(Object.keys(LIBRARY_PRESETS).map(maker))].forEach(label => {
+    const names = builtIn.filter(name => maker(name) === label);
+    if (names.length) groups.push([label,names.map(name => option(name,mechanism(name))).join('')]);
+  });
   if (custom.length) groups.push(['My setups',custom.map(name => option(name,'My setup')).join('')]);
   return groups.length ? groups.map(([label,items]) => `<div class="quick-setup-group"><div class="quick-setup-group-label">${label}</div>${items}</div>`).join('')
     : '<div class="quick-setup-empty">No matching setups</div>';
@@ -8352,7 +8435,12 @@ function renderQuickSetupMenu(bi, query = '') {
   menu.innerHTML = quickSetupMenuHtml(query);
   menu.hidden = false;
   input.setAttribute('aria-expanded','true');
+  syncQuickSetupFade(menu);
   refreshBankMenuLayer();
+}
+// Bottom fade only while options sit below the fold (UX audit 2026-09-28, N-7).
+function syncQuickSetupFade(menu) {
+  menu.classList.toggle('has-more', menu.scrollTop + menu.clientHeight < menu.scrollHeight - 2);
 }
 // Library setup lives in a popover anchored to "Browse…" (spec 2026-09-26 §4).
 // The picker inside (search, groups, keyboard, preview dialog, Apply) is the
@@ -8396,6 +8484,14 @@ function libraryBankRename(bank, name, preset) {
   const next = String(preset.custom ? name : (preset.bank_name || name)).trim().slice(0,24);
   return next && next !== current ? next : null;
 }
+// First names instead of a bare count – saves apply → open → undo (UX audit 2026-09-28 N-13).
+function previewNamesText(names) {
+  return names.length > 6 ? `${names.slice(0,6).join(', ')} +${names.length-6} more` : names.join(', ');
+}
+function articulationNames(source) {
+  const ks = source?.ks_notes || [];
+  return ks.length ? ks.map(n => source.ks_names?.[n] || noteName(n)) : (source?.uacc_values || []).map(uaccName);
+}
 function libraryPresetPreviewRows(name, preset) {
   const rows = [];
   const bank = cfg.banks[activeBank];
@@ -8404,7 +8500,7 @@ function libraryPresetPreviewRows(name, preset) {
   if (preset.custom) {
     if (preset.mapping) {
       const left = preset.mapping.fader1 || {}, right = preset.mapping.fader2 || {};
-      rows.push(['Faders', `${faderDisplayName(left,'fader1')} · Ch ${(left.channel ?? 0)+1} · CC ${left.cc ?? 11}; ${faderDisplayName(right,'fader2')} · Ch ${(right.channel ?? 0)+1} · CC ${right.cc ?? 1}`]);
+      rows.push(['Faders', `${faderDisplayName(left,'fader1')} · Ch ${(left.channel ?? 0)+1} · CC${left.cc ?? 11}; ${faderDisplayName(right,'fader2')} · Ch ${(right.channel ?? 0)+1} · CC${right.cc ?? 1}`]);
     }
     if (preset.roller) {
       const mode = preset.roller.roller_mode || 'cc';
@@ -8415,13 +8511,17 @@ function libraryPresetPreviewRows(name, preset) {
       const ks = preset.articulations.ks_notes || [];
       rows.push(['Sequence', ks.length ? `${ks.length} keyswitch notes · Ch ${(preset.articulations.ks_channel ?? 0)+1}` : `${uaccCount} articulation values`]);
     }
+    const customNames = articulationNames(preset.articulations);
+    if (customNames.length) rows.push(['Articulations', previewNamesText(customNames)]);
     if (Object.prototype.hasOwnProperty.call(preset,'icon')) rows.push(['Bank icon', preset.icon || 'Remove icon']);
   } else {
-    rows.push(['Roller', `${rollerModeTitle(preset.roller_mode || 'cc')} · CC ${preset.encoder_cc ?? 32} · channel stays unchanged`]);
+    rows.push(['Roller', `${rollerModeTitle(preset.roller_mode || 'cc')} · CC${preset.encoder_cc ?? 32} · channel stays unchanged`]);
     const keyswitches = preset.ks_notes || [];
     rows.push(['Sequence', keyswitches.length
       ? `${keyswitches.length} keyswitch notes · Ch ${(preset.ks_channel ?? 0)+1}`
       : `${(preset.uacc_values || []).length} UACC articulation values`]);
+    const names = articulationNames(preset);
+    if (names.length) rows.push(['Articulations', previewNamesText(names)]);
     rows.push(['Bank icon', cfg.banks[activeBank]?.icon ? 'Keep current icon' : (preset.icon || 'No icon')]);
   }
   return rows.map(([label,value]) => `<div class="library-preview-row"><span class="library-preview-row-label">${escHtml(label)}</span><span class="library-preview-row-value">${escHtml(value)}</span></div>`).join('');
