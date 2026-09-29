@@ -67,6 +67,14 @@
   --highlight-rgb:76,175,105;
   --highlight-section-fill:color-mix(in srgb,var(--t1) 4%,transparent);  /* neutral: green is live-only (spec 2026-09-26 §1) */
   --highlight-section-glow:transparent;
+  --link-ring-rgb:255,255,255; /* white highlight ring for every controller zone + onboarding Connect & load (Frank 2026-09-29) */
+  /* Highlight timing (Frank 2026-09-29: "jemnější, víc dýchat"): reacts at once, then rises
+     slowly and organically; the fade-out lingers even a little longer (a slow cross-fade between controls). Base state carries the OUT timing, the lit state the IN timing. */
+  --dur-link-in:1.3s;
+  --dur-link-out:1.8s;
+  --ease-link:cubic-bezier(.22,.61,.36,1);   /* responds on the first frame, long soft tail */
+  --link-delay:0ms;
+  --link-edge:rgba(20,20,24,.4); /* thin dark outline so the white ring stays visible where it sits on the light page (button zone, Connect & load) */
   --amber:#e6a23c;
   --piano-white:#fbfbfd;
   --piano-black:#303036;
@@ -154,6 +162,7 @@ html.dark{
   --highlight-rgb:92,190,120;
   --highlight-section-fill:color-mix(in srgb,var(--t1) 6%,transparent);
   --highlight-section-glow:transparent;
+  --link-edge:transparent;
   --piano-white:#d8d8dc;
   --piano-black:#202024;
 }
@@ -309,7 +318,9 @@ header{
 @media(any-pointer:fine){.live-hud.is-contextual-visible{cursor:grab}}
 .h-left{display:flex;align-items:center;gap:var(--space-6);flex:1 1 auto;min-width:0}
 /* Wordmark in normal case (spec 2026-09-26 §2). 700 = heaviest embedded Mulish. */
-.h-title{color:var(--t1);font-size:var(--fs-lg);font-weight:700;letter-spacing:-.01em;flex-shrink:0;white-space:nowrap;user-select:none}
+/* Tracked caps like the onboarding wordmark (Frank 2026-09-29: one wordmark style everywhere; supersedes the
+   normal-case wordmark from spec 2026-09-26). */
+.h-title{color:var(--t1);font-size:var(--fs-lg);font-weight:700;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;white-space:nowrap;user-select:none}
 .h-right{display:flex;align-items:center;gap:var(--space-4)}
 
 /* MAIN */
@@ -393,8 +404,9 @@ main{width:100%;}
 /* Live MIDI is already frame-coalesced in flushFaderFrame(). A CSS transform
    transition here only makes the visual thumb chase each new CC value by
    ~60ms, so leave the realtime path unanimated. The welcome handoff sets its
-   own temporary settle transition inline and remains unchanged. */
-.fader-thumb{position:absolute;left:50%;top:0;transform:translate3d(-50%,0,0);pointer-events:none;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+   own temporary settle transition inline and remains unchanged. Only the
+   highlight ring (filter) fades, so it eases in like the roller/button zones. */
+.fader-thumb{position:absolute;left:50%;top:0;transform:translate3d(-50%,0,0);transition:filter var(--dur-link-out) var(--ease-link);pointer-events:none;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .fader-thumb img{display:block;width:100%;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
 
 
@@ -717,28 +729,29 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
    not green – green is live-only, spec 2026-09-26 §1); no onboarding
    equivalent to match (onboarding never shows settings panels), scope
    confirmed with Frank 2026-08-18. */
-.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:var(--r-sm);}
-/* Hardware-zone highlight now matches onboarding's own glow EXACTLY (same
-   rgba(52,199,89,...) triple-layer values, per element) instead of the
-   softer --highlight-rgb system — Frank 2026-08-18: "chci aby byly ty
-   zvýrazněné prvky zvýrazněné stejným způsobem jako v onboarding screenu".
-   Faders: onboarding glows the THUMB shape itself via drop-shadow (not a
-   separate pill layer behind the track) — matched here on .fader-thumb,
-   replacing the old .fader-track::before pill-glow mechanism entirely. */
+.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:var(--r-sm);transition:background var(--dur-link-in) var(--ease-link) var(--link-delay), box-shadow .2s;}
+/* Hardware-zone highlight = white ring (Frank 2026-09-29, "A4" shape): a crisp
+   edge (reads as selection) plus the old soft halo shape. Not green – green is live-only (spec 2026-09-26 §1). Onboarding uses
+   the SAME values (its [data-onb-feature] rules) so both stay consistent
+   (Frank 2026-08-18 parity request, kept). Faders ring the THUMB shape itself
+   via drop-shadow, not a separate layer behind the track. */
+.fader-track.fader-linked .fader-thumb,.device-wrap.welcome-mode[data-onb-feature="faders"] .fader-thumb{transition:filter var(--dur-link-in) var(--ease-link) var(--link-delay)}
 .fader-track.fader-linked .fader-thumb{
-  filter:drop-shadow(0 0 3px rgba(52,199,89,.95)) drop-shadow(0 0 13px rgba(52,199,89,.72)) drop-shadow(0 0 27px rgba(52,199,89,.38));
+  filter:drop-shadow(0 0 .6px rgba(var(--link-ring-rgb),1)) drop-shadow(0 0 .6px rgba(var(--link-ring-rgb),1)) drop-shadow(0 0 9px rgba(var(--link-ring-rgb),.6)) drop-shadow(0 0 20px rgba(var(--link-ring-rgb),.32));
 }
-.ctrl-zone{position:absolute;border-radius:10px;outline:1px solid transparent;outline-offset:1px;transition:background .2s,box-shadow .2s,outline-color .2s;}
-/* Roller: matches onboarding's #zone-roller[data-onb-feature="roller"] exactly. */
-#zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 5px 2px rgba(52,199,89,.95),0 0 14px 7px rgba(52,199,89,.72),0 0 29px 14px rgba(52,199,89,.38);}
+.ctrl-zone{position:absolute;border-radius:10px;outline:1px solid transparent;outline-offset:1px;transition:background var(--dur-link-out) var(--ease-link),box-shadow var(--dur-link-out) var(--ease-link),outline-color var(--dur-link-out) var(--ease-link);}
+#zone-roller.fader-linked,#zone-macro.fader-linked,
+.device-wrap.welcome-mode[data-onb-feature="roller"] #zone-roller,.device-wrap.welcome-mode[data-onb-feature="button"] #zone-macro{transition:background var(--dur-link-in) var(--ease-link) var(--link-delay),box-shadow var(--dur-link-in) var(--ease-link) var(--link-delay),outline-color var(--dur-link-in) var(--ease-link) var(--link-delay)}
+/* Roller: same ring as onboarding's [data-onb-feature="roller"] #zone-roller. */
+#zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 0 1.5px rgba(var(--link-ring-rgb),.9),0 0 12px 5px rgba(var(--link-ring-rgb),.6),0 0 26px 11px rgba(var(--link-ring-rgb),.32);}
 #zone-macro{border-radius:0 var(--r-pill) var(--r-pill) 0;clip-path:inset(-50px -50px -50px 0);}   /* půlkruh na hraně těla, oblouk ven; clip-path utne glow na ploché straně → čisté zalícování s hranou */
 /* The top render only shows the BUTTON as a tiny point on the device edge.
    Keep that precise visual glow, but give its hover target a usable 28px
    footprint; otherwise a normal mouse pass almost never reaches the 8px
    geometry and the linked BUTTON section cannot light up. */
 #zone-macro::before{content:'';position:absolute;inset:-10px;pointer-events:auto;}
-/* Button: matches onboarding's #zone-macro[data-onb-feature="button"] exactly (near-solid fill, not just a soft wash). */
-#zone-macro.fader-linked{background:rgba(52,199,89,.96);outline-color:transparent;box-shadow:0 0 5px 3px rgba(52,199,89,.95),0 0 15px 9px rgba(52,199,89,.72),0 0 32px 17px rgba(52,199,89,.38);}
+/* Button: same as onboarding's [data-onb-feature="button"] #zone-macro (near-solid fill). */
+#zone-macro.fader-linked{background:rgba(var(--link-ring-rgb),.92);outline-color:transparent;box-shadow:0 0 0 1px var(--link-edge),0 0 4px 3px rgba(var(--link-ring-rgb),.8),0 0 13px 8px rgba(var(--link-ring-rgb),.6),0 0 28px 15px rgba(var(--link-ring-rgb),.32);}
 
 
 
@@ -1277,9 +1290,19 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .welcome-skip.welcome-skip-floating{display:block!important}
 .onb-beat-title{font-size:var(--fs-3xl);font-weight:700;color:var(--t1);letter-spacing:-.02em;line-height:1.2;transition:opacity var(--dur-base) ease;}
 .onb-beat-sub{font-size:var(--fs-base);color:var(--t2);line-height:1.5;margin:7px auto 0;max-width:420px;min-height:40px;text-align:justify;text-align-last:left;hyphens:auto;-webkit-hyphens:auto;transition:opacity var(--dur-base) ease;}
-.onb-beat-details{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;min-height:29px;margin-top:10px;transition:opacity var(--dur-base) ease;}
-.onb-detail-pill{display:inline-flex;align-items:center;min-height:27px;padding:0 10px;border:1px solid var(--border-s);border-radius:var(--r-pill);background:color-mix(in srgb,var(--glass-card) 82%,transparent);color:var(--t2);font-size:var(--fs-sm);font-weight:600;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,.04)}
-.onb-detail-pill strong{margin-right:4px;color:var(--t1);font-weight:700}
+/* Capability line = quiet, non-interactive text (Frank 2026-09-29: the old
+   bordered pills looked clickable but weren't). Centered, and anchored a
+   constant 14px above the nav (32px buttons + 8px margin) so it doesn't float
+   with the 2–3 line description; flow layouts below reset it to static, where
+   the nav already follows it at a fixed 14px. Wrapped lines center too. */
+.onb-beat-details{position:absolute;left:0;right:0;bottom:calc(8px + 32px + 14px);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;column-gap:20px;row-gap:2px;text-align:center;transition:opacity var(--dur-base) ease;}
+.onb-detail-pill{position:relative;display:inline-flex;align-items:center;color:var(--t3);font-size:var(--fs-sm);font-weight:600;white-space:nowrap}
+/* Separator sits out of flow in the column gap, so hiding it on a wrapped
+   line's first item (.is-line-start, set by markOnbDetailLineStarts) can't
+   change where the line wraps. */
+.onb-detail-pill + .onb-detail-pill:not(.is-line-start)::before{content:'·';position:absolute;left:-10px;transform:translateX(-50%)}
+.onb-detail-pill strong{color:var(--t2);font-weight:700}
+.onb-detail-pill strong::after{content:'→';margin:0 4px;color:var(--t3);font-weight:600}
 .onb-nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:7px;margin:0 0 8px;}
 .onb-nav-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font:600 var(--fs-sm)/1 'Mulish',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:color var(--dur-fast) ease,border-color var(--dur-fast) ease,background var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
 .onb-nav-btn:hover:not(:disabled){color:var(--t1);border-color:var(--t3);background:var(--bg)}
@@ -1330,6 +1353,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   #welcome-text-block.welcome-onboarding .onb-nav{
     position:relative;left:auto;right:auto;bottom:auto;margin:14px 0 0;
   }
+  #welcome-text-block.welcome-onboarding .onb-beat-details{position:static;margin-top:10px}
   /* Move only the hardware artwork with the overlay scroll. Transforming the
      whole .device-wrap would make it the containing block for the fixed
      Connect & load button, shifting the CTA and all copy below it at this
@@ -1369,6 +1393,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 #welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .onb-nav{
   position:relative;left:auto;right:auto;bottom:auto;margin:14px 0 0;
 }
+#welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .onb-beat-details{position:static;margin-top:10px}
 /* The one rule this mirror block was missing: without it, the controller doesn't
    move AT ALL while scrolling under the dynamic fallback (confirmed: transform
    stayed 'none', device-img's own top didn't shift a single px across a 150px
@@ -1388,8 +1413,9 @@ body:has(#welcome-screen.welcome-scroll-fallback) .device-wrap.welcome-mode[data
   #welcome-text-block.welcome-onboarding #onb-beats{height:212px}
   .onb-beat-title{font-size:var(--fs-2xl)}
   .onb-beat-sub{font-size:var(--fs-md);min-height:56px}
-  .onb-beat-details{min-height:29px;margin-top:7px;gap:var(--space-1)}
-  .onb-detail-pill{min-height:25px;padding:0 8px;font-size:var(--fs-xs)}
+  .onb-beat-details{bottom:calc(4px + 32px + 14px);column-gap:14px}
+  .onb-detail-pill{font-size:var(--fs-xs)}
+  .onb-detail-pill + .onb-detail-pill:not(.is-line-start)::before{left:-7px}
   .onb-nav{gap:var(--space-1);margin-bottom:4px}
   .onb-dot{width:20px}
   .onb-dot.on::before{width:11px}
@@ -1466,18 +1492,19 @@ body.welcome-connecting #send-btn.welcome-floating{
 .device-wrap.welcome-mode .fader-tracks{display:block!important;pointer-events:none;z-index:2}
 .device-wrap.welcome-mode[data-onb-feature] .device-img,
 .device-wrap.welcome-mode[data-onb-feature] .fader-tracks,
-.device-wrap.welcome-mode[data-onb-feature] .ctrl-zone{transition:opacity var(--dur-base) ease,filter var(--dur-base) ease,background var(--dur-base) ease,box-shadow var(--dur-base) ease,outline-color var(--dur-base) ease}
+.device-wrap.welcome-mode[data-onb-feature] .ctrl-zone{transition:opacity var(--dur-base) ease,filter var(--dur-base) ease,background var(--dur-link-out) var(--ease-link),box-shadow var(--dur-link-out) var(--ease-link),outline-color var(--dur-base) ease}
+/* Same white ring as the app's .fader-linked highlight (keep in sync). */
 .device-wrap.welcome-mode[data-onb-feature="faders"] .fader-thumb{
-  filter:drop-shadow(0 0 3px rgba(52,199,89,.95)) drop-shadow(0 0 13px rgba(52,199,89,.72)) drop-shadow(0 0 27px rgba(52,199,89,.38));
+  filter:drop-shadow(0 0 .6px rgba(var(--link-ring-rgb),1)) drop-shadow(0 0 .6px rgba(var(--link-ring-rgb),1)) drop-shadow(0 0 9px rgba(var(--link-ring-rgb),.6)) drop-shadow(0 0 20px rgba(var(--link-ring-rgb),.32));
 }
 .device-wrap.welcome-mode[data-onb-feature="roller"] #zone-roller{
   display:block;z-index:3;opacity:1;background:transparent;border-radius:8px;
-  outline:0;box-shadow:0 0 5px 2px rgba(52,199,89,.95),0 0 14px 7px rgba(52,199,89,.72),0 0 29px 14px rgba(52,199,89,.38);
+  outline:0;box-shadow:0 0 0 1.5px rgba(var(--link-ring-rgb),.9),0 0 12px 5px rgba(var(--link-ring-rgb),.6),0 0 26px 11px rgba(var(--link-ring-rgb),.32);
 }
 .device-wrap.welcome-mode[data-onb-feature="button"] #zone-macro{
   display:block;z-index:3;opacity:1;border-radius:50%;clip-path:none;
-  background:rgba(52,199,89,.96);outline:0;
-  box-shadow:0 0 5px 3px rgba(52,199,89,.95),0 0 15px 9px rgba(52,199,89,.72),0 0 32px 17px rgba(52,199,89,.38);
+  background:rgba(var(--link-ring-rgb),.92);outline:0;
+  box-shadow:0 0 0 1px var(--link-edge),0 0 4px 3px rgba(var(--link-ring-rgb),.8),0 0 13px 8px rgba(var(--link-ring-rgb),.6),0 0 28px 15px rgba(var(--link-ring-rgb),.32);
 }
 .device-wrap.welcome-mode[data-onb-feature] .device-visual{z-index:205;pointer-events:none}
 /* Plain (returning-user, non-onboarding) welcome needs the same poke-
@@ -1588,7 +1615,8 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease!important;
 }
 .device-wrap.welcome-mode[data-onb-feature="configure"] #send-btn.welcome-floating{
-  box-shadow:0 0 4px 1px rgba(52,199,89,.6),0 0 14px 5px rgba(52,199,89,.28);
+  /* white like the controller-zone ring (Frank 2026-09-29), not green – green is live-only */
+  box-shadow:0 0 0 1px rgba(var(--link-ring-rgb),.9),0 0 0 2px var(--link-edge),0 0 12px 4px rgba(var(--link-ring-rgb),.6),0 0 28px 10px rgba(var(--link-ring-rgb),.3);
 }
 /* floatSendBtnNative() moves the button here (see its own comment) whenever
    #welcome-screen is actually scrollable — position:absolute inside it, native
@@ -1824,7 +1852,7 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 }
 .bank-section{
   padding:0 18px;
-  transition:background .2s, box-shadow .2s;
+  transition:background var(--dur-link-out) var(--ease-link), box-shadow .2s;   /* same timing as the controller-zone ring */
 }
 .bank-section.is-open>.section-collapse-body{padding:4px 0 18px 36px}
 .section-head.section-toggle{width:100%;text-align:left;background:none;border:0;font-family:'Mulish',sans-serif;color:inherit}
@@ -7530,6 +7558,7 @@ function onbBeatGo(i, instant) {
       }
       return pill;
     }));
+    markOnbDetailLineStarts();
     if (prevEl) prevEl.disabled = _onbBeat === 0;
     nextEl?.classList.toggle('is-final', _onbBeat === _ONB_BEATS.length - 1);
     if (controller) controller.dataset.onbFeature = beat.feature;
@@ -7558,6 +7587,19 @@ function onbBeatGo(i, instant) {
   clearTimeout(_onbBeatTimer);
   if (_onbBeat === _ONB_BEATS.length - 1) onbBeatShowCTA();
 }
+// A wrapped capability line must not start with a dangling "·" separator, so
+// drop it on each item that begins a line (the separator is out of flow, so
+// this never changes the wrapping itself).
+function markOnbDetailLineStarts() {
+  const pills = [...document.querySelectorAll('#onb-beats .onb-detail-pill')];
+  pills.forEach(pill => pill.classList.remove('is-line-start'));
+  let prevTop = null;
+  pills.forEach(pill => {
+    if (prevTop !== null && pill.offsetTop > prevTop + 1) pill.classList.add('is-line-start');
+    prevTop = pill.offsetTop;
+  });
+}
+window.addEventListener('resize', () => requestAnimationFrame(markOnbDetailLineStarts));
 function onbBeatNext() { onbBeatGo(_onbBeat + 1); }
 function onbBeatPrev() { onbBeatGo(_onbBeat - 1); }
 (() => {
