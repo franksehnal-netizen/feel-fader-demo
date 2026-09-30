@@ -74,6 +74,12 @@
   --dur-link-out:1.8s;
   --ease-link:cubic-bezier(.22,.61,.36,1);   /* responds on the first frame, long soft tail */
   --link-delay:0ms;
+  /* Pointer hover on buttons/rows/sections rides the SAME rise/fade as the controller
+     glow (Frank 2026-09-29: "stejně pomalu jako záře ... navaž na stejný parametr").
+     Same split: base rule carries --hover-out, the :hover rule --hover-in. Press
+     (scale) and selection states (.active/.selected) keep their own quick timing. */
+  --hover-in:var(--dur-link-in) var(--ease-link);
+  --hover-out:var(--dur-link-out) var(--ease-link);
   --link-edge:rgba(20,20,24,.4); /* thin dark outline so the white ring stays visible where it sits on the light page (button zone, Connect & load) */
   --amber:#e6a23c;
   --piano-white:#fbfbfd;
@@ -167,8 +173,8 @@ html.dark{
   --piano-black:#202024;
 }
 html.dark select{color-scheme:dark}
-.ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:pointer;transition:color .14s ease,filter .14s ease,transform var(--dur-press) ease,box-shadow .14s ease,background-color .14s ease}
-.ui-control:hover{color:var(--t1);filter:brightness(.98)}
+.ui-control{appearance:none;-webkit-appearance:none;font-family:'Mulish',sans-serif;cursor:pointer;transition:color var(--hover-out),filter var(--hover-out),transform var(--dur-press) ease,box-shadow var(--hover-out),background-color var(--hover-out),border-color var(--hover-out)}
+.ui-control:hover{color:var(--t1);filter:brightness(.98);transition:color var(--hover-in),filter var(--hover-in),transform var(--dur-press) ease,box-shadow var(--hover-in),background-color var(--hover-in),border-color var(--hover-in)}
 .ui-control:active{transform:scale(.96)}
 .ui-control:disabled{opacity:.35;cursor:default;filter:none;transform:none;box-shadow:none}
 .ui-pill{border-radius:var(--r-pill)}
@@ -240,9 +246,9 @@ header{
 .live-hud-size-btn{
   position:absolute;right:3px;bottom:3px;width:19px;height:19px;padding:0;
   display:grid;place-items:center;border:0;border-radius:var(--r-sm);background:transparent;
-  color:var(--t3);opacity:.45;cursor:pointer;transition:opacity .15s ease,background .15s ease,color .15s ease;
+  color:var(--t3);opacity:.45;cursor:pointer;transition:opacity var(--hover-out),background var(--hover-out),color var(--hover-out);
 }
-.live-hud-size-btn:hover,.live-hud-size-btn:focus-visible{opacity:1;background:rgba(127,127,135,.16);color:var(--t1)}
+.live-hud-size-btn:hover,.live-hud-size-btn:focus-visible{opacity:1;background:rgba(127,127,135,.16);color:var(--t1);transition:opacity var(--hover-in),background var(--hover-in),color var(--hover-in)}
 .live-hud-size-btn svg{width:12px;height:12px;display:block}
 /* Enlarge/drag are mouse-gated, not width-gated: a half-screen desktop window keeps the button; touch-only devices hide it (Frank 2026-07-27). */
 @media not all and (any-pointer:fine){.live-hud-size-btn{display:none}}
@@ -346,6 +352,11 @@ main{width:100%;}
      device for its 44px-blur shadow instead of cutting it off at the edge. */
   body:has(#welcome-screen.hidden) .center-col>.stage-collapse>.stage{padding-left:160px;padding-right:40px}
   body:has(#welcome-screen.hidden) .center-col>.settings-col{grid-column:2;grid-row:1;padding-top:32px}
+  /* Footer is page chrome, not part of the editor: span both columns so it
+     doesn't sit under the settings only (Frank 2026-09-29). Row 1 takes the
+     spare height so the footer stays pinned to the bottom. */
+  body:has(#welcome-screen.hidden) .center-col{grid-template-rows:1fr auto}
+  body:has(#welcome-screen.hidden) .center-col>.site-footer{grid-column:1/-1;grid-row:2}
   @media(prefers-reduced-motion:reduce){.center-col{transition:none}}
 }
 /* 900–1099 px (a 1920px monitor split with the DAW = 960): two columns with
@@ -436,6 +447,10 @@ main{width:100%;}
   letter-spacing:.01em;
 }
 .send-btn:hover{background:var(--red2);box-shadow:0 6px 20px rgba(228,87,69,.34);}
+/* Hover rise = controller-glow timing (--hover-in). Not while .sent: that green glow keeps
+   its own --dur-glow beat even under the cursor. Hover-out stays on the base glow timing,
+   which the idle/red/sent state changes share. */
+.send-btn:not(.sent):hover{transition:background-color var(--hover-in),color var(--hover-in),border-color var(--dur-base) ease,box-shadow var(--hover-in),opacity .28s ease,transform .18s ease}
 .send-btn:active{transform:scale(.97);box-shadow:0 2px 8px rgba(228,87,69,.26);}
 .send-btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
 .send-btn.sent{background:var(--green);box-shadow:0 4px 16px rgba(52,199,89,.4)}
@@ -584,9 +599,9 @@ header,.live-hud{view-transition-name:none}
   position:relative;z-index:1;min-width:0;padding:7px 10px;border:0;border-radius:var(--r-pill);touch-action:manipulation;
   background:transparent;color:var(--t2);cursor:pointer;font:600 var(--fs-sm) 'Mulish',sans-serif;
   line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:color .15s ease,transform var(--dur-press) ease;
+  transition:color var(--hover-out),transform var(--dur-press) ease;
 }
-.roller-mode-btn:hover{color:var(--t1)}
+.roller-mode-btn:hover{color:var(--t1);transition:color var(--hover-in),transform var(--dur-press) ease}
 .roller-mode-btn:active{transform:scale(.98)}
 .roller-mode-btn.active,.roller-mode-btn.active:hover{color:var(--t1)}
 html.dark .roller-mode-row{background:var(--bg-input)}
@@ -614,14 +629,14 @@ html.dark .roller-mode-row::before{background:var(--bg-card);box-shadow:var(--sh
 .stepper input{width:34px;height:24px;text-align:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow);font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;font-size:var(--fs-md);color:var(--t1);padding:0;outline:none;-moz-appearance:textfield;font-weight:600;}
 .stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none}
 .stepper input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 20%,transparent),inset 0 1px 0 rgba(255,255,255,.78)}
-.step-btn{width:28px;height:32px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:var(--fs-lg);line-height:1;transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease;font-weight:400;font-family:'Mulish',sans-serif;}
+.step-btn{width:28px;height:32px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:var(--fs-lg);line-height:1;transition:color var(--hover-out),background-color var(--hover-out),transform var(--dur-press) ease;font-weight:400;font-family:'Mulish',sans-serif;}
 .stepper .step-btn{width:24px;height:24px;border-radius:var(--r-pill)}
-.step-btn:hover{background:rgba(127,127,135,.12);color:var(--t1);}
+.step-btn:hover{background:rgba(127,127,135,.12);color:var(--t1);transition:color var(--hover-in),background-color var(--hover-in),transform var(--dur-press) ease}
 /* Was --red — read as an error flash on plain +/- taps, which aren't an
    error state (Frank, 2026-08-10). --green matches the app's other
    "acknowledged" feedback (.send-btn.sent, enabled toggles). */
-.step-btn:active{background:rgba(52,199,89,.12);color:var(--green);transform:scale(.94);}
-.step-btn.active,.step-btn.active:hover{background:var(--red);color:#fff;box-shadow:0 3px 10px rgba(201,71,53,.22),inset 0 1px 0 rgba(255,255,255,.18)}
+.step-btn:active{background:rgba(52,199,89,.12);color:var(--green);transform:scale(.94);transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease}
+.step-btn.active,.step-btn.active:hover{background:var(--red);color:#fff;box-shadow:0 3px 10px rgba(201,71,53,.22),inset 0 1px 0 rgba(255,255,255,.18);transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease}
 /* Key-capture button (Navigation keys, Button macro): one pill component with
    an explicit empty ("Not assigned") and capture ("Press keys…") state (K-2). */
 .ui-keycap{min-height:32px;padding:6px 16px;color:var(--t1);font-size:var(--fs-md);font-weight:600;white-space:nowrap}
@@ -637,11 +652,11 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-keyboard-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 88%,transparent);box-shadow:inset 0 1px 2px var(--border);scrollbar-width:thin;overscroll-behavior-x:contain}
 .ks-keyboard{--white-w:26px;position:relative;width:1950px;height:78px;user-select:none;touch-action:none}
 .ks-white-keys{display:flex;height:100%}
-.ks-key{appearance:none;padding:0;font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,transform var(--dur-press) ease}
+.ks-key{appearance:none;padding:0;font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,filter var(--hover-out),transform var(--dur-press) ease}
 .ks-key-white{position:relative;flex:0 0 var(--white-w);height:100%;border:0;border-right:1px solid var(--border-s);background:var(--piano-white);color:var(--piano-black);z-index:1}
 .ks-key-white:last-child{border-right:0}
 .ks-key-black{position:absolute;top:0;width:16px;height:48px;border:1px solid color-mix(in srgb,var(--piano-black) 78%,transparent);border-radius:0 0 4px 4px;background:var(--piano-black);color:var(--piano-white);z-index:3;box-shadow:0 2px 3px var(--border-s)}
-.ks-key:hover{filter:brightness(.97)}
+.ks-key:hover{filter:brightness(.97);transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,filter var(--hover-in),transform var(--dur-press) ease}
 .ks-key:active{transform:translateY(1px)}
 .ks-key.is-selected.ks-key-white{background:color-mix(in srgb,var(--red) 28%,var(--piano-white));color:var(--t1)}
 .ks-key.is-selected.ks-key-black{background:color-mix(in srgb,var(--red) 72%,var(--piano-black));border-color:color-mix(in srgb,var(--red) 82%,var(--piano-black))}
@@ -649,8 +664,8 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-key-black.is-edge{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--red) 55%,var(--piano-white)),0 2px 3px var(--border-s)}
 .ks-key:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;z-index:5}
 .ks-key-label{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);font-size:var(--fs-xs);font-weight:600;white-space:nowrap;pointer-events:none}
-.ks-key-scroll-btn{width:28px;height:auto;min-height:78px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 86%,transparent);color:var(--t2);cursor:pointer;font-size:var(--fs-lg);transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,transform var(--dur-press) ease}
-.ks-key-scroll-btn:hover{background:color-mix(in srgb,var(--bg-input) 68%,var(--glass-soft));color:var(--t1)}
+.ks-key-scroll-btn{width:28px;height:auto;min-height:78px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 86%,transparent);color:var(--t2);cursor:pointer;font-size:var(--fs-lg);transition:background-color var(--hover-out),color var(--hover-out),transform var(--dur-press) ease}
+.ks-key-scroll-btn:hover{background:color-mix(in srgb,var(--bg-input) 68%,var(--glass-soft));color:var(--t1);transition:background-color var(--hover-in),color var(--hover-in),transform var(--dur-press) ease}
 .ks-key-scroll-btn:active{transform:scale(.96)}
 .ks-key-scroll-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(max-width:540px){.ks-keyboard-hint{display:none}.ks-keyboard{height:70px}.ks-key-black{height:43px}.ks-key-scroll-btn{min-height:70px}}
@@ -681,8 +696,8 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .hid-inline-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;font-size:var(--fs-md);line-height:1.4}
 .hid-inline-copy strong{display:flex;align-items:center;gap:6px;color:var(--t1);font-size:var(--fs-md);font-weight:600}
 .hid-inline-copy strong::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
-.hid-inline-help{color:var(--t1);font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}
-.hid-inline-help:hover{text-decoration:underline;text-underline-offset:2px}
+.hid-inline-help{color:var(--t1);font-weight:600;text-decoration:underline transparent;text-underline-offset:2px;cursor:pointer;white-space:nowrap;transition:text-decoration-color var(--hover-out)}
+.hid-inline-help:hover{text-decoration-color:currentColor;transition:text-decoration-color var(--hover-in)}
 .hid-inline-action{flex-shrink:0;min-height:32px;padding:6px 16px;color:var(--t1);font:600 var(--fs-md) 'Mulish',sans-serif}
 @media(max-width:540px){.hid-inline-notice{align-items:flex-start;flex-wrap:wrap}.hid-inline-action{margin-left:auto}}
 
@@ -718,8 +733,9 @@ html.dark .icon-picker-trigger svg{opacity:.7;}
   width:28px;height:28px;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
+  transition:color var(--hover-out),background var(--hover-out),border-color var(--hover-out);
 }
-.btn-remove-bank:hover{color:var(--danger);background:var(--danger-bg);border-style:solid;border-color:var(--danger);}
+.btn-remove-bank:hover{color:var(--danger);background:var(--danger-bg);border-style:solid;border-color:var(--danger);transition:color var(--hover-in),background var(--hover-in),border-color var(--hover-in)}
 html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,transparent);}
 .btn-remove-bank::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:auto}
 
@@ -729,7 +745,13 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
    not green – green is live-only, spec 2026-09-26 §1); no onboarding
    equivalent to match (onboarding never shows settings panels), scope
    confirmed with Frank 2026-08-18. */
-.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:var(--r-sm);transition:background var(--dur-link-in) var(--ease-link) var(--link-delay), box-shadow .2s;}
+/* Full-bleed, square row fill (Frank 2026-09-29, "A"): the inset dividers around the
+   lit section fade out on the same timing, so the row reads as one surface instead
+   of a rounded box overhanging the 18px divider inset. The card's own rounding
+   frames the last section (inherit, since mobile doesn't clip the card). */
+.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:0;transition:background var(--dur-link-in) var(--ease-link) var(--link-delay), box-shadow .2s;}
+.bank-section.fader-linked:last-child{border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}
+.bank-section.fader-linked+.bank-section-divider,.bank-section-divider:has(+.bank-section.fader-linked){opacity:0;transition:opacity var(--dur-link-in) var(--ease-link) var(--link-delay)}
 /* Hardware-zone highlight = white ring (Frank 2026-09-29, "A4" shape): a crisp
    edge (reads as selection) plus the old soft halo shape. Not green – green is live-only (spec 2026-09-26 §1). Onboarding uses
    the SAME values (its [data-onb-feature] rules) so both stay consistent
@@ -804,7 +826,8 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .seq-handle{width:14px;flex:none;text-align:center;color:var(--t3);font-size:var(--fs-lg)}
 .seq-actions{display:flex;align-items:center;gap:2px;opacity:0;transition:opacity var(--dur-fast) ease}
 .seq-row:hover .seq-actions,.seq-row:focus-within .seq-actions{opacity:1}
-.seq-actions button{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--r-pill);background:none;color:var(--t3);font-size:var(--fs-md);cursor:pointer}
+.seq-actions button{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--r-pill);background:none;color:var(--t3);font-size:var(--fs-md);cursor:pointer;transition:background var(--hover-out),color var(--hover-out)}
+.seq-actions button:hover{transition:background var(--hover-in),color var(--hover-in)}
 .seq-actions .tag-order-btn:hover{background:var(--bg-input);color:var(--t1)}
 .seq-actions .tag-order-btn:disabled{opacity:.3;cursor:default;background:none;color:var(--t3)}
 .seq-actions .tag-remove-btn:hover{background:var(--danger-bg);color:var(--danger)}
@@ -818,8 +841,8 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .seq-add-row input{width:110px;height:30px;padding:0 10px;border:0;border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);font:var(--fs-md) 'Mulish',sans-serif;outline:none;-moz-appearance:textfield}
 .seq-add-row input::-webkit-inner-spin-button,.seq-add-row input::-webkit-outer-spin-button{-webkit-appearance:none}
 .seq-add-row input:focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 30%,transparent)}
-.seq-link{border:0;background:none;padding:0;color:var(--red);font:600 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer}
-.seq-link:hover{color:var(--red2)}
+.seq-link{border:0;background:none;padding:0;color:var(--red);font:600 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer;transition:color var(--hover-out)}
+.seq-link:hover{color:var(--red2);transition:color var(--hover-in)}
 @media(pointer:coarse){.seq-actions{opacity:1}.seq-actions button{width:32px;height:32px}}
 
 /* DEVICE INFO */
@@ -865,7 +888,8 @@ html.dark .info-lbl{color:var(--t2)}
 html.dark .info-val{color:var(--t1)}
 
 /* BOTTOM */
-.btn{display:inline-flex;align-items:center;gap:var(--space-1);padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:var(--fs-md);font-weight:600;cursor:pointer;border:1px solid;transition:color .13s ease,background-color .13s ease,border-color .13s ease,transform var(--dur-press) ease,box-shadow .13s ease;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:var(--space-1);padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:var(--fs-md);font-weight:600;cursor:pointer;border:1px solid;transition:color var(--hover-out),background-color var(--hover-out),border-color var(--hover-out),transform var(--dur-press) ease,box-shadow var(--hover-out),filter var(--hover-out);white-space:nowrap}
+.btn:hover{transition:color var(--hover-in),background-color var(--hover-in),border-color var(--hover-in),transform var(--dur-press) ease,box-shadow var(--hover-in),filter var(--hover-in)}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
 .btn-ghost{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow);color:var(--t2)}
@@ -883,8 +907,8 @@ html.dark .info-val{color:var(--t1)}
    card-white so they still read as buttons (Frank 2026-09-28). */
 .backup-tools .ui-control.ui-glass,.backup-tools .ui-control.ui-glass:hover,
 .midi-diagnostics .ui-control.ui-glass,.midi-diagnostics .ui-control.ui-glass:hover{background:var(--bg-card)}
-.midi-diagnostics{overflow:hidden;transition:box-shadow .14s ease}
-.midi-diagnostics:has(>summary:hover){box-shadow:var(--control-glass-shadow-hover)}
+.midi-diagnostics{overflow:hidden;transition:box-shadow var(--hover-out)}
+.midi-diagnostics:has(>summary:hover){box-shadow:var(--control-glass-shadow-hover);transition:box-shadow var(--hover-in)}
 .midi-diagnostics>summary{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);padding:10px 10px 10px 12px;list-style:none;cursor:pointer;color:var(--t1)}
 .midi-diagnostics>summary::-webkit-details-marker{display:none}
 .midi-diagnostics>summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:var(--r)}
@@ -935,18 +959,23 @@ html.dark .info-val{color:var(--t1)}
   display:flex;flex-direction:column;gap:var(--space-2);align-items:flex-end;
 }
 .footer-links a{
-  font-size:var(--fs-md);color:var(--t3);text-decoration:none;transition:color .13s;
+  font-size:var(--fs-md);color:var(--t3);text-decoration:none;transition:color var(--hover-out);
 }
-.footer-links a:hover{color:var(--t2)}
+.footer-links a:hover{color:var(--t2);transition:color var(--hover-in)}
 .footer-bottom{
   display:flex;flex-wrap:wrap;gap:8px 20px;
   font-size:var(--fs-sm);color:var(--t3);
   border-top:1px solid var(--border);padding-top:10px;
 }
+/* Mirror .footer-top: legal/version left, compat + origin right (Frank 2026-09-29).
+   Groups wrap as a whole so "Made in…" never drops alone under the left group. */
+.footer-bottom-group{display:flex;flex-wrap:wrap;gap:8px 20px}
+.footer-bottom-end{margin-left:auto}
 html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !important}
 @media(max-width:600px){
   .footer-top{flex-direction:column;}
   .footer-links{align-items:flex-start;}
+  .footer-bottom-end{margin-left:0}
 }
 
 /* MODAL */
@@ -972,8 +1001,8 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 .toast.e .toast-icon{border-color:color-mix(in srgb,var(--danger) 30%,var(--glass-border));background:var(--danger-bg);color:var(--danger)}
 .toast-message{min-width:0;flex:1;color:var(--t2);overflow-wrap:anywhere}
 .toast.e .toast-message{color:color-mix(in srgb,var(--danger) 72%,var(--t1))}
-.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 var(--fs-sm) 'Mulish',sans-serif;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
-.tx:hover,.tx:focus-visible{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);opacity:1}.tx:active{transform:scale(.92)}
+.tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 var(--fs-sm) 'Mulish',sans-serif;transition:background-color var(--hover-out),color var(--hover-out),opacity var(--hover-out),transform var(--dur-press) ease}
+.tx:hover,.tx:focus-visible{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);opacity:1;transition:background-color var(--hover-in),color var(--hover-in),opacity var(--hover-in),transform var(--dur-press) ease}.tx:active{transform:scale(.92)}
 .hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:var(--r-sm);font:var(--fs-md)/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--chrome-glass-bg);backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);border:1px solid var(--chrome-float-border);box-shadow:var(--chrome-glass-shadow);opacity:0;pointer-events:none;transition:opacity .15s ease;}
 .hover-tip.show{opacity:1;}
 .hover-tip[hidden]{display:none;}
@@ -1257,10 +1286,10 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   /* Space is reserved from the start (no display:none) and the button fades in via .show,
      so surfacing it after the timeout never shifts the text below (Frank 2026-07-09). */
   opacity:0;pointer-events:none;
-  transition:opacity .4s ease,background .14s,transform .1s;
+  transition:opacity .4s ease,background var(--hover-out),box-shadow var(--hover-out),transform .1s;
 }
 .welcome-start.show{opacity:1;pointer-events:auto;}
-.welcome-start:hover{background:var(--red2);box-shadow:0 6px 20px rgba(228,87,69,.34);}
+.welcome-start:hover{background:var(--red2);box-shadow:0 6px 20px rgba(228,87,69,.34);transition:opacity .4s ease,background var(--hover-in),box-shadow var(--hover-in),transform .1s}
 /* K-7 (UX audit 2026-09-25): #send-btn carries .idle on welcome (nothing dirty
    yet), and .send-btn.idle's glass look buried the only primary action as a
    secondary pill. Welcome keeps the red primary; .idle glass resumes in-app. */
@@ -1304,8 +1333,8 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .onb-detail-pill strong{color:var(--t2);font-weight:700}
 .onb-detail-pill strong::after{content:'→';margin:0 4px;color:var(--t3);font-weight:600}
 .onb-nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:7px;margin:0 0 8px;}
-.onb-nav-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font:600 var(--fs-sm)/1 'Mulish',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:color var(--dur-fast) ease,border-color var(--dur-fast) ease,background var(--dur-fast) ease,opacity var(--dur-fast) ease,transform var(--dur-press) ease}
-.onb-nav-btn:hover:not(:disabled){color:var(--t1);border-color:var(--t3);background:var(--bg)}
+.onb-nav-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font:600 var(--fs-sm)/1 'Mulish',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:color var(--hover-out),border-color var(--hover-out),background var(--hover-out),opacity var(--dur-fast) ease,transform var(--dur-press) ease}
+.onb-nav-btn:hover:not(:disabled){color:var(--t1);border-color:var(--t3);background:var(--bg);transition:color var(--hover-in),border-color var(--hover-in),background var(--hover-in),opacity var(--dur-fast) ease,transform var(--dur-press) ease}
 .onb-nav-btn:active:not(:disabled){transform:scale(.96)}
 .onb-nav-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .onb-nav-btn:disabled{opacity:.28;cursor:default}
@@ -1792,11 +1821,11 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 .icon-btn{
   display:flex;flex-direction:column;align-items:center;gap:var(--space-1);
   padding:8px;border-radius:var(--r);border:1px solid var(--border);
-  background:var(--bg-input);cursor:pointer;transition:all .13s;
+  background:var(--bg-input);cursor:pointer;transition:all .13s,border-color var(--hover-out),background-color var(--hover-out);
   min-width:58px;
 }
-.icon-btn:hover{border-color:var(--border-s);background:var(--bg)}
-.icon-btn.selected{border-color:var(--red);background:rgba(232,80,58,.08)}
+.icon-btn:hover{border-color:var(--border-s);background:var(--bg);transition:all .13s,border-color var(--hover-in),background-color var(--hover-in)}
+.icon-btn.selected{border-color:var(--red);background:rgba(232,80,58,.08);transition:all .13s}
 .icon-btn-emoji{font-size:var(--fs-3xl);line-height:1}
 .icon-btn-label{font-size:var(--fs-sm);color:var(--t3);text-align:center;white-space:nowrap}
 .badge-btn .icon-btn-emoji{display:none}
@@ -1904,6 +1933,7 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   height:1px;
   background:var(--border);
   margin:0 0 0 18px;
+  transition:opacity var(--dur-link-out) var(--ease-link);   /* returns with the section fill's fade-out */
 }
 .bank-section-encoder{
   padding:0 18px;
@@ -1967,7 +1997,7 @@ button:focus-visible{outline-offset:3px;}
   font-family:'Mulish',sans-serif;
   font-size:var(--fs-base);font-weight:600;
   color:var(--t2);
-  transition:all .15s;
+  transition:all .15s,color var(--hover-out),background-color var(--hover-out);
   white-space:nowrap;
   display:flex;align-items:center;gap:var(--space-1);
 }
@@ -1998,7 +2028,7 @@ button:focus-visible{outline-offset:3px;}
 }
 .bank-block-tab.active .bank-tab-name{max-width:140px;opacity:1;margin-left:5px;text-overflow:ellipsis;}
 .bank-block-tabs.tabs-fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);}
-.bank-block-tab:hover{color:var(--t2);background:var(--bg-input);}
+.bank-block-tab:hover{color:var(--t2);background:var(--bg-input);transition:all .15s,color var(--hover-in),background-color var(--hover-in)}
 .bank-block-tab[draggable="true"]{cursor:grab}
 .bank-block-tab.is-dragging{opacity:.42;cursor:grabbing}
 .bank-block-tab.drag-before,.bank-block-tab.drag-after{position:relative}
@@ -2016,6 +2046,7 @@ button:focus-visible{outline-offset:3px;}
   border-color:transparent;
   border-radius:var(--r-pill);
   box-shadow:0 0 0 1px var(--border);
+  transition:all .15s;   /* selecting a bank snaps; only the hover tint rides the glow timing */
 }
 .bank-tab-device-dot{display:none;width:5px;height:5px;border-radius:50%;background:var(--green);flex:0 0 auto;margin-left:var(--space-1)}
 .bank-block-tab.is-on-device .bank-tab-device-dot{display:inline-block}
@@ -2042,10 +2073,10 @@ button:focus-visible{outline-offset:3px;}
   cursor:pointer;
   font-size:var(--fs-xl);
   color:var(--t3);
-  transition:all .14s;
+  transition:all .14s,color var(--hover-out),background-color var(--hover-out);
   display:flex;align-items:center;
 }
-.bank-block-tab-add:hover{color:var(--t1);background:var(--bg-input);}
+.bank-block-tab-add:hover{color:var(--t1);background:var(--bg-input);transition:all .14s,color var(--hover-in),background-color var(--hover-in)}
 .bank-block-name{
   display:flex;flex-direction:column;gap:2px;
   padding:18px 18px 14px;
@@ -2056,8 +2087,8 @@ button:focus-visible{outline-offset:3px;}
 }
 .bank-quick-setup{position:relative;display:flex;align-items:baseline;gap:6px;min-width:0;font-size:var(--fs-base)}
 .bank-quick-setup-label{color:var(--t2);white-space:nowrap}
-.library-browse-link{border:1px solid transparent;border-radius:var(--r-pill);background:none;padding:0 4px;margin-left:-4px;color:var(--red);font:600 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer}
-.library-browse-link:hover{color:var(--red2)}
+.library-browse-link{border:1px solid transparent;border-radius:var(--r-pill);background:none;padding:0 4px;margin-left:-4px;color:var(--red);font:600 var(--fs-lg) 'Mulish',sans-serif;cursor:pointer;transition:color var(--hover-out)}
+.library-browse-link:hover{color:var(--red2);transition:color var(--hover-in)}
 /* The pill pulls 4px left, so the default ring covered "setup" (N-13). */
 .library-browse-link:focus-visible{outline-offset:-1px}
 .library-popover{position:absolute;top:calc(100% + 6px);left:0;z-index:120;width:min(360px,calc(100vw - 40px))}
@@ -2102,8 +2133,8 @@ button:focus-visible{outline-offset:3px;}
 .library-popover,.quick-setup-menu,.response-select-menu,.uacc-preset-dropdown{padding:6px;border:0;border-radius:var(--r);background:var(--bg-card);box-shadow:0 0 0 1px var(--border),var(--shadow-hud)}
 /* Nested in the popover the list is plain content, not a second surface. */
 .library-popover .quick-setup-menu{padding:0;background:none;box-shadow:none}
-.quick-setup-option,.response-select-option,.uacc-preset-dropdown button{display:flex;align-items:center;gap:var(--space-2);width:100%;padding:7px 10px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--t1);font:600 var(--fs-md)/16px 'Mulish',sans-serif;text-align:left;cursor:pointer;transition:background .14s ease}
-.quick-setup-option:hover,.quick-setup-option:focus-visible,.response-select-option:hover,.response-select-option:focus-visible,.uacc-preset-dropdown button:hover,.uacc-preset-dropdown button:focus-visible{background:var(--bg-input);outline:none}
+.quick-setup-option,.response-select-option,.uacc-preset-dropdown button{display:flex;align-items:center;gap:var(--space-2);width:100%;padding:7px 10px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--t1);font:600 var(--fs-md)/16px 'Mulish',sans-serif;text-align:left;cursor:pointer;transition:background var(--hover-out)}
+.quick-setup-option:hover,.quick-setup-option:focus-visible,.response-select-option:hover,.response-select-option:focus-visible,.uacc-preset-dropdown button:hover,.uacc-preset-dropdown button:focus-visible{background:var(--bg-input);outline:none;transition:background var(--hover-in)}
 .response-select-option{flex-direction:column;align-items:flex-start;gap:1px}
 /* Selected value: a check, since hover already uses the --bg-input fill. */
 .response-select-option[aria-selected="true"]{position:relative;padding-right:30px}
@@ -2127,8 +2158,8 @@ button:focus-visible{outline-offset:3px;}
 .custom-preset-empty{font-size:var(--fs-md);color:var(--t3);padding:10px 0}
 .custom-preset-row{display:flex;align-items:center;gap:var(--space-2);padding:7px 9px;border:1px solid var(--border);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 72%,transparent)}
 .custom-preset-row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-md);color:var(--t1)}
-.custom-preset-row button{border:0;background:transparent;color:var(--t2);font:var(--fs-sm) 'Mulish',sans-serif;cursor:pointer;padding:3px 6px;border-radius:var(--r-sm)}
-.custom-preset-row button:hover{background:var(--bg-input);color:var(--t1)}
+.custom-preset-row button{border:0;background:transparent;color:var(--t2);font:var(--fs-sm) 'Mulish',sans-serif;cursor:pointer;padding:3px 6px;border-radius:var(--r-sm);transition:background var(--hover-out),color var(--hover-out)}
+.custom-preset-row button:hover{background:var(--bg-input);color:var(--t1);transition:background var(--hover-in),color var(--hover-in)}
 .custom-preset-row .custom-preset-delete:hover{color:var(--danger)}
 .custom-preset-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 20px 18px;border-top:1px solid var(--border)}
 .custom-preset-foot-left,.custom-preset-foot-right{display:flex;align-items:center;gap:var(--space-2)}
@@ -2169,10 +2200,13 @@ button:focus-visible{outline-offset:3px;}
    closing the flex gap – "Bank" caption ends up half hidden (final review 1). */
 .panels-row>.group-cap{margin:var(--space-6) 18px var(--space-2)}
 .settings-group{background:var(--bg-card);border-radius:var(--r);overflow:hidden;box-shadow:none}
-.group-row{position:relative;display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:50px;padding:0 18px;border:0;background:none;color:var(--t1);font:400 var(--fs-lg) 'Mulish',sans-serif;text-align:left;cursor:pointer;box-sizing:border-box}
-.group-row+.group-row::before,.group-row+div:not(.group-row)::before,div:not(.group-row)+.group-row::before{content:'';position:absolute;top:0;left:18px;right:0;border-top:1px solid var(--border)}
+.group-row{position:relative;display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:50px;padding:0 18px;border:0;background:none;color:var(--t1);font:400 var(--fs-lg) 'Mulish',sans-serif;text-align:left;cursor:pointer;box-sizing:border-box;transition:background var(--hover-out)}
+.group-row+.group-row::before,.group-row+div:not(.group-row)::before,div:not(.group-row)+.group-row::before{content:'';position:absolute;top:0;left:18px;right:0;border-top:1px solid var(--border);transition:opacity var(--hover-out)}
+/* Same full-bleed row as .bank-section.fader-linked: the inset hairlines above and
+   below the hovered row fade out with its fill (--hover-in). */
+.group-row:hover::before,.group-row:hover+.group-row::before,.group-row:hover+div:not(.group-row)::before{opacity:0;transition:opacity var(--hover-in)}
 .settings-group>div:not(.group-row){position:relative}
-.group-row:hover{background:color-mix(in srgb,var(--t1) 3%,transparent)}
+.group-row:hover{background:color-mix(in srgb,var(--t1) 3%,transparent);transition:background var(--hover-in)}
 .group-row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .group-row-label{flex:1;min-width:0;display:flex;align-items:center;gap:var(--space-2)}
 .group-row-value{font-size:var(--fs-base);color:var(--t2)}
@@ -2441,6 +2475,8 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
     </div>
   </div>
 
+  </div><!-- /settings-col -->
+
   <!-- FOOTER -->
   <footer class="site-footer">
     <div class="footer-top">
@@ -2454,13 +2490,16 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 Acoustic Empire s.r.o.</span>
-      <span>v 1.0.0</span>
-      <span data-i18n="footer.compat">Works with Chrome &amp; Edge · Web Serial &amp; Web MIDI required</span>
-      <span data-i18n="footer.made">Made in Czech Republic</span>
+      <div class="footer-bottom-group">
+        <span>© 2026 Acoustic Empire s.r.o.</span>
+        <span>v 1.0.0</span>
+      </div>
+      <div class="footer-bottom-group footer-bottom-end">
+        <span data-i18n="footer.compat">Works with Chrome &amp; Edge · Web Serial &amp; Web MIDI required</span>
+        <span data-i18n="footer.made">Made in Czech Republic</span>
+      </div>
     </div>
   </footer>
-  </div><!-- /settings-col -->
 </div><!-- /center-col -->
 </main>
 
