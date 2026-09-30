@@ -985,28 +985,28 @@ html.dark #footer-logo{filter:grayscale(1) invert(1) !important;opacity:.85 !imp
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 /* TOASTS */
 #toasts{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;width:min(360px,calc(100vw - 32px));flex-direction:column;align-items:flex-end;gap:7px;pointer-events:none}
+/* Flat floating card like the HUD (minimal hybrid §1/§3, Frank 2026-09-30): no glass, radius --r so wrapped text stays a card, not an oval. */
 .toast{
-  display:flex;align-items:center;gap:7px;width:max-content;max-width:100%;min-height:38px;padding:5px 7px;
-  border:1px solid var(--glass-border);border-radius:var(--r-pill);background:linear-gradient(145deg,var(--glass-dialog),var(--glass-soft));
-  color:var(--t1);font:600 var(--fs-sm)/1.35 'Mulish',sans-serif;pointer-events:auto;
-  box-shadow:0 10px 30px rgba(34,34,40,.13),inset 0 1px 0 rgba(255,255,255,.34);
-  backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
+  display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;min-height:38px;padding:6px 6px 6px 12px;
+  border:1px solid var(--border);border-radius:var(--r);background:var(--bg-card);
+  color:var(--t1);font:500 var(--fs-base)/1.4 'Mulish',sans-serif;pointer-events:auto;
+  box-shadow:var(--shadow-hud);
   animation:toast-in .32s var(--ease-out) both;transform-origin:right bottom;
   transition:opacity .22s ease,transform .28s cubic-bezier(.4,0,1,1),filter .22s ease
 }
 @keyframes toast-in{from{opacity:0;transform:translate3d(10px,4px,0) scale(.97);filter:blur(4px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
 .toast.is-leaving{opacity:0;transform:translate3d(8px,3px,0) scale(.98);filter:blur(3px);pointer-events:none}
-.toast-icon{display:grid;width:24px;height:24px;flex:0 0 24px;place-items:center;border:1px solid var(--glass-border);border-radius:50%;background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t2);font:700 var(--fs-xs) 'Mulish',sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.28)}
-.toast.s .toast-icon,.toast.sent .toast-icon{border-color:var(--green-border);background:var(--green-bg);color:var(--green-text)}
-.toast.e .toast-icon{border-color:color-mix(in srgb,var(--danger) 30%,var(--glass-border));background:var(--danger-bg);color:var(--danger)}
-.toast-message{min-width:0;flex:1;color:var(--t2);overflow-wrap:anywhere}
+.toast-icon{display:grid;width:16px;height:16px;flex:0 0 16px;place-items:center;border:0;border-radius:50%;background:none;color:var(--t3);font:700 var(--fs-md) 'Mulish',sans-serif}
+.toast.s .toast-icon,.toast.sent .toast-icon{color:var(--green-text)}
+.toast.e .toast-icon{color:var(--danger)}
+.toast-message{min-width:0;flex:1;color:var(--t1);overflow-wrap:anywhere}
 .toast.e .toast-message{color:color-mix(in srgb,var(--danger) 72%,var(--t1))}
 .tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 var(--fs-sm) 'Mulish',sans-serif;transition:background-color var(--hover-out),color var(--hover-out),opacity var(--hover-out),transform var(--dur-press) ease}
 .tx:hover,.tx:focus-visible{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);opacity:1;transition:background-color var(--hover-in),color var(--hover-in),opacity var(--hover-in),transform var(--dur-press) ease}.tx:active{transform:scale(.92)}
 .hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:var(--r-sm);font:var(--fs-md)/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--chrome-glass-bg);backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);border:1px solid var(--chrome-float-border);box-shadow:var(--chrome-glass-shadow);opacity:0;pointer-events:none;transition:opacity .15s ease;}
 .hover-tip.show{opacity:1;}
 .hover-tip[hidden]{display:none;}
-.toast-action{min-height:26px;border:1px solid var(--control-glass-border);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);border-radius:var(--r-pill);padding:4px 9px;font:600 var(--fs-xs) 'Mulish',sans-serif;cursor:pointer;box-shadow:var(--control-glass-shadow)}
+.toast-action{flex:0 0 auto;min-height:26px;border:0;background:var(--bg-input);color:var(--t1);border-radius:var(--r-pill);padding:4px 10px;font:600 var(--fs-md) 'Mulish',sans-serif;white-space:nowrap;cursor:pointer}
 @media(max-width:600px){#toasts{right:16px;bottom:calc(14px + env(safe-area-inset-bottom));left:16px;width:auto;align-items:center}.toast{max-width:min(100%,340px);transform-origin:center bottom}}
 @media(prefers-reduced-motion:reduce){.toast{animation:none;transition:none}.toast.is-leaving{display:none}}
 .sync-banner{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:250;   /* pod single-row header, nad stage (z-40) i toasty */
@@ -1767,6 +1767,26 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
    2026-08-16 as a fix for ghost text over the revealed app; opacity alone
    already fades it to ~0.2 well before the app is legible underneath, so
    the filter wasn't worth this regression. */
+/* Owner greeting (spec 2026-09-30-owner-name-design, overlay per Frank 2026-10-01):
+   centered, non-blocking, on the fader-glow timing – in --dur-link-in (name +.15s)
+   → hold → out --dur-link-out from 2.55s, all --ease-link. */
+.owner-greeting{position:fixed;inset:0;z-index:160;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none;
+  /* Soft scrim so the greeting never reads over the sections beneath it. */
+  background:color-mix(in srgb,var(--bg) 70%,transparent);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-out) var(--ease-link) 2.55s forwards}
+.owner-greeting::before{content:'';position:absolute;left:50%;top:50%;width:min(760px,94vw);height:340px;transform:translate(-50%,-50%);
+  background:radial-gradient(closest-side,var(--bg),transparent);opacity:.9;z-index:-1}
+.owner-greeting-pre{font:400 var(--fs-xl)/1.2 'Mulish',sans-serif;color:var(--t2);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) both}
+.owner-greeting-name{max-width:92vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:700 calc(var(--fs-3xl) * 2)/1.15 'Mulish',sans-serif;letter-spacing:-.035em;color:var(--t1);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) .15s both}
+@keyframes owner-greeting-in{from{opacity:0;transform:translateY(14px);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+@keyframes owner-greeting-out{to{opacity:0;transform:scale(.985);filter:blur(8px)}}
+@keyframes owner-greeting-fade{from{opacity:0}to{opacity:1}}
+@keyframes owner-greeting-fade-out{to{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+  .owner-greeting{animation:owner-greeting-fade .3s ease both,owner-greeting-fade-out .3s ease 2.55s forwards}
+  .owner-greeting-pre,.owner-greeting-name{animation:owner-greeting-fade .3s ease both}
+}
 @keyframes welcome-text-out{
   from{opacity:1}
   to  {opacity:0}
@@ -1780,6 +1800,14 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   to  {opacity:1}
 }
 #welcome-screen.connecting{pointer-events:none}
+/* Connect & load → app chrome reveal (revealAppChrome(), Frank 2026-10-01). */
+body.app-reveal-pending header,body.app-reveal-pending #settings-col,body.app-reveal-pending .site-footer{opacity:0}
+/* Opacity only: a transform would make #settings-col the offsetParent mid-reveal
+   and skew every offsetTop-based scroll computed during it. */
+body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-footer{animation:app-chrome-fade var(--dur-link-in) var(--ease-link) .35s both}
+body.app-reveal .center-col>.stage-collapse{z-index:3}
+@keyframes app-chrome-fade{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-footer{animation-duration:.3s;animation-timing-function:ease;animation-delay:0s}}
 #welcome-screen.connecting::before{animation:welcome-screen-out .34s ease .72s forwards}
 
 /* ── INSTRUMENT ICON PICKER ── */
@@ -1888,6 +1916,29 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 .section-head.section-toggle{cursor:pointer}
 .section-toggle-title{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .section-toggle-meta{margin-left:auto;display:flex;align-items:center;gap:var(--space-3);min-width:0}
+/* Live value at the right of each section head (Frank 2026-09-30): what the hardware
+   sends right now – fader number on a level wash, roller articulation/keyswitch (relative:
+   last direction), button flash on a short press. Only while live and the card shows
+   the device's bank; otherwise nothing. Appears/fades and brightens while values
+   arrive on the controller-glow timing (--hover-in/--hover-out); the number and bar
+   themselves never lag. */
+.section-live{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--t2);font:600 var(--fs-sm) 'Mulish',sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;opacity:0;transition:opacity var(--hover-out),color var(--hover-out)}
+.section-live.is-on{opacity:1;transition:opacity var(--hover-in),color var(--hover-out)}
+.section-live.is-on.is-moving{color:var(--t1);transition:opacity var(--hover-in),color var(--hover-in)}
+/* Fader = a miniature Live HUD cell (Frank 2026-09-30): bold number on a wash that
+   rises from the bottom with the level – same scaleY technique as
+   .live-hud-item::before, a touch stronger so the level reads at this size. */
+.section-live-fader{position:relative;overflow:hidden;justify-content:center;min-width:32px;height:26px;padding:0 5px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--t2) 4%,transparent)}
+.section-live-fader::before{content:'';position:absolute;inset:0;transform:scaleY(var(--live-frac,0));transform-origin:bottom;background:color-mix(in srgb,var(--t2) 20%,transparent)}
+.section-live-num{position:relative;z-index:1;min-width:3ch;text-align:center;font-weight:700;font-size:var(--fs-md)}
+.section-live-roller{display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.section-live-button{justify-content:center;min-width:32px;height:26px;padding:0 5px}   /* same box as .section-live-fader → the dot sits on the fader numbers' axis (Frank 2026-09-30) */
+.section-live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 rgba(var(--link-ring-rgb),0);transition:width var(--hover-out),height var(--hover-out),box-shadow var(--hover-out)}
+/* Long press (macro fired): the fader-thumb glow recipe on a ring (spec 2026-09-30). */
+.section-live.is-held{color:var(--t1)}
+.section-live.is-held .section-live-dot{width:10px;height:10px;box-shadow:0 0 0 1px var(--link-edge),0 0 0 2.5px rgba(var(--link-ring-rgb),.9),0 0 9px 3px rgba(var(--link-ring-rgb),.6),0 0 18px 6px rgba(var(--link-ring-rgb),.32);transition:width var(--hover-in),height var(--hover-in),box-shadow var(--hover-in)}
+@media(max-width:600px){.section-live-roller{max-width:96px}}
+@media(prefers-reduced-motion:reduce){.section-live,.section-live-dot{transition:none}}
 .section-toggle-action{display:flex;align-items:center;gap:var(--space-3);min-width:0;margin-left:auto;padding:5px 0 5px 12px;border:0;background:transparent;color:inherit;cursor:pointer;font-family:'Mulish',sans-serif}
 .section-toggle-action:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
 /* Šířka podle obsahu, ne pevných 190 px: prázdné místo napravo od názvu
@@ -2152,6 +2203,8 @@ button:focus-visible{outline-offset:3px;}
 .custom-preset-body{padding:16px 20px;display:grid;gap:15px}
 .custom-preset-name{width:100%;border:1px solid var(--border-s);border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:8px 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
 .custom-preset-name:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
+.owner-name-input{flex:1;min-width:0;max-width:220px;border:1px solid var(--border-s);border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:8px 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
+.owner-name-input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
 .custom-preset-scopes{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
 .custom-preset-scope{display:flex;align-items:center;gap:var(--space-2);font-size:var(--fs-md);color:var(--t2);line-height:1.35;cursor:pointer}
 .custom-preset-list{display:grid;gap:6px;max-height:190px;overflow:auto}
@@ -2231,7 +2284,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 /* Glass fallback + lighter compositor load on small screens. Inputs and steppers
    deliberately remain opaque so configuration values retain maximum contrast. */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .modal,.icon-picker-modal,.toast,.sync-banner{background:var(--bg-card)}
+  .modal,.icon-picker-modal,.sync-banner{background:var(--bg-card)}
 }
 </style>
 </head>
@@ -2384,6 +2437,11 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
           <progress id="fw-update-progress" max="100" value="0" hidden aria-label="Firmware update progress"></progress>
         </div>
         <div class="info-row"><span class="info-lbl">Serial</span><span class="info-val" id="di-serial" style="color:var(--t2)">–</span></div>
+        <div class="info-row info-row-action" id="owner-row" hidden data-tip="Saved on the device – the app greets you by name when it connects.">
+          <label class="info-lbl" for="owner-input">Your name</label>
+          <input class="owner-name-input" id="owner-input" maxlength="24" placeholder="Optional" autocomplete="off" spellcheck="false"
+            onkeydown="onOwnerKeydown(event)" onblur="saveOwnerName()">
+        </div>
         <div class="info-row info-row-action" data-tip="Enable HID to let the device send keystrokes – required for the Navigation roller mode and the button long-press macro.">
           <span class="info-lbl">Keyboard (HID)</span>
           <label class="hid-switch" title="Required for Navigation and Button Macro">
@@ -2759,6 +2817,14 @@ const SECTION_MARKS = {
   macro: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="currentColor"/></svg>',
 };
 const SECTION_CHEVRON = '<svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// Empty live-value slot per section head; syncSectionLive() fills it.
+function sectionLiveSlotHtml(key) {
+  const inner = key === 'fader1' || key === 'fader2'
+    ? '<span class="section-live-num"></span>'
+    : key === 'macro' ? '<span class="section-live-dot"></span>' : '';
+  const cls = key === 'roller' ? ' section-live-roller' : key === 'macro' ? ' section-live-button' : ' section-live-fader';
+  return `<span class="section-live${cls}" id="section-live-${key}" aria-hidden="true">${inner}</span>`;
+}
 function sectionHeaderHtml(bi, key, title, summary, tip, extra) {
   const open = isSectionOpen(key);
   const tipAttr = tip ? ` data-tip="${escHtml(tip)}"` : '';
@@ -2778,7 +2844,7 @@ function sectionHeaderHtml(bi, key, title, summary, tip, extra) {
       </span>
       <button type="button" class="section-toggle-action" id="section-toggle-${bi}-${key}"
         onclick="toggleSection('${key}',event)" aria-expanded="${open}" aria-controls="section-body-${bi}-${key}" aria-label="${open?'Collapse':'Expand'} ${escHtml(title)} settings">
-        ${SECTION_CHEVRON}
+        ${sectionLiveSlotHtml(key)}${SECTION_CHEVRON}
       </button>
     </div>`;
   }
@@ -2786,7 +2852,7 @@ function sectionHeaderHtml(bi, key, title, summary, tip, extra) {
     onclick="toggleSection('${key}',event)" aria-expanded="${open}" aria-controls="section-body-${bi}-${key}">
       ${mark}
       <span class="section-toggle-title"><span class="panel-name${key==='roller'?' roller-mode-title':''}" id="section-title-${bi}-${key}">${escHtml(title)}</span>${summaryHtml}</span>
-      <span class="section-toggle-meta">${extra||''}${SECTION_CHEVRON}</span>
+      <span class="section-toggle-meta">${extra||''}${sectionLiveSlotHtml(key)}${SECTION_CHEVRON}</span>
     </button>`;
 }
 // Collapsed-header summaries (UX audit 2026-09-25 C-5): each section says what
@@ -2962,6 +3028,8 @@ const DEVICE_INFO = {
   fader_response_presets: false,
   fader_response: null,
   update: null,           // z CMD_INFO: {supported, slot} — firmware umí in-app update (fw ≥ 1.3.0)
+  supports_owner: false,  // z CMD_INFO: firmware umí CMD_OWNER (fw ≥ 1.4.0)
+  owner: '',              // jméno vlastníka uložené v zařízení ('' = nenastaveno)
 };
 
 const LS_CFG_KEY        = 'ff-cfg';
@@ -3034,6 +3102,7 @@ let _lastRenderedConfig = cloneConfig(cfg);
 const UNDO_LIMIT = 10;
 let _undoConfigHistory = [];
 let _suspendUndoCapture = false;
+let _unsentLiveHintShown = false;   // maybeHintUnsentLive(): once per unsent change set
 
 function markConfigSynced() {
   _syncedConfigSnapshot = cloneConfig(cfg);
@@ -3233,6 +3302,7 @@ function reflectDirty() {
   // UX audit 2026-09-25 F-1: a change that is reversed (step up/down, mode
   // there and back) returns to the synced config — same rule as undo.
   if (dirty && _syncedConfigSnapshot && configSignature(cfg) === configSignature(_syncedConfigSnapshot)) dirty = false;
+  if (!dirty) _unsentLiveHintShown = false;
   recordConfigCheckpoint();
   if (dirty && _sendConfirmed) {
     _sendConfirmed = false;
@@ -3419,6 +3489,7 @@ function renderPanels(errs = validate()) {
   // pick up any section that's open by default (no hover involved) — see
   // syncFaderLink() comment.
   ['fader1','fader2','roller','macro'].forEach(syncFaderLink);
+  syncSectionLive();   // the rebuilt heads start with empty live slots
   updateStickySectionHeads();
 }
 
@@ -3869,6 +3940,50 @@ function updateHidToggle(){
   const el=document.getElementById('hid-toggle');
   if(el){ el.checked = !!DEVICE_INFO.hid_enabled; el.disabled = !(_ffConnected || DEVICE_INFO.hid_available); }
 }
+// Owner name (feel-fader-firmware spec 2026-09-30-owner-name-design) – lives in
+// its own device slot, not in cfg: saved immediately like HID, never via Send.
+function updateOwnerRow(){
+  const row = document.getElementById('owner-row');
+  const input = document.getElementById('owner-input');
+  if (!row || !input) return;
+  const s = connState();
+  const connected = s === 'CONNECTED_LIVE' || s === 'CONNECTED_BLIND';
+  row.hidden = !(connected && DEVICE_INFO.supports_owner && protocolVersion === 2);
+  if (document.activeElement !== input) input.value = DEVICE_INFO.owner;
+}
+function onOwnerKeydown(e){
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  else if (e.key === 'Escape') { e.target.value = DEVICE_INFO.owner; e.target.blur(); }
+}
+let _ownerSaving = false;
+async function saveOwnerName(){
+  const input = document.getElementById('owner-input');
+  if (!input || _ownerSaving) return;
+  const owner = input.value.trim();
+  if (owner === DEVICE_INFO.owner) { input.value = owner; return; }
+  if (_fwUpdating) { toast('i', 'Firmware update in progress – wait until the device restarts.'); input.value = DEVICE_INFO.owner; return; }
+  _ownerSaving = true;
+  try {
+    await serialRequest('CMD_OWNER', JSON.stringify({ owner }), 2000);
+    DEVICE_INFO.owner = owner;
+    toast('s', owner ? 'Name saved' : 'Name removed');
+    // Read-back via a plain CMD_INFO, not serialReadInfo(): its legacy bootstrap flips
+    // protocolVersion to 1 under any queued transaction (e.g. Send clicked right after
+    // blur) and its render() would rebuild an input the user just moved into.
+    try {
+      const info = JSON.parse(await serialRequest('CMD_INFO', null, 2000));
+      DEVICE_INFO.owner = typeof info.owner === 'string' ? info.owner : '';
+    } catch (e) {}   // best effort
+  } catch (e) {
+    const err = /^ERR:(.+)$/.exec(e.message || '');
+    toast('e', err && err[1] === 'space'
+      ? 'Not enough device memory – send your settings once, then try again.'
+      : "Couldn't save name");
+  } finally {
+    _ownerSaving = false;
+    updateOwnerRow();
+  }
+}
 function updateFaderResponseControl(){
   const select = document.getElementById('fader-response-select');
   const trigger = document.getElementById('fader-response-trigger');
@@ -4041,6 +4156,7 @@ function updateDeviceInfo() {
   setVal('di-firmware', firmware);
   setTxt('di-firmware-summary', deviceSummaryText());
   updateHidToggle();
+  updateOwnerRow();
   updateFaderResponseControl();
   updateMacroUI();
   renderMidiDiagnostics();
@@ -5249,7 +5365,7 @@ function flushFaderFrame(){
   // High-rate fader CC must stay on a tiny fast path. Rebuilding every label,
   // validation marker and contextual HUD position at up to 125 Hz lets other
   // MIDI-heavy tabs push this page into a visible event backlog.
-  renderLiveFaderValues(changed);
+  renderLiveFaderValues(changed, true);
 }
 function pF(tid,thid,v){
   const th=document.getElementById(thid);
@@ -5453,6 +5569,16 @@ function connectInputs(){
 }
 
 
+// Unsent edits on the bank the device is on (Frank 2026-09-30): the device still runs
+// the last sent config, so its live values can look wrong (a reordered roller "skips"
+// a value until Send). Say so once per unsent change set; reflectDirty() resets it.
+function maybeHintUnsentLive() {
+  if (!dirty || _unsentLiveHintShown || activeBank !== liveBank) return;
+  const synced = _syncedConfigSnapshot?.banks?.[liveBank];
+  if (synced && configSignature(synced) === configSignature(cfg.banks[liveBank])) return;
+  _unsentLiveHintShown = true;
+  toast('i', 'Device is still on the last sent settings.', { label: t('btn.send'), onClick: () => doSend() });
+}
 function onMidiMsg(event){
   const data=event.data, st=data[0];
   monitorMidiBacklog(event);
@@ -5472,9 +5598,11 @@ function onMidiMsg(event){
     const cc=data[1],val=data[2];
     if(cc===bank.fader1.cc && ch===bank.fader1.channel){
       liveValues.f1=val;liveSeen.f1=true;_faderDirty.l=true;scheduleFaderFrame();
+      maybeHintUnsentLive();
     }
     if(cc===bank.fader2.cc && ch===bank.fader2.channel){
       liveValues.f2=val;liveSeen.f2=true;_faderDirty.r=true;scheduleFaderFrame();
+      maybeHintUnsentLive();
     }
     if(cc===bank.encoder.cc && ch===bank.encoder.channel){
       encLiveVal = val;
@@ -5485,6 +5613,8 @@ function onMidiMsg(event){
       const idx = bank.uacc_values.indexOf(val);
       if(idx !== -1) encIndex = idx;
       syncUaccLiveRow();
+      pulseSectionLive('roller');
+      maybeHintUnsentLive();
     }
 
   }
@@ -5496,6 +5626,8 @@ function onMidiMsg(event){
       document.querySelectorAll('.seq-row.is-live[data-ksnote]').forEach(el => el.classList.remove('is-live'));
       document.querySelector(`.seq-row[data-ksnote="${note}"]`)?.classList.add('is-live');
       renderLiveStrip();
+      pulseSectionLive('roller');
+      maybeHintUnsentLive();
     }
   }
   // Bank switch via Program Change from hardware button
@@ -5512,6 +5644,7 @@ function onMidiMsg(event){
       setActiveTab(activeBank);
       renderUacc();
       renderLiveStrip();
+      pulseSectionLive('macro', true);   // short press = bank switch; long press (macro) is HID-only, never reaches the app
     }
   }
 }
@@ -5546,7 +5679,7 @@ async function syncSendMine() { hideSyncBanner(); doSend(); }
 // ═══════════════════════════════════════════════════════════
 // SYSEX
 // ═══════════════════════════════════════════════════════════
-const MFR=0x7D,DEV_ID=0x01,CMD_R=0x02,CMD_INFO=0x03,CMD_HID=0x07;
+const MFR=0x7D,DEV_ID=0x01,CMD_R=0x02,CMD_INFO=0x03,CMD_HID=0x07,CMD_EVT=0x08,EVT_MACRO_FIRED=0x01;
 let _serialPort   = null;  // Web Serial port (cached for session)
 let protocolVersion = 1;        // 1 = legacy, 2 = rid framing; nastaví bootstrap CMD_INFO
 let _ridCounter = 0;
@@ -5670,6 +5803,8 @@ function handleSysEx(data){
   // unauthenticated config (structure audit 2026-07-20, SEC-003/PR-001).
   if(data[1]!==MFR||data[2]!==DEV_ID)return;
   const cmd=data[3],payload=Array.from(data.slice(4,-1));
+  // Button macro fired on the device (long press) – light the Button ring (spec 2026-09-30).
+  if(cmd===CMD_EVT){ if(payload[0]===EVT_MACRO_FIRED) pulseSectionLiveMacroHold(); return; }
   if(cmd===CMD_INFO){
     try{
       const info=JSON.parse(new TextDecoder().decode(new Uint8Array(dec7(payload))));
@@ -5766,7 +5901,7 @@ function serialRequest(cmd, payload, timeoutMs) {
     await writer.write(new TextEncoder().encode(line + '\n'));
     writer.releaseLock();
     if (!v2 && (cmd === 'CMD_W' || cmd === 'CMD_HID')) return '';   // legacy: bez odpovědi
-    const expect = { CMD_R: 'CFG', CMD_INFO: 'INFO', CMD_W: 'ACK', CMD_HID: 'ACK',
+    const expect = { CMD_R: 'CFG', CMD_INFO: 'INFO', CMD_W: 'ACK', CMD_HID: 'ACK', CMD_OWNER: 'ACK',
                      CMD_UB: 'ACK', CMD_UC: 'ACK', CMD_UE: 'ACK', CMD_UA: 'ACK' }[cmd];
     return await _readReply(port, v2, expect, rid, timeoutMs);
   };
@@ -5841,6 +5976,8 @@ async function serialReadInfo() {
   DEVICE_INFO.update = (info.update && typeof info.update === 'object')
     ? { supported: info.update.supported === true, slot: String(info.update.slot || '') }
     : null;
+  DEVICE_INFO.supports_owner = info.supports_owner === true;
+  DEVICE_INFO.owner = typeof info.owner === 'string' ? info.owner : '';
   // Sync live-bank indicator to the device's actual current bank on (re)connect,
   // so it isn't stuck at Bank 1 until the next Program Change (firmware reports
   // its bank_index in CMD_INFO; liveBank sync-on-load 2026-07-29).
@@ -5863,12 +6000,14 @@ async function serialReadInfo() {
 // Shared: read device info + config over serial. Opens the port (picker only if not yet granted).
 async function loadConfigFromDevice() {
   await _serialEnsureOpen();                    // grant/open — shows picker only if no port granted yet
-  try { await serialReadInfo(); } catch(e) {}   // device info (firmware/serial/HID) — best effort
+  let deviceBank = 0;                           // Bank 1 unless CMD_INFO reports the device's current bank
+  try { await serialReadInfo(); deviceBank = liveBank; } catch(e) {}   // device info (firmware/serial/HID) — best effort
   const jsonStr = await serialReadConfig();
   let p = JSON.parse(jsonStr);
   if (!p.banks) throw new Error('Invalid structure');
   p = normalizeFwConfig(p);
-  cfg = p; loaded = true; dirty = false; activeBank = 0; markConfigSynced();
+  // Open on the bank the device is on (Frank 2026-09-30), not always Bank 1.
+  cfg = p; loaded = true; dirty = false; activeBank = deviceBank < p.banks.length ? deviceBank : 0; markConfigSynced();
   cfgSave();
   storageSet(LS_SERIAL_PID_KEY, _serialPort.getInfo().usbProductId);
   _serialGranted = true;
@@ -5886,6 +6025,27 @@ function updateWelcomeSkip() {
   const visible = !(_ffConnected || _serialPort);
   if (skip) skip.style.display = visible ? '' : 'none';
   document.getElementById('welcome-text-block')?.classList.toggle('welcome-has-skip',visible);
+}
+// Owner greeting (spec 2026-09-30-owner-name-design) – at most once per page load.
+// Returns the owner name to greet, '' when there is none or it was already used.
+let _ownerGreeted = false;
+function takeOwnerGreeting(){
+  if (_ownerGreeted || !DEVICE_INFO.owner) return '';
+  _ownerGreeted = true;
+  return DEVICE_INFO.owner;
+}
+// Centered, non-blocking overlay that removes itself once .owner-greeting's
+// fade-out ends – not its fade-in (timer is only a fallback for tabs that skip animations).
+function showOwnerGreeting(name){
+  document.getElementById('owner-greeting')?.remove();
+  const el = document.createElement('div');
+  el.id = 'owner-greeting'; el.className = 'owner-greeting'; el.setAttribute('role', 'status');
+  const pre = document.createElement('span'); pre.className = 'owner-greeting-pre'; pre.textContent = 'Welcome back,';
+  const nm = document.createElement('span'); nm.className = 'owner-greeting-name'; nm.textContent = name;
+  el.append(pre, nm);
+  el.addEventListener('animationend', e => { if (e.target === el && /-out$/.test(e.animationName)) el.remove(); });
+  setTimeout(() => el.remove(), 4700);
+  document.body.appendChild(el);
 }
 function showStartBtn() {
   const btn = document.getElementById('send-btn');
@@ -5914,7 +6074,9 @@ async function doStart() {
   try {
     await loadConfigFromDevice();
     renderConnState();
+    const owner = takeOwnerGreeting();
     hideWelcome();                              // transition → main page
+    if (owner) setTimeout(() => showOwnerGreeting(owner), 2100);   // once the connect transition + app reveal have settled
   } catch(e) {
     const cancelled = e && (e.name === 'AbortError' || e.name === 'NotFoundError' || /cancel|no port selected/i.test(e.message || ''));
     if (!cancelled) await releaseSerialPort({forget:true});
@@ -5963,6 +6125,11 @@ async function _onDeviceConnected() {
       const differs = protocolVersion === 2 && stored && DEVICE_INFO.config_hash
                        && stored !== DEVICE_INFO.config_hash;
       if (!dirty) {
+        // Banner paths keep the local config – still show the bank the device is on
+        // (its tab carries the device dot). Unsaved edits keep their bank (C10/C11).
+        if ((isDefaults || differs) && liveBank < cfg.banks.length && activeBank !== liveBank) {
+          activeBank = liveBank; render();
+        }
         if (isDefaults) { showSyncBanner('defaults'); renderConnState(); }
         else if (differs) { showSyncBanner('differs'); renderConnState(); }
         else { await loadConfigFromDevice(); renderConnState(); }
@@ -5995,7 +6162,11 @@ async function _onDeviceConnected() {
     // known device replayed the whole "Connect & load" -> "Continue without
     // device" -> "Send to device" reveal in miniature, reading as a flicker
     // instead of a seamless load (Frank 2026-08-16).
-    if (onWelcome) finishWelcomeInstant();
+    if (onWelcome) {
+      finishWelcomeInstant();
+      const owner = takeOwnerGreeting();   // silent load of a known device
+      if (owner) showOwnerGreeting(owner);
+    }
     return;
   }
   // Grant needed → surface Start on the welcome screen (re-show it if we already left, e.g. after skip).
@@ -6431,7 +6602,7 @@ function updateContextualLiveStrip(){
   strip.classList.toggle('is-idle',!live);
   strip.setAttribute('aria-hidden',String(!visible));
 }
-function renderLiveFaderValues(changed = {l:true,r:true}){
+function renderLiveFaderValues(changed = {l:true,r:true}, moved = false){
   const allowed = connState() === 'CONNECTED_LIVE';
   const setLiveValue = (id, itemId, value, seen) => {
     const valid = allowed && seen && Number.isFinite(value);
@@ -6445,6 +6616,72 @@ function renderLiveFaderValues(changed = {l:true,r:true}){
   };
   if (changed.l) setLiveValue('live-f1-value', 'live-f1-item', liveValues.f1, liveSeen.f1);
   if (changed.r) setLiveValue('live-f2-value', 'live-f2-item', liveValues.f2, liveSeen.f2);
+  if (changed.l) setSectionLiveFader('fader1', liveValues.f1, liveSeen.f1, moved);
+  if (changed.r) setSectionLiveFader('fader2', liveValues.f2, liveSeen.f2, moved);
+}
+
+// Live values in the section heads (Frank 2026-09-30) – same sources as the Live
+// HUD, shown only while live and the card shows the bank the device is on.
+// .is-moving marks "values arriving" and drops SECTION_LIVE_SETTLE_MS after the
+// last one, so the brightening rises and fades on the glow timing (CSS).
+const SECTION_LIVE_SETTLE_MS = 350;
+const _sectionLiveTimers = {};
+function sectionLiveEl(key) { return document.getElementById(`section-live-${key}`); }
+function sectionLiveAllowed() { return connState() === 'CONNECTED_LIVE' && activeBank === liveBank; }
+function pulseSectionLive(key, flash = false) {
+  const el = sectionLiveEl(key);
+  if (!el || !sectionLiveAllowed()) return;
+  el.classList.add('is-on', 'is-moving');
+  clearTimeout(_sectionLiveTimers[key]);
+  _sectionLiveTimers[key] = setTimeout(() => {
+    const cur = sectionLiveEl(key);   // the panel may have re-rendered meanwhile
+    if (!cur) return;
+    cur.classList.remove('is-moving');
+    if (flash) cur.classList.remove('is-on');
+  }, SECTION_LIVE_SETTLE_MS);
+}
+// Long press (macro fired): a glowing ring on the controller-glow timing – on for
+// SECTION_LIVE_SETTLE_MS after the last event, then fades out (spec 2026-09-30).
+function pulseSectionLiveMacroHold() {
+  const el = sectionLiveEl('macro');
+  if (!el || !sectionLiveAllowed()) return;
+  el.classList.add('is-on', 'is-held');
+  clearTimeout(_sectionLiveTimers.macroHold);
+  _sectionLiveTimers.macroHold = setTimeout(() => {
+    sectionLiveEl('macro')?.classList.remove('is-on', 'is-held');   // the panel may have re-rendered meanwhile
+  }, SECTION_LIVE_SETTLE_MS);
+}
+function setSectionLiveFader(key, value, seen, moved) {
+  const el = sectionLiveEl(key);
+  if (!el) return;
+  if (!(sectionLiveAllowed() && seen && Number.isFinite(value))) { el.classList.remove('is-on', 'is-moving'); return; }
+  const text = String(value);
+  const num = el.firstElementChild;
+  if (num.textContent !== text) num.textContent = text;
+  el.style.setProperty('--live-frac', String(Math.max(0, Math.min(127, value)) / 127));
+  if (moved) pulseSectionLive(key); else el.classList.add('is-on');
+}
+function sectionRollerLiveText() {
+  const bank = cfg.banks[liveBank];
+  const mode = bank?.roller_mode || 'cc';
+  if (mode === 'cc' && encLiveVal !== null) return liveArticulationName(encLiveVal);
+  if (mode === 'keyswitch' && ksLiveNote !== null) return ksLabel(bank, ksLiveNote);
+  // Relative CC carries only a direction (firmware: roll up = 1, down = 127).
+  if (mode === 'cc_relative' && encLiveVal !== null) return encLiveVal < 64 ? '↑' : '↓';
+  return '';   // track_nav: keys go straight to the OS, nothing reaches the app
+}
+function syncSectionLive() {
+  setSectionLiveFader('fader1', liveValues.f1, liveSeen.f1, false);
+  setSectionLiveFader('fader2', liveValues.f2, liveSeen.f2, false);
+  const roller = sectionLiveEl('roller');
+  if (roller) {
+    const text = sectionLiveAllowed() ? sectionRollerLiveText() : '';
+    if (text) {
+      if (roller.textContent !== text) { roller.textContent = text; roller.title = text; }
+      roller.classList.add('is-on');
+    } else roller.classList.remove('is-on', 'is-moving');
+  }
+  if (!sectionLiveAllowed()) sectionLiveEl('macro')?.classList.remove('is-on', 'is-moving');
 }
 
 // Device context in the editor (spec 2026-09-26 §2/§4, Frank reversed the
@@ -6540,6 +6777,7 @@ function renderLiveStrip(errs = validate()){
       : mode === 'keyswitch' && ksLiveNote !== null && bank.ks_names?.[ksLiveNote] ? `${readableValue} · ${noteName(ksLiveNote)}` : readableValue;
     rollerValueEl.setAttribute('aria-label', readableValue);
   }
+  syncSectionLive();
   updateContextualLiveStrip();
 }
 function updateNvmDegradedNotice() {
@@ -6592,6 +6830,7 @@ function renderConnState(){
   renderLiveStrip();
   renderMidiDiagnostics();
   updateNvmDegradedNotice();
+  updateOwnerRow();
 }
 function positionLiveNote() {
   const note = document.getElementById('live-note');
@@ -7290,7 +7529,7 @@ function showWelcome() {
     ws.scrollTop = 0;
     syncWelcomeOnboardingScroll();
   }
-  document.body.classList.remove('welcome-connecting');
+  document.body.classList.remove('welcome-connecting','app-reveal-pending','app-reveal');
   const controller = sharedController();
   controller?.classList.remove('connect-success');
   if (controller) delete controller.dataset.onbFeature;
@@ -7357,15 +7596,18 @@ function connectTransitionWelcome() {
     thumbR.style.transform = `translate3d(-50%,${curR}px,0)`;
   }
 
-  // 2. Settle to the device snapshot already applied by serialReadInfo(). This uses
+  // 2. Settle to the device snapshot already applied by serialReadInfo() on the
+  //    fader-glow curve (--ease-link, Frank 2026-10-01: the old snap ease read as a
+  //    jump), finishing just before the 1.1s layout swap, which drops this
+  //    transition and would otherwise cut the settle short. This uses
   //    the same 0–127 -> travel mapping as pF(), including the real rendered thumb height.
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (thumbL && railL) {
-      thumbL.style.transition = 'transform var(--dur-settle) var(--ease-settle)';
+      thumbL.style.transition = 'transform calc(var(--dur-stage) - .1s) var(--ease-link)';
       pF('track-l','thumb-l',liveValues.f1);
     }
     if (thumbR && railR) {
-      thumbR.style.transition = 'transform var(--dur-settle) var(--ease-settle)';
+      thumbR.style.transition = 'transform calc(var(--dur-stage) - .1s) var(--ease-link)';
       pF('track-r','thumb-r',liveValues.f2);
     }
   }));
@@ -7392,6 +7634,10 @@ function connectTransitionWelcome() {
   //    hardware snapshot.
   ws.classList.add('connecting');
   document.body.classList.add('welcome-connecting');
+  // Hold the app chrome hidden while the welcome backdrop fades; it rises in
+  // only once the controller glide is under way (Frank 2026-10-01: sections
+  // used to appear over the moving controller in one frame).
+  document.body.classList.add('app-reveal-pending');
   setTimeout(() => {
     resetAppScrollTop();
     // runValidation() (which sets the button's post-connect text/size —
@@ -7413,6 +7659,7 @@ function connectTransitionWelcome() {
     runValidation();
     onbAfterWelcome();
     glideStageIntoColumn(() => ws.classList.add('hidden'));
+    revealAppChrome();
     // Welcome is now closed — reveal the live HUD immediately. Its
     // .is-contextual-visible toggle keys off welcomeClosed, and without this
     // call nothing re-runs it until the first scroll, so the HUD only appeared
@@ -7452,6 +7699,20 @@ function connectTransitionWelcome() {
 
 function hideWelcome() {
   connectTransitionWelcome();
+}
+
+// Second half of the Connect & load choreography: header, sections and footer
+// fade/rise in on the fader-glow timing, delayed so the gliding controller has
+// already cleared the column. Classes drop once the sections' animation ends.
+function revealAppChrome() {
+  const body = document.body;
+  body.classList.remove('app-reveal-pending');
+  body.classList.add('app-reveal');
+  const sections = document.getElementById('settings-col');
+  let cleared = false;
+  const clear = () => { if (!cleared) { cleared = true; body.classList.remove('app-reveal'); } };
+  sections?.addEventListener('animationend', e => { if (e.target === sections) clear(); });
+  setTimeout(clear, 2200);   // fallback when animations are skipped
 }
 
 function loadDefaultDemoConfig() {
