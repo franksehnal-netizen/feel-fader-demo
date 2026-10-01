@@ -1194,6 +1194,9 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   transition:opacity .4s ease,background var(--hover-out),box-shadow var(--hover-out),transform .1s;
 }
 .welcome-start.show{opacity:1;pointer-events:auto;}
+/* .send-btn's fixed 166px width left a longer label ("Try without device") overflowing
+   its padding, so it sat off-centre – let the pill grow to fit (Frank 2026-10-01). */
+#send-btn.welcome-start{width:auto;box-sizing:border-box;text-align:center}
 .welcome-start:hover{background:var(--red2);box-shadow:0 6px 20px rgba(228,87,69,.34);transition:opacity .4s ease,background var(--hover-in),box-shadow var(--hover-in),transform .1s}
 /* K-7 (UX audit 2026-09-25): #send-btn carries .idle on welcome (nothing dirty
    yet), and .send-btn.idle's glass look buried the only primary action as a
@@ -1529,7 +1532,7 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboardin
    card – so the top stays free and the stage keeps its normal spot (Frank 2026-10-01). */
 @media(max-width:600px){
   #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice{
-    top:auto;bottom:calc(46px + env(safe-area-inset-bottom,0px));
+    top:auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));
     padding:0;background:none;border:none;border-radius:0;
     font-size:var(--fs-sm);font-weight:400;line-height:1.45;
   }
