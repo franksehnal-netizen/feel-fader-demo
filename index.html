@@ -5963,25 +5963,21 @@ function showOwnerGreeting(name, handoff = false){
   document.body.appendChild(el);
   if (handoff && matchMedia('(max-width:899px)').matches) alignGreetingToController(el);
 }
-// Phone hand-off: the greeting's top edge (glyph top, not the line box) touches the
-// controller's top edge (Frank 2026-10-01) and follows it through the layout swap and
-// glide (it shifts by a few px). The CSS padding-top is only the fallback.
+// Phone hand-off: the greeting's bottom edge (ink bottom, not the line box) touches the
+// controller's top edge in its welcome start position (Frank 2026-10-01) – measured once,
+// not pinned to the controller afterwards. The CSS padding-top is only the fallback.
 function alignGreetingToController(el) {
-  const first = el.firstElementChild, dev = document.getElementById('device-img');
-  if (!first || !dev) return;
-  const cs = getComputedStyle(first), ctx = document.createElement('canvas').getContext('2d');
+  const last = el.lastElementChild, dev = document.getElementById('device-img');
+  if (!last || !dev) return;
+  const ctrlTop = dev.getBoundingClientRect().top;
+  const cs = getComputedStyle(last), ctx = document.createElement('canvas').getContext('2d');
   ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-  const m = ctx.measureText(first.textContent);
+  const m = ctx.measureText(last.textContent);
   if (!m.fontBoundingBoxAscent) return;
   const lineH = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.15;
   const halfLeading = (lineH - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2;
-  const glyphOffset = halfLeading + m.fontBoundingBoxAscent - m.actualBoundingBoxAscent;
-  const follow = () => {
-    if (!el.isConnected) return;
-    el.style.paddingTop = Math.max(0, dev.getBoundingClientRect().top - glyphOffset) + 'px';
-    requestAnimationFrame(follow);
-  };
-  follow();
+  const inkBottom = last.offsetTop - parseFloat(getComputedStyle(el).paddingTop) + halfLeading + m.fontBoundingBoxAscent + m.actualBoundingBoxDescent;
+  el.style.paddingTop = Math.max(0, ctrlTop - inkBottom) + 'px';
 }
 function showStartBtn() {
   const btn = document.getElementById('send-btn');
