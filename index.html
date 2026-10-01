@@ -1233,6 +1233,9 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
     background:linear-gradient(to bottom,transparent,var(--bg) 30%);
   }
 }
+/* Hidden by updateWelcomeSkip(); the floating one keeps its fade band, just no label. */
+.welcome-skip.welcome-skip-off:not(.welcome-skip-floating){display:none}
+.welcome-skip.welcome-skip-off>span{visibility:hidden}
 .onb-beat-title{font-size:var(--fs-3xl);font-weight:700;color:var(--t1);letter-spacing:-.02em;line-height:1.2;transition:opacity var(--dur-base) ease;}
 .onb-beat-sub{font-size:var(--fs-base);color:var(--t2);line-height:1.5;margin:7px auto 0;max-width:420px;min-height:40px;text-align:justify;text-align-last:left;hyphens:auto;-webkit-hyphens:auto;transition:opacity var(--dur-base) ease;}
 /* Capability line = quiet, non-interactive text (Frank 2026-09-29: the old
@@ -1531,6 +1534,11 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboardin
     font-size:var(--fs-sm);font-weight:400;line-height:1.45;
   }
   body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice.show) .stage{padding-top:0}
+  /* Centred in the gap above the controller, not pinned to the top (Frank 2026-10-01).
+     --welcome-controller-top comes from positionWelcomeAnchor(). */
+  #welcome-text-block:not(.welcome-onboarding) .welcome-wordmark{
+    top:calc(var(--welcome-controller-top,48px) / 2);transform:translate(-50%,-50%);
+  }
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   --onb-controller-top:72px;
@@ -5081,7 +5089,9 @@ function handleDirtyAction() {
 }
 function handlePrimaryAction() {
   const welcome = document.getElementById('welcome-screen');
-  if (welcome && !welcome.classList.contains('hidden') && !welcome.classList.contains('connecting')) return doStart();
+  if (welcome && !welcome.classList.contains('hidden') && !welcome.classList.contains('connecting')) {
+    return _welcomeUnsupported ? skipWelcome({intro:true}) : doStart();
+  }
   return handleDirtyAction();
 }
 function runValidation(errs = validate()) {
@@ -5918,8 +5928,9 @@ function updateWelcomeSkip() {
   // "Continue without device" is meaningless once a device is present — hide it then;
   // keep it only when no device is detected (real no-device / MIDI-detection quirk).
   const skip = document.querySelector('.welcome-skip');
-  const visible = !(_ffConnected || _serialPort);
-  if (skip) skip.style.display = visible ? '' : 'none';
+  // Unsupported browser: the primary CTA itself is "Try without device".
+  const visible = !(_ffConnected || _serialPort || _welcomeUnsupported);
+  if (skip) { skip.classList.toggle('welcome-skip-off', !visible); skip.inert = !visible; }
   document.getElementById('welcome-text-block')?.classList.toggle('welcome-has-skip',visible);
 }
 // Owner greeting (spec 2026-09-30-owner-name-design) – at most once per page load.
@@ -5950,7 +5961,7 @@ function showOwnerGreeting(name, handoff = false){
 }
 function showStartBtn() {
   const btn = document.getElementById('send-btn');
-  if (btn) { btn.classList.add('show'); btn.disabled = false; btn.textContent = 'Connect & load'; }
+  if (btn) { btn.classList.add('show'); btn.disabled = false; btn.textContent = _welcomeUnsupported ? 'Try without device' : 'Connect & load'; }
   const msg = document.getElementById('welcome-start-msg');
   if (msg) { msg.textContent = ''; msg.removeAttribute('title'); }
   updateWelcomeSkip();
@@ -7131,11 +7142,15 @@ function updateWelcomeOverflowState() {
 // readable notice INSIDE the welcome overlay (the actual first impression),
 // not the footer's "Chrome & Edge" text, which sits behind #welcome-screen
 // (z-index 200, fixed, full-viewport) and is never visible on load.
+// No Web Serial/MIDI (phones, Safari, Firefox) means Connect can never work, so the
+// welcome offers a single "Try without device" CTA instead (Frank 2026-10-01).
+let _welcomeUnsupported = false;
 function checkBrowserSupport() {
+  const unsupported = !('serial' in navigator) || typeof navigator.requestMIDIAccess !== 'function';
+  _welcomeUnsupported = unsupported;
   const notice = document.getElementById('welcome-browser-notice');
   if (!notice) return;
-  const unsupported = !('serial' in navigator) || typeof navigator.requestMIDIAccess !== 'function';
-  notice.textContent = unsupported ? 'Connecting needs Chrome or Edge on a computer – you can still explore without a device.' : '';
+  notice.textContent = unsupported ? 'Connecting a Feel Fader needs Chrome or Edge on a computer.' : '';
   notice.classList.toggle('show', unsupported);
 }
 function showWelcome() {
