@@ -1224,6 +1224,15 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   }
 }
 .welcome-skip.welcome-skip-floating{display:block!important}
+/* Phone onboarding scrolls its copy under the pinned link – fade the copy out
+   behind it instead of letting the two lines overlap (Frank 2026-10-01). */
+@media(max-width:600px){
+  .welcome-skip.welcome-skip-floating{
+    left:0;right:0;bottom:0;width:auto;transform:none;
+    padding:36px 16px calc(18px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(to bottom,transparent,var(--bg) 30%);
+  }
+}
 .onb-beat-title{font-size:var(--fs-3xl);font-weight:700;color:var(--t1);letter-spacing:-.02em;line-height:1.2;transition:opacity var(--dur-base) ease;}
 .onb-beat-sub{font-size:var(--fs-base);color:var(--t2);line-height:1.5;margin:7px auto 0;max-width:420px;min-height:40px;text-align:justify;text-align-last:left;hyphens:auto;-webkit-hyphens:auto;transition:opacity var(--dur-base) ease;}
 /* Capability line = quiet, non-interactive text (Frank 2026-09-29: the old
@@ -1513,6 +1522,16 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .s
 body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice.show) .stage{
   padding-top:84px;
 }
+/* Phone: the notice is a quiet line just above "Continue without device" – no
+   card – so the top stays free and the stage keeps its normal spot (Frank 2026-10-01). */
+@media(max-width:600px){
+  #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice{
+    top:auto;bottom:calc(46px + env(safe-area-inset-bottom,0px));
+    padding:0;background:none;border:none;border-radius:0;
+    font-size:var(--fs-sm);font-weight:400;line-height:1.45;
+  }
+  body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice.show) .stage{padding-top:0}
+}
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   --onb-controller-top:72px;
   --onb-controller-height:497.3125px;
@@ -1670,6 +1689,14 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
    dissolving welcome and the gliding controller. */
 .owner-greeting.is-handoff{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
   animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-in) var(--ease-link) 2s forwards}
+/* Below the two-column layout the controller never glides out of the center, so
+   the hand-off greeting would stay hidden behind it – greet in the free band
+   above the controller instead, over it in the stack (Frank 2026-10-01: "na
+   mobilu se nezobrazí welcome"). */
+@media(max-width:899px){
+  .owner-greeting.is-handoff{z-index:240;justify-content:flex-start;padding-top:calc(28px + env(safe-area-inset-top,0px))}
+  .owner-greeting.is-handoff::before{display:none}
+}
 .owner-greeting::before{content:'';position:absolute;left:50%;top:50%;width:min(760px,94vw);height:340px;transform:translate(-50%,-50%);
   background:radial-gradient(closest-side,var(--bg),transparent);opacity:.9;z-index:-1}
 .owner-greeting-pre{font:400 var(--fs-xl)/1.2 'Mulish',sans-serif;color:var(--t2);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) both}
