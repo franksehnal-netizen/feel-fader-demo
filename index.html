@@ -1111,9 +1111,12 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   color:var(--t1);isolation:isolate;pointer-events:none;
   transition:opacity var(--dur-base) ease;
 }
+/* One wordmark on both welcome variants – the onboarding caps, echoing the
+   header's .h-title (Frank 2026-10-01: the returning welcome's big "Feel Fader"
+   didn't match). */
 .welcome-wordmark-text{
-  font:700 var(--fs-3xl)/1 'Mulish',sans-serif;letter-spacing:-.035em;white-space:nowrap;
-  color:var(--t1);
+  font:700 var(--fs-sm)/1 'Mulish',sans-serif;white-space:nowrap;
+  color:var(--t2);letter-spacing:.12em;text-transform:uppercase;
 }
 #welcome-text-block.welcome-onboarding .welcome-wordmark{
   display:grid;
@@ -1128,9 +1131,6 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
      "posunout controller i Feel Fader víc nahoru"). */
   position:fixed;top:var(--onb-wordmark-bottom,50%);left:50%;
   width:auto;height:18px;margin:0;overflow:visible;transform:translate(-50%,-100%);
-}
-#welcome-text-block.welcome-onboarding .welcome-wordmark-text{
-  color:var(--t2);font-size:var(--fs-sm);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
 }
 /* The browser-unsupported notice used to be positioned by plain document flow
    (margin-top, centered by .welcome-inner's flexbox) — independent of the
@@ -1184,7 +1184,9 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .welcome-start:active{transform:scale(.97);}
 .welcome-start:disabled{opacity:.6;cursor:default;}
 .welcome-start-msg{width:100%;height:14px;min-height:14px;margin:6px 0 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:var(--fs-sm);line-height:14px;color:var(--danger);}
-.welcome-browser-notice{display:none;width:100%;box-sizing:border-box;margin:10px 0 0;padding:9px 14px;border-radius:var(--r);font-size:var(--fs-md);line-height:1.4;color:var(--danger);background:var(--danger-bg);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);}
+/* Same flat card as an error toast (.toast.e) – Frank 2026-10-01: the tinted red
+   box on mobile read as a different design language from everything else. */
+.welcome-browser-notice{display:none;width:100%;box-sizing:border-box;margin:10px 0 0;padding:9px 14px;border-radius:var(--r);font:500 var(--fs-md)/1.4 'Mulish',sans-serif;color:color-mix(in srgb,var(--danger) 72%,var(--t1));background:var(--bg-card);border:1px solid var(--border);}
 .welcome-browser-notice.show{display:block;}
 .welcome-skip{
   position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:3;
@@ -1676,6 +1678,9 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   to  {opacity:1}
 }
 #welcome-screen.connecting{pointer-events:none}
+/* "Continue without device" fades with the welcome text; the floating one lives
+   on <body>, and after the swap it sits back inside the hidden-pending welcome. */
+body.welcome-connecting .welcome-skip,#welcome-screen.connecting .welcome-skip{opacity:0;pointer-events:none;transition:opacity calc(var(--dur-link-in) / 3) var(--ease-link)}
 /* Connect & load → app chrome reveal (revealAppChrome(), Frank 2026-10-01).
    --app-reveal-delay: mid-glide, or the greeting's fade-out when there is one. */
 body.app-reveal-pending header,body.app-reveal-pending #settings-col,body.app-reveal-pending .site-footer{opacity:0}
@@ -2426,7 +2431,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <div class="welcome-action-slot" id="welcome-action-slot"></div>
       <div class="welcome-start-msg" id="welcome-start-msg" role="status" aria-live="polite"></div>
       <div class="welcome-browser-notice" id="welcome-browser-notice" role="alert" aria-live="assertive"></div>
-      <button class="welcome-skip" onclick="skipWelcome()">
+      <button class="welcome-skip" onclick="skipWelcome({intro:true})">
         <span data-i18n="welcome.skip">Continue without device</span>
       </button>
     </div>
@@ -3314,7 +3319,7 @@ function renderPanels(errs = validate()) {
   // (the innerHTML assignment wiped any class set before this render) and
   // pick up any section that's open by default (no hover involved) — see
   // syncFaderLink() comment.
-  ['fader1','fader2','roller','macro'].forEach(syncFaderLink);
+  syncAllFaderLinks();
   syncSectionLive();   // the rebuilt heads start with empty live slots
   updateStickySectionHeads();
 }
@@ -5873,13 +5878,17 @@ function takeOwnerGreeting(){
 // Centered, non-blocking overlay that removes itself once .owner-greeting's
 // fade-out ends – not its fade-in (timer is only a fallback for tabs that skip animations).
 // handoff: part of the Connect & load choreography (no scrim, see .is-handoff).
+// No name ("Continue without device", Frank 2026-10-01): just a big "Welcome".
 function showOwnerGreeting(name, handoff = false){
   document.getElementById('owner-greeting')?.remove();
   const el = document.createElement('div');
   el.id = 'owner-greeting'; el.className = handoff ? 'owner-greeting is-handoff' : 'owner-greeting'; el.setAttribute('role', 'status');
-  const pre = document.createElement('span'); pre.className = 'owner-greeting-pre'; pre.textContent = 'Welcome back,';
-  const nm = document.createElement('span'); nm.className = 'owner-greeting-name'; nm.textContent = name;
-  el.append(pre, nm);
+  const nm = document.createElement('span'); nm.className = 'owner-greeting-name'; nm.textContent = name || 'Welcome';
+  if (name) {
+    const pre = document.createElement('span'); pre.className = 'owner-greeting-pre'; pre.textContent = 'Welcome back,';
+    el.append(pre);
+  }
+  el.append(nm);
   el.addEventListener('animationend', e => { if (e.target === el && /-out$/.test(e.animationName)) el.remove(); });
   setTimeout(() => el.remove(), 4700);
   document.body.appendChild(el);
@@ -6186,10 +6195,19 @@ function hoverFaderLink(key, on){
   else if (_hoveredFaderKey === key) _hoveredFaderKey = null;
   syncFaderLink(key);
 }
+// No highlight until the app is on screen (Frank 2026-10-01: a cursor resting
+// where the still-hidden sections land lit the faders right on Connect). Hover
+// is still tracked; syncAllFaderLinks() applies it once the intro is over.
+function appIntroActive(){
+  const ws = document.getElementById('welcome-screen');
+  const body = document.body;
+  return (ws && !ws.classList.contains('hidden')) || body.classList.contains('app-reveal-pending') || body.classList.contains('app-reveal');
+}
 function syncFaderLink(key){
-  const on = _hoveredFaderKey === key || (isSectionOpen(key) && key === _lastActiveFaderKey);
+  const on = !appIntroActive() && (_hoveredFaderKey === key || (isSectionOpen(key) && key === _lastActiveFaderKey));
   document.querySelectorAll(`[data-fader="${key}"]`).forEach(el => el.classList.toggle('fader-linked', on));
 }
+function syncAllFaderLinks(){ ['fader1','fader2','roller','macro'].forEach(syncFaderLink); }
 
 // ── Connection state — single source of truth (Vlna 3) ──
 function liveAllowed(){ return _midiState === 'granted' && _ffConnected; }
@@ -6745,7 +6763,7 @@ function finalizeWelcomeExit() {
     // window as the class removal above — done after restoring transition,
     // it read as a genuine "1 -> 0" change with the restored `opacity .28s
     // ease` active, i.e. an unwanted second fade-out (reproduced 2026-07-21).
-    // This function is shared by skipWelcome() (wants the button instantly
+    // This function is shared by finishWelcomeInstant() (wants the button instantly
     // visible, no animation at all) and connectTransitionWelcome() (wants it
     // to fade in later, once the app is already open — Frank, 2026-07-21:
     // "at se tam to send to device objevi az plynule po otevreni te appky").
@@ -7037,7 +7055,7 @@ function checkBrowserSupport() {
   const notice = document.getElementById('welcome-browser-notice');
   if (!notice) return;
   const unsupported = !('serial' in navigator) || typeof navigator.requestMIDIAccess !== 'function';
-  notice.textContent = unsupported ? 'Feel Fader needs Chrome or Edge – Web Serial & Web MIDI required.' : '';
+  notice.textContent = unsupported ? 'Connecting needs Chrome or Edge on a computer – you can still explore without a device.' : '';
   notice.classList.toggle('show', unsupported);
 }
 function showWelcome() {
@@ -7100,7 +7118,8 @@ const CONNECT_LINK_IN_MS = 1300, CONNECT_LINK_OUT_MS = 1800;
 const CONNECT_SWAP_MS = CONNECT_LINK_IN_MS / 3;   // = calc(var(--dur-link-in) / 3) in CSS
 const OWNER_GREETING_OUT_MS = 2000;   // .owner-greeting.is-handoff's owner-greeting-out delay
 const OWNER_GREETING_GONE_MS = OWNER_GREETING_OUT_MS + CONNECT_LINK_IN_MS;
-// greeting: owner name to greet as part of the hand-off ('' = none).
+// greeting: owner name to greet as part of the hand-off ('' = none, true = a
+// nameless "Welcome" – the "Continue without device" path).
 function connectTransitionWelcome(greeting = '') {
   const ws = document.getElementById('welcome-screen');
   if (!ws || ws.classList.contains('hidden') || ws.classList.contains('connecting')) return;
@@ -7175,7 +7194,7 @@ function connectTransitionWelcome(greeting = '') {
 
   // 5. The greeting rises with the faders (Frank 2026-10-01) – first through the
   // dissolving welcome, then from behind the controller as it glides away.
-  if (greeting) showOwnerGreeting(greeting, true);
+  if (greeting) showOwnerGreeting(greeting === true ? '' : greeting, true);
 
   // 6. Backdrop + floating Send button fade via the body.welcome-connecting CSS hook.
   ws.classList.add('connecting');
@@ -7199,7 +7218,7 @@ function connectTransitionWelcome(greeting = '') {
     finalizeWelcomeExit();
     runValidation();
     onbAfterWelcome();
-    glideStageIntoColumn(() => ws.classList.add('hidden'));
+    glideStageIntoColumn(() => { ws.classList.add('hidden'); syncAllFaderLinks(); });
     // 7. With a greeting the app chrome only fades in once the greeting is
     // gone (no cross-fade over it); without one, from mid-glide, once the
     // controller has mostly cleared the column. Delays below count from this swap.
@@ -7248,6 +7267,7 @@ function revealAppChrome(delayMs = 0) {
     cleared = true;
     body.classList.remove('app-reveal');
     body.style.removeProperty('--app-reveal-delay');
+    syncAllFaderLinks();   // a hover held through the intro lights up only now
   };
   sections?.addEventListener('animationend', e => { if (e.target === sections) clear(); });
   setTimeout(clear, delayMs + CONNECT_LINK_IN_MS + 300);   // fallback when animations are skipped
@@ -7268,10 +7288,11 @@ function loadDefaultDemoConfig() {
   render();
 }
 
-// Shared by skipWelcome() and onDeviceConnected()'s silent auto-reconnect —
-// both want the welcome screen gone with no ceremony, as opposed to
-// connectTransitionWelcome()'s ~1100ms celebration, which is reserved for a
-// deliberate "Connect & load" click (doStart()). Caller must load/sync
+// Shared by a scripted skipWelcome() and onDeviceConnected()'s silent
+// auto-reconnect — both want the welcome screen gone with no ceremony, as
+// opposed to connectTransitionWelcome()'s celebration, which is reserved for a
+// deliberate "Connect & load" (doStart()) or "Continue without device" click
+// (skipWelcome({intro:true})). Caller must load/sync
 // config and call render()/renderConnState() BEFORE this — it just tears
 // down the welcome chrome and reconciles the button/HUD to whatever state is
 // already set.
@@ -7289,6 +7310,7 @@ function finishWelcomeInstant() {
   // the config state that was already loaded.
   runValidation();
   if (ws) ws.classList.add('hidden');
+  syncAllFaderLinks();
   onbAfterWelcome();
   requestAnimationFrame(() => {
     resetAppScrollTop();
@@ -7307,7 +7329,10 @@ function finishWelcomeInstant() {
     positionThumbs();
   });
 }
-function skipWelcome() {
+// intro: the "Continue without device" button plays the Connect & load intro;
+// a bare call (probes, scripted entry) still cuts straight into the app.
+function skipWelcome({ intro = false } = {}) {
+  if (document.getElementById('welcome-screen')?.classList.contains('connecting')) return;   // intro already running
   // Reset to predictable demo defaults only on a genuinely fresh browser
   // (no saved config yet, _savedCfg null). A returning user's saved config
   // must never be silently replaced just because no hardware happens to be
@@ -7317,7 +7342,10 @@ function skipWelcome() {
   // no undo, no warning. `cfg` is already the correct value here (set from
   // _savedCfg at module load) — just establish the synced baseline against it.
   if (_savedCfg) { markConfigSynced(); render(); } else { loadDefaultDemoConfig(); }
-  finishWelcomeInstant();
+  // Same intro as Connect & load, greeted with a nameless "Welcome" (Frank 2026-10-01:
+  // the instant cut had no animation at all).
+  if (intro) connectTransitionWelcome(true);
+  else finishWelcomeInstant();
 }
 
 // ── Onboarding (guided first-run) ──────────────────────────────
