@@ -1,0 +1,54 @@
+/* Feel Fader legal pages (Privacy, Terms) – standalone, opened in a new tab
+   from the app footer. Same tokens as feel-fader.html; no third-party loads. */
+@font-face{font-family:'Mulish';font-style:normal;font-weight:300 700;font-display:swap;src:url(mulish.woff2) format('woff2')}
+:root{
+  --bg:#f5f5f7;--bg-card:#ffffff;--border:rgba(0,0,0,.08);
+  --t1:#1d1d1f;--t2:#505057;--t3:#6f6f76;--red:#e45745;
+  --ft-bg:#2a2a2c;--ft-t3:rgba(255,255,255,.5);
+  --r-sm:6px;--r:12px;
+}
+html.dark{--bg:#0f0f11;--bg-card:#1c1c1e;--border:rgba(255,255,255,.08);--t1:#f5f5f7;--t2:#aeaeb2;--t3:#8e8e93}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--t2);font:400 15px/1.7 'Mulish',sans-serif}
+
+.legal-top{border-bottom:1px solid var(--border)}
+.legal-top-inner{max-width:760px;margin:0 auto;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.legal-brand{font-weight:700;font-size:15px;letter-spacing:.18em;color:var(--t1);text-decoration:none}
+.legal-nav{display:flex;gap:20px;font-size:14px}
+.legal-nav a{color:var(--t2);text-decoration:none}
+.legal-nav a:hover{color:var(--t1)}
+.legal-nav a[aria-current="page"]{color:var(--t1);font-weight:700}
+
+main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:48px 20px 96px}
+h1{margin:0 0 8px;font-size:32px;line-height:1.25;font-weight:700;color:var(--t1)}
+h2{margin:40px 0 10px;font-size:19px;line-height:1.35;font-weight:700;color:var(--t1)}
+p{margin:0 0 12px}
+ul{margin:0 0 12px;padding-left:22px}
+li{margin-bottom:4px}
+a{color:var(--red)}
+.legal-meta{margin-bottom:28px;font-size:14px;color:var(--t3)}
+.legal-draft{margin:0 0 20px;padding:10px 14px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--t1);font-size:14px}
+.legal-tbd{background:color-mix(in srgb,#f5c000 32%,transparent);color:inherit;padding:0 3px;border-radius:var(--r-sm)}
+
+/* Documentation: contents list and spec tables */
+.doc-toc{margin:0 0 8px;padding:16px 20px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-card)}
+.doc-toc ol{margin:0;padding-left:20px;columns:2;column-gap:32px;font-size:14px}
+.doc-toc a{color:var(--t2);text-decoration:none}
+.doc-toc a:hover{color:var(--t1)}
+h2[id]{scroll-margin-top:24px}
+.doc-table{width:100%;margin:0 0 12px;border-collapse:collapse;font-size:14px}
+.doc-table th,.doc-table td{padding:9px 12px 9px 0;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.doc-table th{width:34%;font-weight:600;color:var(--t1)}
+@media(max-width:600px){.doc-toc ol{columns:1}.doc-table th{width:40%}}
+
+.legal-foot{background:var(--ft-bg);color:var(--ft-t3);font-size:12px;line-height:1.6}
+.legal-foot-inner{max-width:760px;margin:0 auto;padding:24px 20px}
+.legal-foot p{margin:0}
+
+a:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:var(--r-sm)}
+@media(max-width:600px){
+  main{padding:32px 16px 72px}
+  h1{font-size:26px}
+  .legal-top-inner,.legal-foot-inner{padding-left:16px;padding-right:16px}
+}

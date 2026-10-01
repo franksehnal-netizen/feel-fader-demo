@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentation – Feel Fader</title>
+  <meta name="description" content="Technical documentation for the Feel Fader MIDI controller and its web configurator.">
+  <link rel="stylesheet" href="pages.css">
+  <!-- Same theme as the app: dark only when the app's own toggle is on. -->
+  <script>try{if(localStorage.getItem('ff-dark')==='1')document.documentElement.classList.add('dark')}catch(_){}</script>
+</head>
+<body>
+  <header class="legal-top">
+    <div class="legal-top-inner">
+      <span class="legal-brand">FEEL FADER</span>
+      <nav class="legal-nav" aria-label="Pages">
+        <a href="documentation.html" aria-current="page">Documentation</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms &amp; Conditions</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <h1>Documentation</h1>
+    <p class="legal-draft">Draft – technical information under review.</p>
+    <p class="legal-meta">Feel Fader hardware and the Feel Fader web configurator.</p>
+
+    <nav class="doc-toc" aria-label="Contents">
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#specs">Technical specifications</a></li>
+        <li><a href="#requirements">Configurator requirements</a></li>
+        <li><a href="#getting-started">Getting started</a></li>
+        <li><a href="#faders">Faders</a></li>
+        <li><a href="#roller">Roller</a></li>
+        <li><a href="#button">Button</a></li>
+        <li><a href="#banks">Banks</a></li>
+        <li><a href="#hid">Keyboard (HID)</a></li>
+        <li><a href="#device">Device settings</a></li>
+        <li><a href="#firmware">Firmware updates</a></li>
+        <li><a href="#backup">Backup, import and reset</a></li>
+        <li><a href="#diagnostics">MIDI diagnostics</a></li>
+        <li><a href="#shortcuts">Keyboard shortcuts</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="overview">Overview</h2>
+    <p>Feel Fader is a compact USB MIDI controller with two faders, a detented roller and a button, designed for expressive control of orchestral and other virtual instruments – typically Expression (CC 11) and Dynamics (CC 1) on the faders and articulation switching on the roller.</p>
+    <p>It works as a class-compliant MIDI device without drivers. The web configurator lets you change what every control sends; the configuration is stored on the controller itself, so it works the same on any computer.</p>
+
+    <h2 id="specs">Technical specifications</h2>
+    <table class="doc-table">
+      <tbody>
+        <tr><th scope="row">Controls</th><td>2 linear faders, 1 detented roller (24 steps per revolution), 1 push button</td></tr>
+        <tr><th scope="row">Connection</th><td>USB-C</td></tr>
+        <tr><th scope="row">USB interfaces</th><td>Class-compliant USB MIDI 1.0 (no driver needed); optional USB keyboard (HID); serial interface used by the configurator</td></tr>
+        <tr><th scope="row">MIDI output</th><td>Control Change (CC), Note (keyswitches), relative CC; channel 1–16 per control</td></tr>
+        <tr><th scope="row">Banks</th><td>Up to 8, stored on the device</td></tr>
+        <tr><th scope="row">Power</th><td>USB bus powered, 5 V, under 100 mA</td></tr>
+        <tr><th scope="row">MIDI compatibility</th><td>macOS, Windows, Linux, iOS, Android <mark class="legal-tbd">[confirm iOS/Android]</mark></td></tr>
+        <tr><th scope="row">Fader travel</th><td>100 mm</td></tr>
+        <tr><th scope="row">Dimensions / weight</th><td><mark class="legal-tbd">[mm / g]</mark></td></tr>
+        <tr><th scope="row">Enclosure</th><td><mark class="legal-tbd">[material, finish]</mark></td></tr>
+        <tr><th scope="row">In the box</th><td><mark class="legal-tbd">[Feel Fader, USB-C cable, Quick Start Guide – confirm]</mark></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="requirements">Configurator requirements</h2>
+    <ul>
+      <li>Google Chrome or Microsoft Edge on a desktop computer (Windows, macOS or Linux). The configurator uses Web Serial and Web MIDI, which other browsers do not support.</li>
+      <li>Feel Fader connected by a USB cable that carries data (not a charge-only cable).</li>
+      <li>Nothing to install – the configurator runs in the browser. You do not need the configurator to play; the controller keeps its configuration.</li>
+    </ul>
+
+    <h2 id="getting-started">Getting started</h2>
+    <ol>
+      <li>Connect Feel Fader to your computer via USB.</li>
+      <li>Open the configurator and click <b>Connect &amp; load</b>. Allow access to the device when the browser asks. The configurator reads the current configuration from the controller.</li>
+      <li>Change what you need – faders, roller, button, banks.</li>
+      <li>Click <b>Send to device</b> to save the changes to the controller.</li>
+    </ol>
+
+    <h2 id="faders">Faders</h2>
+    <p>Each fader sends a MIDI CC on a channel you choose (by default Expression CC 11 and Dynamics CC 1). The faders on screen mirror the hardware – they are display only and cannot be dragged.</p>
+    <p><b>Fader response</b> (under Device) sets how the controller filters both faders:</p>
+    <ul>
+      <li><b>Immediate</b> – direct response for precise performance,</li>
+      <li><b>Balanced</b> – natural control with subtle filtering (default),</li>
+      <li><b>Smooth</b> – gentle glide for long expressive moves.</li>
+    </ul>
+
+    <h2 id="roller">Roller</h2>
+    <p>The roller has four modes, set per bank:</p>
+    <ul>
+      <li><b>Articulation</b> – steps through articulations (UACC). For Spitfire libraries, set the plugin's articulation lock to "Locked to UACC".</li>
+      <li><b>Keyswitch</b> – sends MIDI note keyswitches on the configured channel. Click a piano key or drag across a range; the roller steps through the selected notes. Reorder long sequences by dragging rows or with Alt + arrow keys.</li>
+      <li><b>Navigation</b> – sends a keyboard key per step (e.g. arrow keys) to navigate your DAW. Requires Keyboard (HID).</li>
+      <li><b>Relative CC</b> – sends a relative step (value 1 = up, 127 = down) on the configured CC and channel, for external MIDI processing such as a per-track keyswitch mapper.</li>
+    </ul>
+
+    <h2 id="button">Button</h2>
+    <ul>
+      <li><b>Short press</b> – switches to the next bank.</li>
+      <li><b>Long press</b> (0.5 s or longer) – sends a key combination you define, e.g. play/stop or a DAW shortcut. Requires Keyboard (HID).</li>
+    </ul>
+
+    <h2 id="banks">Banks</h2>
+    <p>A bank is a complete setup of all controls. You can define up to 8 banks and switch between them with the button. Bank names and icons are saved in the browser and, with firmware 1.1.0 or later, also on the controller, so they follow it between computers.</p>
+    <p>In the configurator, the highlighted tab is the bank you are editing; a small green dot marks the bank currently active on the hardware. Library setups show a preview before changing the bank. Built-in setups are starting points – check them against the exact library patch and version.</p>
+
+    <h2 id="hid">Keyboard (HID)</h2>
+    <p>When Keyboard (HID) is enabled under Device, Feel Fader can also send keystrokes like a computer keyboard. It is required for the Navigation roller mode and the button long-press macro. When it is off, the controller sends MIDI only.</p>
+
+    <h2 id="device">Device settings</h2>
+    <ul>
+      <li><b>Firmware</b> and <b>Serial</b> – the firmware version and serial number of the connected controller.</li>
+      <li><b>Your name</b> – optional, up to 24 characters, saved on the controller; the configurator greets you by name when it connects.</li>
+      <li><b>Keyboard (HID)</b> – see above.</li>
+      <li><b>Fader response</b> – see Faders.</li>
+    </ul>
+
+    <h2 id="firmware">Firmware updates</h2>
+    <p>When a new firmware is available, a dot appears next to Device and an <b>Update</b> button appears in the device settings. The update is installed from the configurator; keep the controller connected until it finishes. In-app updates are available from firmware 1.3.0. <mark class="legal-tbd">[Older firmware – how to update? Contact support?]</mark></p>
+
+    <h2 id="backup">Backup, import and reset</h2>
+    <p>Under Device › Backup &amp; reset you can <b>Export</b> the full controller configuration to a .json file, <b>Import</b> it back (e.g. on another controller) or <b>Reset</b> it to factory defaults. Saved library setups can be exported and imported separately.</p>
+
+    <h2 id="diagnostics">MIDI diagnostics</h2>
+    <p>Under Device › MIDI diagnostics you can inspect the active bank mapping, the last received MIDI event, firmware, keyboard (HID) state and configuration checksum, or copy a support snapshot to the clipboard to send to us.</p>
+
+    <h2 id="shortcuts">Keyboard shortcuts</h2>
+    <table class="doc-table">
+      <tbody>
+        <tr><th scope="row">Ctrl / ⌘ + S</th><td>Send to device</td></tr>
+        <tr><th scope="row">Ctrl / ⌘ + Z</th><td>Undo the last change</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    <ul>
+      <li><b>"Web Serial not supported"</b> – open the configurator in Chrome or Edge on a desktop computer.</li>
+      <li><b>The controller is not found</b> – try another USB cable (it must carry data) or another USB port, and close other browser tabs with the configurator open.</li>
+      <li><b>Changes have no effect</b> – click <b>Send to device</b>; edits are only saved to the controller when sent.</li>
+      <li><b>Still stuck?</b> – copy a support snapshot (MIDI diagnostics) and write to <a href="mailto:support@acoustic-empire.cz">support@acoustic-empire.cz</a>.</li>
+    </ul>
+  </main>
+  <footer class="legal-foot">
+    <div class="legal-foot-inner">
+      <p>© 2026 Acoustic Empire s.r.o. · Martinice 109, 769 01 Martinice, Czech Republic · ID No. 17532264 · Registered with the Regional Court in Brno, Section C, File 130448 · <a href="mailto:support@acoustic-empire.cz">support@acoustic-empire.cz</a></p>
+    </div>
+  </footer>
+</body>
+</html>
