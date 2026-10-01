@@ -686,7 +686,6 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   .h-status{width:7px;min-width:7px;flex:0 0 7px}
   .h-status-text{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
   header{padding:5px 16px;}
-  .bank-block-tab .bank-tab-name{max-width:72px;}
   .btn.btn-ghost{padding:6px 12px;font-size:var(--fs-md);color:var(--t2);}
 }
 .enc-unified-body{
@@ -972,7 +971,7 @@ html.dark .info-val{color:var(--t1)}
      stay at 44px). Unlike .dark-toggle, .bank-block-tab has no competing
      unconditional height rule, so this can stay right here — no source-
      order dance needed. */
-  .bank-block-tab{min-height:22px}
+  .bank-block-tab{min-height:30px}   /* = the desktop pill (Frank 2026-10-01: phone banks look like PC) */
   .bank-block-tab-add,.send-btn,.btn,.ui-select-trigger{min-height:44px}
   .tx{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   /* Keep toast chrome compact while the close button retains a 44px hit area. */
@@ -1712,7 +1711,11 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
    would show it overlapping the controller mid-fade – fade/blur in place instead. */
 @media(max-width:899px) and (prefers-reduced-motion:no-preference){
   .owner-greeting.is-handoff .owner-greeting-pre,.owner-greeting.is-handoff .owner-greeting-name{animation-name:owner-greeting-in-flat}
+  /* No scale on the way out either (it drifted the text a few px), and a viewport-wide box
+     that doesn't re-centre when the app's scrollbar appears at the layout swap. */
+  .owner-greeting.is-handoff{animation-name:owner-greeting-fade,owner-greeting-flat-out;right:auto;width:100vw}
 }
+@keyframes owner-greeting-flat-out{to{opacity:0;filter:blur(8px)}}
 @keyframes owner-greeting-in-flat{from{opacity:0;filter:blur(10px)}to{opacity:1;filter:none}}
 .owner-greeting::before{content:'';position:absolute;left:50%;top:50%;width:min(760px,94vw);height:340px;transform:translate(-50%,-50%);
   background:radial-gradient(closest-side,var(--bg),transparent);opacity:.9;z-index:-1}
@@ -2031,20 +2034,10 @@ button:focus-visible{outline-offset:3px;}
 }
 .bank-tab-device-dot{display:none;width:5px;height:5px;border-radius:50%;background:var(--green);flex:0 0 auto;margin-left:var(--space-1)}
 .bank-block-tab.is-on-device .bank-tab-device-dot{display:inline-block}
-@media(max-width:600px){
-  .bank-block-tab{padding:2px 8px}
-  .bank-block-tab .bank-tab-name{max-width:0;opacity:0;margin-left:0}
-  .bank-block-tab.active .bank-tab-name{max-width:68px;opacity:1;margin-left:4px}
-  .bank-block-tab-add{padding:4px 7px}
-}
 /* A default "Bank N" name already carries its number, so the number slot hides
-   (UX audit 2026-09-25, K-7). Mobile collapses inactive names, so there the
-   inactive tabs keep the number. */
+   (UX audit 2026-09-25, K-7). Phone tabs are the same pills as on desktop. */
 .bank-block-tab.is-default-name .bank-tab-fallback{display:none}
 .bank-block-tab.is-default-name .bank-tab-name{margin-left:0}
-@media(max-width:600px){
-  .bank-block-tab.is-default-name:not(.active) .bank-tab-fallback{display:inline}
-}
 .bank-block-tab-add{
   flex:0 0 auto;
   padding:4px 9px;
