@@ -1708,6 +1708,12 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   .owner-greeting.is-handoff{z-index:240;justify-content:flex-start;padding-top:calc(28px + env(safe-area-inset-top,0px))}
   .owner-greeting.is-handoff::before{display:none}
 }
+/* Phone: the greeting is placed flush on the controller's top edge, so its rise (translateY)
+   would show it overlapping the controller mid-fade – fade/blur in place instead. */
+@media(max-width:899px) and (prefers-reduced-motion:no-preference){
+  .owner-greeting.is-handoff .owner-greeting-pre,.owner-greeting.is-handoff .owner-greeting-name{animation-name:owner-greeting-in-flat}
+}
+@keyframes owner-greeting-in-flat{from{opacity:0;filter:blur(10px)}to{opacity:1;filter:none}}
 .owner-greeting::before{content:'';position:absolute;left:50%;top:50%;width:min(760px,94vw);height:340px;transform:translate(-50%,-50%);
   background:radial-gradient(closest-side,var(--bg),transparent);opacity:.9;z-index:-1}
 .owner-greeting-pre{font:400 var(--fs-xl)/1.2 'Mulish',sans-serif;color:var(--t2);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) both}
