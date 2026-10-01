@@ -73,6 +73,10 @@
   --dur-link-in:1.3s;
   --dur-link-out:1.8s;
   --ease-link:cubic-bezier(.22,.61,.36,1);   /* responds on the first frame, long soft tail */
+  /* Motion on the same clock (Frank 2026-10-01: Connect & load faders/controller "s náběhem
+     a dojezdem"): soft ramp-in, then the same long landing as --ease-link. Kept gentle
+     (no steep middle) so overlapping moves hand over without a lull ("zasekne se"). */
+  --ease-glide:cubic-bezier(.3,0,.25,1);
   --link-delay:0ms;
   /* Pointer hover on buttons/rows/sections rides the SAME rise/fade as the controller
      glow (Frank 2026-09-29: "stejně pomalu jako záře ... navaž na stejný parametr").
@@ -97,8 +101,7 @@
   --r:12px;
   --r-lg:18px;
   --r-pill:999px;
-  /* Type scale (UX audit 2026-09-25, K-3). Only these sizes; --fs-hud-sm exists
-     solely for the Ch·CC line of the 112 px mobile Live HUD. */
+  /* Type scale (UX audit 2026-09-25, K-3). Only these sizes. */
   --fs-xs:10px;
   --fs-sm:11px;
   --fs-md:12px;
@@ -108,7 +111,6 @@
   --fs-2xl:20px;
   --fs-3xl:22px;
   --fs-display:20px;  /* bank name in the card header only (spec 2026-09-26 §4; 32→20 Frank 2026-09-28) */
-  --fs-hud-sm:8px;
   /* Spacing scale (K-3): gaps between controls. Half-steps (2/6/10 px) stay raw
      where optical alignment needs them. */
   --space-1:4px;
@@ -129,14 +131,11 @@
      together, though, they should share one of these. */
   --ease-out:cubic-bezier(.16,1,.3,1);      /* house ease-out — panel/structural motion */
   --ease-hero:cubic-bezier(.22,1,.36,1);    /* success/glow moments */
-  --ease-settle:cubic-bezier(.22,.8,.2,1);  /* snap-into-place settle */
   --dur-press:.1s;    /* press-down scale feedback */
   --dur-fast:.16s;    /* small state/visibility toggles */
   --dur-base:.3s;     /* default cross-fade */
   --dur-glow:.46s;    /* hero glow/success */
-  --dur-settle:.72s;  /* settle/shimmer */
   --dur-stage:1.1s;   /* major panel choreography */
-  --dur-reveal:.6s;   /* post-connect Send button + live HUD reveal, must land together */
   --dur-modal:.18s;   /* modal overlay fade-in + panel slide-up, same moment, must land together */
   --dur-switch:.22s;  /* hid-switch track + thumb, same moment, must land together */
 }
@@ -208,120 +207,15 @@ header{
   -webkit-backdrop-filter:var(--chrome-glass-filter);
   box-shadow:var(--chrome-glass-shadow);
 }
-/* transition:opacity matches .live-hud's own base transition (line 168) —
-   both are governed by the same welcome-onboarding !important hide rule
-   below and must reveal together. .top-sticky had none, so the instant its
-   condition stopped matching (onboarding -> Connect & load finishing), the
-   header — including "FEEL FADER" — snapped straight to fully visible in a
-   single frame instead of fading in like the HUD beside it (Frank
+/* transition:opacity – governed by the welcome-onboarding !important hide rule
+   below. .top-sticky had none, so the instant its condition stopped matching
+   (onboarding -> Connect & load finishing), the header — including "FEEL
+   FADER" — snapped straight to fully visible in a single frame (Frank
    2026-08-16, "problikne FEEL FADER"). */
 .top-sticky{position:sticky;top:0;z-index:50;pointer-events:none;transition:opacity .28s ease;}
-/* .top-sticky (z-50) sits above the live HUD (z-45); make the wrapper itself
-   click-through and re-enable only the header, so no band below the header
-   can swallow pointer events on the HUD (Frank 2026-07-27). */
+/* Make the sticky wrapper click-through and re-enable only the header, so no
+   band below the header swallows pointer events (Frank 2026-07-27). */
 .top-sticky>header{pointer-events:auto}
-.live-hud{
-  position:fixed;top:64px;z-index:45;width:144px;height:144px;box-sizing:border-box;padding:10px;
-  --hud-scale:1;transform-origin:top left;
-  border:1px solid var(--border);border-radius:var(--r-lg);
-  background:var(--bg-card);
-  box-shadow:var(--shadow-hud);
-  opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-5px) scale(calc(.98 * var(--hud-scale)));
-  transition:opacity .28s ease,transform .36s var(--ease-out),left .36s var(--ease-out),top .36s var(--ease-out),width .38s var(--ease-out),height .38s var(--ease-out),padding .38s var(--ease-out),border-radius .38s var(--ease-out),visibility 0s linear .36s;
-}
-.live-hud[data-side="left"]{left:28px;right:auto}
-.live-hud[data-side="right"]{left:auto;right:28px}
-/* --hud-scale drives the whole HUD's size via transform (1 = normal, 2 =
-   enlarged): everything — box, border, fonts, meters — scales together and
-   stays crisp, no internal-CSS rework. transform-origin:top left so it grows
-   from its positioned top-left corner (the anchor the drag/clamp uses). The
-   .36s transform transition makes the 1x<->2x toggle glide; move-drag sets
-   transition:none and moves via left/top so scale is untouched. */
-.live-hud.is-contextual-visible{opacity:1;visibility:visible;pointer-events:auto;transform:scale(var(--hud-scale));transition-delay:0s}
-/* No idle dimming. Since the minimal hybrid pass (spec 2026-09-26 §3) the HUD is
-   a flat --bg-card card with a hairline and --shadow-hud – the header is the only
-   glass surface. Live vs not-live is conveyed by the content (values vs "–");
-   .is-idle stays as a state hook but no longer changes opacity. */
-.live-hud.is-dragging{cursor:grabbing!important;transform:scale(calc(1.015 * var(--hud-scale)))}
-.live-hud-size-btn{
-  position:absolute;right:3px;bottom:3px;width:19px;height:19px;padding:0;
-  display:grid;place-items:center;border:0;border-radius:var(--r-sm);background:transparent;
-  color:var(--t3);opacity:.45;cursor:pointer;transition:opacity var(--hover-out),background var(--hover-out),color var(--hover-out);
-}
-.live-hud-size-btn:hover,.live-hud-size-btn:focus-visible{opacity:1;background:rgba(127,127,135,.16);color:var(--t1);transition:opacity var(--hover-in),background var(--hover-in),color var(--hover-in)}
-.live-hud-size-btn svg{width:12px;height:12px;display:block}
-/* Enlarge/drag are mouse-gated, not width-gated: a half-screen desktop window keeps the button; touch-only devices hide it (Frank 2026-07-27). */
-@media not all and (any-pointer:fine){.live-hud-size-btn{display:none}}
-.live-hud-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr) 42px;gap:7px 5px;height:100%}
-/* The green dot in the header already says that a device is connected. The
-   HUD owns device context: its first row maps the active physical bank with
-   one neutral dot per bank. This stays distinct from the edited-bank card. */
-.live-hud-bank{display:none;height:12px;align-items:center;justify-content:center;gap:var(--space-1);overflow:hidden}
-.live-hud-bank-dot{width:3px;height:3px;flex:0 0 auto;border-radius:50%;background:var(--t2);opacity:.28}
-.live-hud-bank-dot.is-active{width:5px;height:5px;background:var(--t1);opacity:.78;box-shadow:none}
-.live-hud[data-state^="CONNECTED"] .live-hud-bank{display:flex}
-.live-hud[data-state^="CONNECTED"] .live-hud-inner{height:calc(100% - 18px);margin-top:4px}
-.live-hud-item{min-width:0;color:var(--t2)}
-.live-hud-item:not(.live-hud-roller){position:relative;overflow:hidden;border-radius:var(--r);padding:4px 2px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;align-items:center;justify-items:center;row-gap:2px}
-/* Fader level as a background wash instead of a separate meter bar — the
-   fill sits behind the label/value/tech so it reads as the cell's own
-   state, not a decoration next to it. The wash (::before) and the text
-   (direct children) both get z-index so painting order is explicit —
-   z-index:-1 on the wash alone rendered blank under this ancestor's
-   backdrop-filter (headless-Chrome-verified render bug, 2026-08-17); this
-   positive-z-index-on-both-layers form is more robust. Driven by
-   scaleY(--live-level-frac) rather than a percentage height: percentage
-   height on an absolutely positioned pseudo needs its containing block's
-   height to be "specified", which a grid-item's stretch-derived height
-   isn't reliably treated as — scaleY sidesteps that and is compositor-only
-   (cheaper than animating height). --live-level-frac is a unitless 0..1
-   fraction set on the item itself (Frank 2026-08-17, option D of 4). */
-.live-hud-item:not(.live-hud-roller)>*{position:relative;z-index:1}
-.live-hud-item:not(.live-hud-roller)::before{
-  content:'';position:absolute;z-index:0;inset:0;
-  transform:scaleY(var(--live-level-frac,0));transform-origin:bottom;
-  background:color-mix(in srgb,var(--t2) 14%,transparent);
-  transition:background-color .15s ease;
-}
-.live-hud-item:not(.live-hud-roller):has(.live-hud-tech.has-issue)::before{
-  background:color-mix(in srgb,var(--danger) 20%,transparent);
-}
-.live-hud-label{font:700 var(--fs-xs) 'Mulish',sans-serif;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
-.live-hud-label-long{display:none}
-.live-hud-label-short{display:inline}
-.live-hud-value{min-width:3ch;text-align:center;color:var(--t1);font:700 var(--fs-2xl)/1 'Mulish',sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:visible;text-overflow:clip}
-.live-hud-tech{color:var(--t2);font:600 var(--fs-xs) 'Mulish',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1;white-space:nowrap}
-.live-hud-tech.has-issue{color:var(--danger)}
-/* Anchored on the "·" separator instead of centering the whole string as one
-   block — CC9→CC10 used to shift "Ch1" sideways too, since justify-items:
-   center on the parent centers the combined text as a unit (Frank
-   2026-08-17: "to se posouvá, když změním např. z CC9 na CC10"). The two
-   flanking 1fr columns are always EQUAL width to each other (that's what fr
-   units do in a fixed-width grid, regardless of content length) — .live-
-   hud-tech-split{justify-self:stretch} gives the grid a stable width to
-   split evenly (the default justify-items:center on .live-hud-item would
-   otherwise shrink-wrap it to content, which breaks the equal-column trick).
-   Only applied to the two fader items — the roller item's tech line
-   (#live-roller-tech) is a different, already-left-aligned shape (3
-   different content formats depending on nav mode) and wasn't part of this
-   request. */
-/* minmax(0,1fr), not bare 1fr: a plain 1fr column still floors at its own
-   content's min-content width before distributing the fr share, so a wider
-   value ("CC100" vs "CC9") ate into the OTHER column's space too, leaving a
-   residual ~2px drift on the "Ch1" side (measured live). minmax(0,1fr)
-   drops that floor to 0, forcing a true, content-independent 50/50 split of
-   the remaining space on both sides of the dot. */
-.live-hud-tech-split{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);justify-self:stretch}
-.live-hud-tech-split .live-hud-tech-ch{justify-self:end}
-.live-hud-tech-split .live-hud-tech-val{justify-self:start}
-.live-hud-roller{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:2px;padding-top:5px;border-top:1px solid var(--border)}
-.live-hud-roller .live-hud-tech{grid-column:1/-1;justify-self:start}
-/* Font-size stays constant regardless of name length — it used to shrink via
-   .is-long/.is-very-long as the live articulation name changed, which read as
-   the text visibly resizing on every step (Frank, 2026-08-10 HW test: "to je
-   otravný"). Overflow is handled by truncation (ellipsis) instead. */
-.live-hud-roller .live-hud-value{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:left;font-size:var(--fs-lg);line-height:17px;letter-spacing:-.02em}
-@media(any-pointer:fine){.live-hud.is-contextual-visible{cursor:grab}}
 .h-left{display:flex;align-items:center;gap:var(--space-6);flex:1 1 auto;min-width:0}
 /* Wordmark in normal case (spec 2026-09-26 §2). 700 = heaviest embedded Mulish. */
 /* Tracked caps like the onboarding wordmark (Frank 2026-09-29: one wordmark style everywhere; supersedes the
@@ -342,15 +236,14 @@ main{width:100%;}
    Only once the welcome is closed: the sticky column is a stacking context
    and would trap the shared controller (z 205) under the welcome overlay. */
 @media(min-width:900px){
-  body:has(#welcome-screen.hidden) .center-col{--stage-col:420px;max-width:1180px;display:grid;grid-template-columns:var(--stage-col) minmax(0,680px);justify-content:center;column-gap:clamp(32px,4vw,64px);align-items:stretch}
+  body:has(#welcome-screen.hidden) .center-col{--stage-col:300px;max-width:1180px;display:grid;grid-template-columns:var(--stage-col) minmax(0,680px);justify-content:center;column-gap:clamp(32px,4vw,64px);align-items:stretch}
   body:has(#welcome-screen.hidden) .center-col>.stage-collapse{grid-column:1;grid-row:1;align-self:start;position:sticky;top:40px;min-width:0}
   /* Room for the one-line change note under Send, which .stage would clip. */
   body:has(#welcome-screen.hidden) .center-col>.stage-collapse>.stage{padding-bottom:120px}
-  /* The HUD slot (160px) is always reserved so the controller never shifts
-     when the live monitor appears, hides or is dragged away (Frank 2026-09-28).
-     .stage clips overflow (collapse animation), so keep 40px right of the
-     device for its 44px-blur shadow instead of cutting it off at the edge. */
-  body:has(#welcome-screen.hidden) .center-col>.stage-collapse>.stage{padding-left:160px;padding-right:40px}
+  /* .stage clips overflow (collapse animation), so keep 40px around the
+     device for its 44px-blur shadow instead of cutting it off at the edge.
+     (The 160px live-HUD slot left of it went with the HUD, Frank 2026-10-01.) */
+  body:has(#welcome-screen.hidden) .center-col>.stage-collapse>.stage{padding-left:40px;padding-right:40px}
   body:has(#welcome-screen.hidden) .center-col>.settings-col{grid-column:2;grid-row:1;padding-top:32px}
   /* Footer is page chrome, not part of the editor: span both columns so it
      doesn't sit under the settings only (Frank 2026-09-29). Row 1 takes the
@@ -361,9 +254,9 @@ main{width:100%;}
 }
 /* 900–1099 px (a 1920px monitor split with the DAW = 960): two columns with
    a smaller controller instead of the editor starting below the photo
-   (UX audit 2026-09-28, N-4, variant A). HUD slot and shadow room as above. */
+   (UX audit 2026-09-28, N-4, variant A). Shadow room as above. */
 @media(min-width:900px) and (max-width:1099px){
-  body:has(#welcome-screen.hidden) .center-col{--stage-col:366px;column-gap:28px}
+  body:has(#welcome-screen.hidden) .center-col{--stage-col:246px;column-gap:28px}
   body:has(#welcome-screen.hidden) .device-home{width:min(166px,clamp(120px,calc(44.24vh - 126px),220px))}
 }
 /* Single-column desktop: the change note under Send ends ~11px below .stage,
@@ -426,6 +319,10 @@ main{width:100%;}
 /* SEND / LOAD */
 .live-note{position:absolute;left:50%;transform:translateX(-50%);margin:0;font-size:var(--fs-md);color:var(--t3);text-align:center;line-height:1.4;width:max-content;max-width:calc(100% - 32px);}
 .live-note[hidden]{display:none;}
+/* Connect & load: the note waits out the whole intro, then surfaces very slowly
+   (Frank 2026-10-01: "strašně moc ruší … velmi pomalu, např. za 3 s"). */
+body.live-note-held .live-note{opacity:0;transition:none}
+body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
 .send-callout{
   display:flex;
   align-items:center;
@@ -560,7 +457,7 @@ html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.the
 ::view-transition-old(root){animation:none}
 ::view-transition-new(root){animation:theme-frame-in .36s ease both}
 @keyframes theme-frame-in{from{opacity:0}to{opacity:1}}
-header,.live-hud{view-transition-name:none}
+header{view-transition-name:none}
 @media(prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
 .panel{
   background:var(--bg-card);
@@ -786,7 +683,6 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   .device-home{width:min(55vw,clamp(120px,calc(44.24vh - 126px),196px));}
   .panel{min-width:0;}
   .h-status{width:7px;min-width:7px;flex:0 0 7px}
-  .controller-toggle-icon{display:none}
   .h-status-text{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
   header{padding:5px 16px;}
   .bank-block-tab .bank-tab-name{max-width:72px;}
@@ -870,11 +766,6 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
    same variable) (Frank 2026-08-18). border/glow stay soft-mix, same
    convention .send-btn.sent uses for its own glow. */
 .hid-switch input:checked + .hid-switch-track{background:var(--green);border-color:color-mix(in srgb,var(--green) 72%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--green) 25%,transparent),inset 0 1px 2px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.24)}
-/* Header's "Live monitor" switch reuses .hid-switch styling via the shared
-   .controller-switch class, but it's a view preference, not a device/connect
-   state — giving it the same green as above would collide with the header's
-   connected-status semantics (UX audit 2026-07-22, I-3). Keep it neutral. */
-.controller-switch input:checked + .hid-switch-track{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);border-color:var(--control-glass-border);box-shadow:var(--control-glass-shadow)}
 .hid-switch input:checked + .hid-switch-track .hid-switch-thumb{transform:translateX(14px)}
 .hid-switch input:focus-visible + .hid-switch-track{outline:2px solid var(--focus);outline-offset:3px}
 .hid-switch input:disabled + .hid-switch-track{opacity:.42;cursor:not-allowed}
@@ -1143,11 +1034,6 @@ html.dark .dark-toggle .theme-icon-sun{opacity:0;transform:rotate(45deg) scale(.
    button (Frank 2026-08-16, docs/TODO.md). Nudge it up by half that gap. */
 html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1) translateY(-.5px)}
 
-.controller-toggle-wrap{display:flex;align-items:center;gap:6px;flex:0 0 auto;color:var(--t2)}
-.controller-toggle-icon{width:14px;height:14px;flex:0 0 auto}
-.controller-switch.hid-switch{display:inline-flex}
-.controller-toggle-text{font-size:var(--fs-md);color:var(--t2);white-space:nowrap}
-@media(max-width:600px){.controller-toggle-text{display:none}}
 
 /* ── WELCOME SCREEN ── */
 #welcome-screen{
@@ -1512,7 +1398,7 @@ body.welcome-connecting #send-btn.welcome-floating{
      fade window). Disable it for just this narrow window (both classes
      present, i.e. only during the active connect-reveal fade). */
   transition:none;
-  animation:welcome-screen-out .34s ease .72s forwards;
+  animation:welcome-screen-out calc(var(--dur-link-in) / 3) var(--ease-link) forwards;
 }
 @media(prefers-reduced-motion:reduce){
   #welcome-screen.connecting::before,
@@ -1547,7 +1433,6 @@ body.welcome-connecting #send-btn.welcome-floating{
    z-index:205 rule (onboarding above; .connect-success below). */
 .device-wrap.welcome-mode:not([data-onb-feature]):not(.connect-success) .device-visual{z-index:205;pointer-events:none}
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .top-sticky,
-body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .live-hud,
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .center-col>:not(.stage-collapse){
   opacity:0!important;visibility:hidden!important;pointer-events:none!important;
 }
@@ -1715,23 +1600,12 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 }
 .device-wrap.welcome-mode.connect-success .device-visual{z-index:205;pointer-events:none}
 
-/* Connect confirmation: a restrained outline + soft halo + one glassy light pass. */
-.device-wrap::after{
-  content:'';position:absolute;inset:0;z-index:3;pointer-events:none;
-  border-radius:var(--r-lg);opacity:0;
-  background:linear-gradient(108deg,transparent 36%,rgba(var(--highlight-rgb),.10) 47%,rgba(255,255,255,.16) 50%,transparent 62%);
-  background-size:260% 100%;background-position:145% 0;
-  mix-blend-mode:screen;
-}
-.device-wrap.connect-success .device-img{animation:welcome-device-glow 1.15s var(--ease-out) both}
-.device-wrap.connect-success .welcome-flash{animation:welcome-device-halo 1.05s var(--ease-out) both}
-/* --dur-settle/--ease-settle: shared with the JS-driven fader-settle transition
-   (welcomeConnectFaders(), ~line 6840) — both fire in the same connect-success
-   moment and used to run on two near-identical but not-quite-matching custom
-   curves (.22,.7,.2,1 here vs .22,.8,.2,1 there), likely an accidental drift
-   rather than a deliberate difference (Frank 2026-08-17 timing-consistency
-   pass). */
-.device-wrap.connect-success::after{animation:welcome-device-shimmer var(--dur-settle) var(--ease-settle) .05s both}
+/* Connect confirmation: a restrained outline + soft halo on the fader-glow clock,
+   done by the layout swap (IN / 3) that removes .connect-success. The glassy
+   light pass that used to sweep the device read as one fader flaring up and
+   dying (Frank 2026-10-01) – removed. */
+.device-wrap.connect-success .device-img{animation:welcome-device-glow calc(var(--dur-link-in) / 3) var(--ease-link) both}
+.device-wrap.connect-success .welcome-flash{animation:welcome-device-halo calc(var(--dur-link-in) / 3) var(--ease-link) both}
 @keyframes welcome-device-glow{
   0%  {box-shadow:0 0 0 0 rgba(var(--highlight-rgb),0),0 8px 20px rgba(var(--highlight-rgb),0)}
   24% {box-shadow:0 0 0 1px rgba(var(--highlight-rgb),.42),0 8px 25px rgba(var(--highlight-rgb),.12),0 0 26px rgba(var(--highlight-rgb),.07)}
@@ -1743,14 +1617,8 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   28%{opacity:.46;transform:scale(1)}
   100%{opacity:0;transform:scale(1.035)}
 }
-@keyframes welcome-device-shimmer{
-  0%{opacity:0;background-position:145% 0}
-  18%{opacity:.42}
-  72%{opacity:.16}
-  100%{opacity:0;background-position:-45% 0}
-}
 @media(prefers-reduced-motion:reduce){
-  .device-wrap.connect-success::after,.device-wrap.connect-success .welcome-flash{animation:none}
+  .device-wrap.connect-success .welcome-flash{animation:none}
   .device-wrap.connect-success .device-img{animation:welcome-device-glow .35s ease-out both}
 }
 /* Opacity only — NOT filter. A `filter` on #welcome-text-block (even
@@ -1774,6 +1642,13 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   /* Soft scrim so the greeting never reads over the sections beneath it. */
   background:color-mix(in srgb,var(--bg) 70%,transparent);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
   animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-out) var(--ease-link) 2.55s forwards}
+/* Connect & load hand-off: the greeting rises with the faders while the controller
+   glides out of the center, then leaves on its own – shorter (out from 2 s over
+   --dur-link-in) and fully gone before the app appears (Frank 2026-10-01: "nechal
+   bych to zmizet a teprve potom zobrazil aplikaci"). No scrim – it would veil the
+   dissolving welcome and the gliding controller. */
+.owner-greeting.is-handoff{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+  animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-in) var(--ease-link) 2s forwards}
 .owner-greeting::before{content:'';position:absolute;left:50%;top:50%;width:min(760px,94vw);height:340px;transform:translate(-50%,-50%);
   background:radial-gradient(closest-side,var(--bg),transparent);opacity:.9;z-index:-1}
 .owner-greeting-pre{font:400 var(--fs-xl)/1.2 'Mulish',sans-serif;color:var(--t2);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) both}
@@ -1785,6 +1660,7 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 @keyframes owner-greeting-fade-out{to{opacity:0}}
 @media(prefers-reduced-motion:reduce){
   .owner-greeting{animation:owner-greeting-fade .3s ease both,owner-greeting-fade-out .3s ease 2.55s forwards}
+  .owner-greeting.is-handoff{animation:owner-greeting-fade .3s ease both,owner-greeting-fade-out .3s ease 2s forwards}
   .owner-greeting-pre,.owner-greeting-name{animation:owner-greeting-fade .3s ease both}
 }
 @keyframes welcome-text-out{
@@ -1800,15 +1676,18 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
   to  {opacity:1}
 }
 #welcome-screen.connecting{pointer-events:none}
-/* Connect & load → app chrome reveal (revealAppChrome(), Frank 2026-10-01). */
+/* Connect & load → app chrome reveal (revealAppChrome(), Frank 2026-10-01).
+   --app-reveal-delay: mid-glide, or the greeting's fade-out when there is one. */
 body.app-reveal-pending header,body.app-reveal-pending #settings-col,body.app-reveal-pending .site-footer{opacity:0}
 /* Opacity only: a transform would make #settings-col the offsetParent mid-reveal
    and skew every offsetTop-based scroll computed during it. */
-body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-footer{animation:app-chrome-fade var(--dur-link-in) var(--ease-link) .35s both}
-body.app-reveal .center-col>.stage-collapse{z-index:3}
+body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-footer{animation:app-chrome-fade var(--dur-link-in) var(--ease-link) var(--app-reveal-delay,0ms) both}
+/* The gliding controller stays above the hand-off greeting (z 160) – the
+   greeting emerges from behind it, as it did under the welcome (z 205). */
+body.app-reveal .center-col>.stage-collapse{z-index:170}
 @keyframes app-chrome-fade{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-footer{animation-duration:.3s;animation-timing-function:ease;animation-delay:0s}}
-#welcome-screen.connecting::before{animation:welcome-screen-out .34s ease .72s forwards}
+#welcome-screen.connecting::before{animation:welcome-screen-out calc(var(--dur-link-in) / 3) var(--ease-link) forwards}
 
 /* ── INSTRUMENT ICON PICKER ── */
 .icon-picker-overlay{
@@ -1816,22 +1695,6 @@ body.app-reveal .center-col>.stage-collapse{z-index:3}
   backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);
   display:flex;align-items:center;justify-content:center;padding:20px;
   animation:fi var(--dur-fast) ease;
-}
-/* 899 (was 980): two columns start at 900 px and keep the 144 px desktop
-   HUD (UX audit 2026-09-25 C-2); the compact square is for narrower screens. */
-@media(max-width:899px){
-  .live-hud{left:16px;width:112px;height:112px;padding:8px;border-radius:var(--r-lg)}
-  .live-hud[data-side]{left:16px;right:auto}
-  .live-hud-inner{grid-template-rows:minmax(0,1fr) 28px;gap:var(--space-1)}
-  .live-hud-item:not(.live-hud-roller){row-gap:2px}
-  .live-hud-roller{grid-template-columns:auto minmax(0,1fr);column-gap:3px;row-gap:1px;padding-top:3px}
-  .live-hud-roller .live-hud-value{font-size:var(--fs-sm);line-height:13px}
-  /* Mobile square is 112 px (M-1, Frank 2026-09-26): with the bank dots row a
-     96 px square overlapped L/R, value and Ch·CC; 120 px would cover the left
-     fader slot. Type stays on the scale except the 8 px Ch·CC line. */
-  .live-hud-label{font-size:var(--fs-xs)}
-  .live-hud-value{font-size:var(--fs-md);line-height:1}
-  .live-hud-tech{font-size:var(--fs-hud-sm)}
 }
 .icon-picker-modal{
   background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);
@@ -1925,9 +1788,8 @@ body.app-reveal .center-col>.stage-collapse{z-index:3}
 .section-live{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--t2);font:600 var(--fs-sm) 'Mulish',sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;opacity:0;transition:opacity var(--hover-out),color var(--hover-out)}
 .section-live.is-on{opacity:1;transition:opacity var(--hover-in),color var(--hover-out)}
 .section-live.is-on.is-moving{color:var(--t1);transition:opacity var(--hover-in),color var(--hover-in)}
-/* Fader = a miniature Live HUD cell (Frank 2026-09-30): bold number on a wash that
-   rises from the bottom with the level – same scaleY technique as
-   .live-hud-item::before, a touch stronger so the level reads at this size. */
+/* Fader = bold number on a wash that rises from the bottom with the level
+   (scaleY), strong enough that the level reads at this size (Frank 2026-09-30). */
 .section-live-fader{position:relative;overflow:hidden;justify-content:center;min-width:32px;height:26px;padding:0 5px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--t2) 4%,transparent)}
 .section-live-fader::before{content:'';position:absolute;inset:0;transform:scaleY(var(--live-frac,0));transform-origin:bottom;background:color-mix(in srgb,var(--t2) 20%,transparent)}
 .section-live-num{position:relative;z-index:1;min-width:3ch;text-align:center;font-weight:700;font-size:var(--fs-md)}
@@ -2304,19 +2166,6 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       </span>
     </div>
 
-    <!-- View option in the header (UX audit 2026-09-28 N-10); the Controller
-         switch next to it was removed (Frank 2026-09-29). -->
-    <div class="controller-toggle-wrap live-monitor-toggle-wrap" title="Show/hide the live monitor (saved in this browser, not on the device)">
-      <svg class="controller-toggle-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" aria-hidden="true">
-        <rect x="2" y="2.5" width="10" height="9" rx="2"/><path d="M5 9V6.5M7 9V5M9 9V7.5"/>
-      </svg>
-      <label class="hid-switch controller-switch">
-        <input type="checkbox" id="live-hud-switch" checked onchange="setLiveHudEnabled(this.checked)" aria-label="Show live monitor">
-        <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
-        <span class="controller-toggle-text" aria-hidden="true">Live monitor</span>
-      </label>
-    </div>
-
     <button class="dark-toggle ui-control ui-pill ui-glass" onclick="toggleDark()" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">
       <svg class="theme-icon theme-icon-sun" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.4"/>
@@ -2329,29 +2178,6 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 
   </div>
 </header>
-</div>
-<div class="live-hud" id="live-strip" data-state="DISCONNECTED" data-side="left" role="group" tabindex="0" aria-label="Live device values. Drag left or right to reposition." aria-hidden="true">
-  <div class="live-hud-bank" id="live-hud-bank" role="img" aria-label="Active device bank"></div>
-  <div class="live-hud-inner">
-    <div class="live-hud-item" id="live-f1-item">
-      <span class="live-hud-label"><span class="live-hud-label-long" id="live-f1-label-long">L</span><span class="live-hud-label-short" id="live-f1-label-short">L</span></span>
-      <span class="live-hud-value" id="live-f1-value">–</span>
-      <span class="live-hud-tech live-hud-tech-split" id="live-f1-tech"><span class="live-hud-tech-ch" id="live-f1-tech-ch">Ch1</span><span class="live-hud-tech-dot">·</span><span class="live-hud-tech-val" id="live-f1-tech-val">CC11</span></span>
-    </div>
-    <div class="live-hud-item" id="live-f2-item">
-      <span class="live-hud-label"><span class="live-hud-label-long" id="live-f2-label-long">R</span><span class="live-hud-label-short" id="live-f2-label-short">R</span></span>
-      <span class="live-hud-value" id="live-f2-value">–</span>
-      <span class="live-hud-tech live-hud-tech-split" id="live-f2-tech"><span class="live-hud-tech-ch" id="live-f2-tech-ch">Ch1</span><span class="live-hud-tech-dot">·</span><span class="live-hud-tech-val" id="live-f2-tech-val">CC1</span></span>
-    </div>
-    <div class="live-hud-item live-hud-roller">
-      <span class="live-hud-label"><span class="live-hud-label-long" id="live-roller-label">ROLLER · ARTICULATION</span><span class="live-hud-label-short" id="live-roller-label-short">ART</span></span>
-      <span class="live-hud-value" id="live-roller-value">–</span>
-      <span class="live-hud-tech" id="live-roller-tech">Ch1·CC32</span>
-    </div>
-  </div>
-  <button class="live-hud-size-btn" id="live-hud-size-btn" type="button" aria-label="Enlarge live values" title="Enlarge (2×)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-  </button>
 </div>
 <main>
 <div class="center-col">
@@ -2886,7 +2712,7 @@ function refreshSectionSemantics(bi, key) {
     setSectionSummary(`section-summary-${bi}-${key}`, faderSectionSummary(ctrl));
     setTxt(`cc-meaning-${bi}-${key}`, musicalCcName(ctrl.cc,`CC${ctrl.cc}`));
   }
-  renderLiveStrip();
+  renderLiveState();
 }
 
 // localStorage may throw SecurityError when persistence is blocked by browser
@@ -3334,7 +3160,7 @@ function render() {
   // render() would be redundant; it's called explicitly at each site where
   // those signals change (connectInputs(), handleSysEx(), etc.).
   updateDeviceInfo();
-  renderLiveStrip(errs);
+  renderLiveState();
 }
 
 function renderBankTabs() {
@@ -5270,7 +5096,7 @@ function runValidation(errs = validate()) {
     if (encChEl) encChEl.setAttribute('aria-invalid', encErrEntry ? 'true' : 'false');
   });
   markSectionIssues(errs);
-  renderLiveStrip(errs);
+  renderLiveState();
 }
 
 // Mapa validačního `field` -> klíč sekce. 'encoder' i 'uacc' bydlí v roller
@@ -5367,7 +5193,12 @@ function flushFaderFrame(){
   // MIDI-heavy tabs push this page into a visible event backlog.
   renderLiveFaderValues(changed, true);
 }
+// True while the Connect & load fader settle runs (connectTransitionWelcome()):
+// nothing may re-position the thumbs in px mid-glide – a new target restarts
+// the transition from zero speed (read as a stall); live values caught up after.
+let _connectThumbSettle = false;
 function pF(tid,thid,v){
+  if(_connectThumbSettle)return;
   const th=document.getElementById(thid);
   if(!th)return;
   // T4: použij cachovanou dráhu; fallback na měření jen když ještě nebyl layout
@@ -5609,7 +5440,7 @@ function onMidiMsg(event){
       setTxt('enc-val', val);
       // Find name — UACC standard or custom
       setTxt('enc-artic-name', uaccName(val));
-      renderLiveStrip();
+      renderLiveState();
       const idx = bank.uacc_values.indexOf(val);
       if(idx !== -1) encIndex = idx;
       syncUaccLiveRow();
@@ -5625,7 +5456,7 @@ function onMidiMsg(event){
       ksLiveNote = note;
       document.querySelectorAll('.seq-row.is-live[data-ksnote]').forEach(el => el.classList.remove('is-live'));
       document.querySelector(`.seq-row[data-ksnote="${note}"]`)?.classList.add('is-live');
-      renderLiveStrip();
+      renderLiveState();
       pulseSectionLive('roller');
       maybeHintUnsentLive();
     }
@@ -5643,7 +5474,7 @@ function onMidiMsg(event){
       }
       setActiveTab(activeBank);
       renderUacc();
-      renderLiveStrip();
+      renderLiveState();
       pulseSectionLive('macro', true);   // short press = bank switch; long press (macro) is HID-only, never reaches the app
     }
   }
@@ -5826,7 +5657,7 @@ function handleSysEx(data){
       render();   // re-render roller selector — track_nav gating depends on hid_enabled
       if (_faders) {
         positionThumbs();                       // thumbs live in the (persistent) stage, not rebuilt by render
-        renderLiveStrip();
+        renderLiveState();
         requestAnimationFrame(positionThumbs);  // best-effort follow-up if geometry wasn't ready yet
       }
       // Apply device-specific theme preference
@@ -5990,9 +5821,14 @@ async function serialReadInfo() {
   fetchFirmwareManifest();   // best effort, bez await — nabídka se dorenderuje sama
   render();   // re-render roller selector — track_nav gating depends on hid_enabled
   if (_faders) {
-    positionThumbs();                       // thumbs live in the (persistent) stage, not rebuilt by render
-    renderLiveStrip();
-    requestAnimationFrame(positionThumbs);  // best-effort follow-up if geometry wasn't ready yet
+    // During Connect & load the thumbs stay put on the welcome: the connect
+    // transition glides them to this snapshot (Frank 2026-10-01: snapping here,
+    // while "Loading…", left the transition nothing to animate – read as a jump).
+    if (!_connectSettlePending) {
+      positionThumbs();                       // thumbs live in the (persistent) stage, not rebuilt by render
+      requestAnimationFrame(() => { if (!_connectSettlePending) positionThumbs(); });   // best-effort follow-up if geometry wasn't ready yet
+    }
+    renderLiveState();
   }
   return info;
 }
@@ -6036,10 +5872,11 @@ function takeOwnerGreeting(){
 }
 // Centered, non-blocking overlay that removes itself once .owner-greeting's
 // fade-out ends – not its fade-in (timer is only a fallback for tabs that skip animations).
-function showOwnerGreeting(name){
+// handoff: part of the Connect & load choreography (no scrim, see .is-handoff).
+function showOwnerGreeting(name, handoff = false){
   document.getElementById('owner-greeting')?.remove();
   const el = document.createElement('div');
-  el.id = 'owner-greeting'; el.className = 'owner-greeting'; el.setAttribute('role', 'status');
+  el.id = 'owner-greeting'; el.className = handoff ? 'owner-greeting is-handoff' : 'owner-greeting'; el.setAttribute('role', 'status');
   const pre = document.createElement('span'); pre.className = 'owner-greeting-pre'; pre.textContent = 'Welcome back,';
   const nm = document.createElement('span'); nm.className = 'owner-greeting-name'; nm.textContent = name;
   el.append(pre, nm);
@@ -6066,25 +5903,33 @@ function showStartBtn() {
 
 // Welcome "Start" — the one user gesture that grants the serial port, loads the
 // config, then plays the transition into the main page. Stays put on cancel/error.
+// True while Connect & load is reading the device: the welcome thumbs must not
+// jump to the snapshot before connectTransitionWelcome() glides them there.
+let _connectSettlePending = false;
 async function doStart() {
   const btn = document.getElementById('send-btn');
   const msg = document.getElementById('welcome-start-msg');
   if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
   if (msg) msg.textContent = '';
+  _connectSettlePending = true;                 // serialReadInfo() leaves the thumbs to the connect glide
   try {
     await loadConfigFromDevice();
     renderConnState();
-    const owner = takeOwnerGreeting();
-    hideWelcome();                              // transition → main page
-    if (owner) setTimeout(() => showOwnerGreeting(owner), 2100);   // once the connect transition + app reveal have settled
+    hideWelcome(takeOwnerGreeting());           // transition → main page; the greeting rides the controller glide
+    if (_connectSettlePending) { _connectSettlePending = false; positionThumbs(); }   // no transition ran
   } catch(e) {
+    _connectSettlePending = false;
+    positionThumbs();
     const cancelled = e && (e.name === 'AbortError' || e.name === 'NotFoundError' || /cancel|no port selected/i.test(e.message || ''));
     if (!cancelled) await releaseSerialPort({forget:true});
     if (btn) { btn.disabled = false; btn.textContent = cancelled ? 'Connect & load' : 'Try again'; }
     if (msg) {
-      msg.textContent = cancelled ? '' : 'Connection failed';
+      // A port held by another tab is the common case (Chrome lets only one tab
+      // open it) – name it in the visible line, not only in the tooltip.
+      const busy = !cancelled && /open|busy|in use|access/i.test(e.message || '');
+      msg.textContent = cancelled ? '' : busy ? 'Port busy – close other Feel Fader tabs' : 'Connection failed';
       if (cancelled) msg.removeAttribute('title');
-      else msg.title = /open|busy|in use|access/i.test(e.message || '')
+      else msg.title = busy
         ? 'The serial port is busy. Close Feel Fader in other tabs or apps, then try again.'
         : 'Could not read the device. Check the USB connection and try again.';
     }
@@ -6354,274 +6199,12 @@ function connState(){
   if (_midiState === 'denied' || _midiState === 'unsupported') return 'MIDI_BLOCKED';
   return 'DISCONNECTED';
 }
-// Live HUD free manipulation (Frank + Sláv 2026-07-26): drag the body to
-// place it anywhere, a corner button toggles 1x<->2x size. Position + size
-// persist per-browser (so each person keeps their own layout). Desktop only —
-// mobile keeps its fixed placement.
-const LIVE_HUD_POS_KEY = 'ff_live_hud_pos';
-const LIVE_HUD_BASE = 144;   // desktop base square side (px); --hud-scale multiplies it
-const LIVE_HUD_MARGIN = 12;  // min gap kept from every viewport edge
-let _liveHudState = { x: null, y: null, large: false }; // x/y null = default (data-side) position
-let _liveHudDrag = null;
-let _liveHudMomentum = null;      // rAF id while a released HUD is coasting (Frank 2026-07-27)
-// Inertial-glide tuning: FRICTION is a per-16.7ms decay applied frame-rate-
-// independently; speeds are px/ms.
-const LIVE_HUD_FRICTION   = 0.90; // lower = stops sooner
-const LIVE_HUD_MIN_FLING  = 0.05; // release slower than this → no glide, just park
-const LIVE_HUD_STOP_SPEED = 0.02; // glide ends once it slows past this
-const LIVE_HUD_MAX_SPEED  = 4;    // cap so a hard flick can't rocket across the screen
-// Touch drag was briefly re-enabled (2026-08-18) then reverted the same
-// day — Frank tried it and asked to keep the HUD fixed in the corner on
-// mobile instead ("nechme tem status bar prichyceny v rohu, jak byl
-// puvodne"). Back to mouse-only manipulation, matching 2026-07-27.
-function liveHudManipulable(){ return window.matchMedia('(any-pointer:fine)').matches; }
-function liveHudScale(){ return _liveHudState.large ? 2 : 1; }
-function liveHudSize(){ return LIVE_HUD_BASE * liveHudScale(); }
-function clampLiveHudPos(x, y){
-  const size = liveHudSize();
-  // Top limit sits below the header bar with the same gap as the side margins,
-  // so the HUD can't be dragged up under the top bar (Frank 2026-07-26).
-  const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom || 0;
-  const minY = headerBottom + LIVE_HUD_MARGIN;
-  const maxX = Math.max(LIVE_HUD_MARGIN, window.innerWidth - size - LIVE_HUD_MARGIN);
-  const maxY = Math.max(minY, window.innerHeight - size - LIVE_HUD_MARGIN);
-  return { x: Math.max(LIVE_HUD_MARGIN, Math.min(maxX, x)), y: Math.max(minY, Math.min(maxY, y)) };
-}
-function persistLiveHud(){
-  storageSet(LIVE_HUD_POS_KEY, JSON.stringify(_liveHudState));
-  updateContextualLiveStrip();
-}
-// Per-browser on/off for the floating HUD (Frank 2026-09-28), not sent to the device.
-let _liveHudEnabled = storageGet('ff_live_hud_enabled', '1') !== '0';
-function setLiveHudEnabled(on){
-  _liveHudEnabled = !!on;
-  storageSet('ff_live_hud_enabled', _liveHudEnabled ? '1' : '0');
-  const sw = document.getElementById('live-hud-switch');
-  if (sw) sw.checked = _liveHudEnabled;
-  updateContextualLiveStrip();
-}
-function liveHudHasCustomPos(){ return _liveHudState.x != null && _liveHudState.y != null && liveHudManipulable(); }
-function applyLiveHudState(persist=false, syncContext=true){
-  const strip = document.getElementById('live-strip');
-  if (!strip) return;
-  // Force 1x on mobile (mobile keeps its own fixed small size).
-  strip.style.setProperty('--hud-scale', String(liveHudManipulable() ? liveHudScale() : 1));
-  if (liveHudHasCustomPos()){
-    const { x, y } = clampLiveHudPos(_liveHudState.x, _liveHudState.y); // re-clamp in case size/viewport changed
-    _liveHudState.x = x; _liveHudState.y = y;
-    strip.style.left = `${x}px`; strip.style.top = `${y}px`; strip.style.right = 'auto';
-    strip.removeAttribute('data-side'); // inline pos overrides the side default
-  } else {
-    strip.style.removeProperty('left'); strip.style.removeProperty('top'); strip.style.removeProperty('right');
-    strip.dataset.side = 'left'; // default: CSS left + contextual top (set by updateContextualLiveStrip)
-  }
-  const sizeBtn = document.getElementById('live-hud-size-btn');
-  if (sizeBtn){
-    sizeBtn.setAttribute('aria-label', _liveHudState.large ? 'Shrink live values' : 'Enlarge live values');
-    sizeBtn.setAttribute('title', _liveHudState.large ? 'Shrink (1×)' : 'Enlarge (2×)');
-  }
-  strip.setAttribute('aria-label', liveHudManipulable()
-    ? `Live device values.${_liveHudState.large ? ' Enlarged.' : ''} Drag to move, arrow keys to nudge, Home to reset, corner button to resize.`
-    : 'Live device values.');
-  if (persist) persistLiveHud();
-  if (syncContext) updateContextualLiveStrip();
-}
-function toggleLiveHudSize(){
-  if (!liveHudManipulable()) return;
-  _liveHudState.large = !_liveHudState.large;
-  applyLiveHudState(true); // re-clamps a custom position so the bigger box still fits
-}
-// Double-click / Home send the HUD to the top-left corner (Frank 2026-09-29),
-// not to the default slot, which from 900 px docks beside the controller.
-function resetLiveHud(){
-  cancelLiveHudMomentum();
-  const { x, y } = clampLiveHudPos(0, 0);
-  _liveHudState = { x, y, large: false };
-  applyLiveHudState(true);
-}
-function cancelLiveHudMomentum(){
-  if (_liveHudMomentum != null){ cancelAnimationFrame(_liveHudMomentum); _liveHudMomentum = null; }
-}
-// Coast a released HUD along (vx,vy) px/ms with exponential friction, clamping to
-// the viewport each frame and stopping an axis when it parks against a wall (no
-// bounce). Transition stays 'none' throughout so rAF alone drives left/top; the
-// resting position is persisted once it settles.
-function startLiveHudMomentum(vx, vy){
-  const strip = document.getElementById('live-strip');
-  if (!strip) return;
-  cancelLiveHudMomentum();
-  const sp = Math.hypot(vx, vy);
-  if (sp > LIVE_HUD_MAX_SPEED){ vx *= LIVE_HUD_MAX_SPEED / sp; vy *= LIVE_HUD_MAX_SPEED / sp; }
-  let last = performance.now();
-  const step = now => {
-    const dt = Math.min(now - last, 40) || 16.667; last = now;
-    let x = _liveHudState.x, y = _liveHudState.y;
-    if (x == null || y == null){ const r = strip.getBoundingClientRect(); x = r.left; y = r.top; }
-    const tx = x + vx * dt, ty = y + vy * dt;
-    const c = clampLiveHudPos(tx, ty);
-    if (c.x !== tx) vx = 0;   // hit a side wall → stop that axis
-    if (c.y !== ty) vy = 0;
-    _liveHudState.x = c.x; _liveHudState.y = c.y;
-    strip.style.left = `${c.x}px`; strip.style.top = `${c.y}px`; strip.style.right = 'auto';
-    strip.removeAttribute('data-side');
-    const decay = Math.pow(LIVE_HUD_FRICTION, dt / 16.667);
-    vx *= decay; vy *= decay;
-    if (Math.hypot(vx, vy) < LIVE_HUD_STOP_SPEED){
-      _liveHudMomentum = null;
-      strip.style.removeProperty('transition');
-      persistLiveHud();
-      return;
-    }
-    _liveHudMomentum = requestAnimationFrame(step);
-  };
-  _liveHudMomentum = requestAnimationFrame(step);
-}
-function initLiveHudPositioning(){
-  const strip = document.getElementById('live-strip');
-  if (!strip) return;
-  try {
-    const saved = JSON.parse(storageGet(LIVE_HUD_POS_KEY, 'null'));
-    if (saved && typeof saved === 'object') _liveHudState = {
-      x: Number.isFinite(saved.x) ? saved.x : null,
-      y: Number.isFinite(saved.y) ? saved.y : null,
-      large: !!saved.large,
-    };
-  } catch (_) {}
-  const hudSwitch = document.getElementById('live-hud-switch');
-  if (hudSwitch) hudSwitch.checked = _liveHudEnabled;
-  applyLiveHudState();
-
-  const sizeBtn = document.getElementById('live-hud-size-btn');
-  if (sizeBtn){
-    sizeBtn.addEventListener('pointerdown', e => e.stopPropagation()); // don't let it start a move-drag
-    sizeBtn.addEventListener('click', e => { e.stopPropagation(); toggleLiveHudSize(); });
-  }
-
-  strip.addEventListener('pointerdown', event => {
-    if (!liveHudManipulable() || event.button !== 0) return;
-    if (event.target.closest('.live-hud-size-btn')) return;
-    cancelLiveHudMomentum();   // grabbing mid-glide takes over the coast
-    const rect = strip.getBoundingClientRect();
-    _liveHudDrag = { pointerId:event.pointerId, offsetX:event.clientX-rect.left, offsetY:event.clientY-rect.top, moved:false,
-                     vx:0, vy:0, lastX:rect.left, lastY:rect.top, lastT:performance.now() };
-    strip.setPointerCapture(event.pointerId);
-    strip.classList.add('is-dragging');
-    strip.style.transition = 'none';
-    event.preventDefault();
-  });
-  strip.addEventListener('pointermove', event => {
-    if (!_liveHudDrag || event.pointerId !== _liveHudDrag.pointerId) return;
-    const { x, y } = clampLiveHudPos(event.clientX - _liveHudDrag.offsetX, event.clientY - _liveHudDrag.offsetY);
-    const now = performance.now();
-    const dt = now - _liveHudDrag.lastT;
-    if (dt > 0){   // recent-velocity estimate, lightly smoothed to shrug off single-frame jitter
-      const nvx = (x - _liveHudDrag.lastX) / dt, nvy = (y - _liveHudDrag.lastY) / dt;
-      _liveHudDrag.vx = _liveHudDrag.vx * 0.6 + nvx * 0.4;
-      _liveHudDrag.vy = _liveHudDrag.vy * 0.6 + nvy * 0.4;
-      _liveHudDrag.lastX = x; _liveHudDrag.lastY = y; _liveHudDrag.lastT = now;
-    }
-    _liveHudDrag.moved = true;
-    _liveHudState.x = x; _liveHudState.y = y;
-    strip.style.left = `${x}px`; strip.style.top = `${y}px`; strip.style.right = 'auto';
-    strip.removeAttribute('data-side');
-  });
-  const finishDrag = event => {
-    if (!_liveHudDrag || event.pointerId !== _liveHudDrag.pointerId) return;
-    const { moved, vx, vy, lastT } = _liveHudDrag;
-    _liveHudDrag = null;
-    strip.classList.remove('is-dragging');
-    const idle = performance.now() - lastT;   // paused before releasing → treat as a park, not a flick
-    const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-    if (moved && !reduce && idle < 60 && Math.hypot(vx, vy) >= LIVE_HUD_MIN_FLING){
-      startLiveHudMomentum(vx, vy);   // keeps transition:none and persists once it settles
-    } else {
-      strip.style.removeProperty('transition');
-      if (moved) persistLiveHud();
-    }
-  };
-  strip.addEventListener('pointerup', finishDrag);
-  strip.addEventListener('pointercancel', finishDrag);
-  strip.addEventListener('dblclick', event => {
-    if (!liveHudManipulable() || event.target.closest('.live-hud-size-btn')) return;
-    resetLiveHud();
-  });
-  strip.addEventListener('keydown', event => {
-    if (!liveHudManipulable()) return;
-    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){
-      event.preventDefault();
-      const step = event.shiftKey ? 1 : 10;
-      const rect = strip.getBoundingClientRect();
-      const baseX = _liveHudState.x != null ? _liveHudState.x : rect.left;
-      const baseY = _liveHudState.y != null ? _liveHudState.y : rect.top;
-      const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
-      const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
-      const { x, y } = clampLiveHudPos(baseX + dx, baseY + dy);
-      _liveHudState.x = x; _liveHudState.y = y;
-      applyLiveHudState(true);
-    } else if (event.key === 'Home'){
-      event.preventDefault();
-      resetLiveHud();
-    }
-  });
-}
-function updateContextualLiveStrip(){
-  const strip = document.getElementById('live-strip');
-  const welcome = document.getElementById('welcome-screen');
-  if (!strip) return;
-  // Anchor to the header itself, matching clampLiveHudPos()'s own
-  // header-based min-Y (Frank 2026-07-27).
-  const anchorBottom = document.querySelector('header')?.getBoundingClientRect().bottom || 0;
-  const welcomeClosed = !!welcome?.classList.contains('hidden');
-  const hasLiveData = !!(liveSeen.f1 || liveSeen.f2 || encLiveVal !== null || ksLiveNote !== null);
-  const live = strip.dataset.state === 'CONNECTED_LIVE' && hasLiveData;
-  const visible = welcomeClosed && _liveHudEnabled;
-  // Two-column layout: the default HUD docks into a slot left of the sticky
-  // controller (body.hud-docked pads the stage), so it never covers the device.
-  const docked = visible && !liveHudHasCustomPos() && !_liveHudState.large
-    && window.matchMedia('(min-width:900px)').matches;
-  document.body.classList.toggle('hud-docked', docked);
-  // Only drive the default position — a user's custom drag position
-  // (inline top, set by applyLiveHudState) must not be overwritten on every
-  // live-data render (Frank 2026-07-26).
-  if (docked) {
-    // Resting position: discount a running glideStageIntoColumn() transform.
-    const stageEl = document.getElementById('stage-collapse');
-    const m = new DOMMatrix(getComputedStyle(stageEl).transform);
-    const col = stageEl.getBoundingClientRect();
-    const dev = document.getElementById('device-home').getBoundingClientRect();
-    // The glide may also scale (origin = the controller's top-left, so the
-    // top discount stays m42); the left edge sits originX·(1−scale) off.
-    const originX = parseFloat(getComputedStyle(stageEl).transformOrigin) || 0;
-    strip.style.left = `${Math.round(col.left - m.m41 - originX * (1 - m.a))}px`;
-    strip.style.top = `${Math.round(dev.top - m.m42)}px`;
-  } else if (!liveHudHasCustomPos()) {
-    strip.style.removeProperty('left');
-    strip.style.top = `${Math.round(anchorBottom + 12)}px`;
-  }
-  strip.classList.toggle('is-contextual-visible',visible);
-  strip.classList.toggle('is-idle',!live);
-  strip.setAttribute('aria-hidden',String(!visible));
-}
 function renderLiveFaderValues(changed = {l:true,r:true}, moved = false){
-  const allowed = connState() === 'CONNECTED_LIVE';
-  const setLiveValue = (id, itemId, value, seen) => {
-    const valid = allowed && seen && Number.isFinite(value);
-    const text = valid ? String(value) : '–';
-    const valueEl = document.getElementById(id);
-    // This runs inside the fader RAF. Do not enqueue a text/layout invalidation
-    // when the rendered value is already current (e.g. the other fader moved).
-    if (valueEl && valueEl.textContent !== text) valueEl.textContent = text;
-    const item = document.getElementById(itemId);
-    if (item) item.style.setProperty('--live-level-frac', valid ? String(Math.max(0, Math.min(127, value)) / 127) : '0');
-  };
-  if (changed.l) setLiveValue('live-f1-value', 'live-f1-item', liveValues.f1, liveSeen.f1);
-  if (changed.r) setLiveValue('live-f2-value', 'live-f2-item', liveValues.f2, liveSeen.f2);
   if (changed.l) setSectionLiveFader('fader1', liveValues.f1, liveSeen.f1, moved);
   if (changed.r) setSectionLiveFader('fader2', liveValues.f2, liveSeen.f2, moved);
 }
 
-// Live values in the section heads (Frank 2026-09-30) – same sources as the Live
-// HUD, shown only while live and the card shows the bank the device is on.
+// Live values in the section heads (Frank 2026-09-30), shown only while live and the card shows the bank the device is on.
 // .is-moving marks "values arriving" and drops SECTION_LIVE_SETTLE_MS after the
 // last one, so the brightening rises and fades on the glow timing (CSS).
 const SECTION_LIVE_SETTLE_MS = 350;
@@ -6686,8 +6269,8 @@ function syncSectionLive() {
 
 // Device context in the editor (spec 2026-09-26 §2/§4, Frank reversed the
 // "HUD only" rule): the bank the hardware is on gets a green dot in its tab
-// and "· active on device" in the card eyebrow. Same condition as the HUD bank
-// dots (any CONNECTED_* state), so the three markers never disagree.
+// and "· active on device" in the card eyebrow (any CONNECTED_* state), so the
+// markers never disagree.
 function deviceBankIndex() {
   return connState().startsWith('CONNECTED') ? liveBank : -1;
 }
@@ -6703,82 +6286,11 @@ function syncDeviceBankMarkers() {
   const eyebrow = document.getElementById('bank-eyebrow-device');
   if (eyebrow) eyebrow.hidden = activeBank !== onDevice;
 }
-function renderLiveHudBankDots(bankCount, activeIndex){
-  const bankHud = document.getElementById('live-hud-bank');
-  if (!bankHud) return;
-  const count = Math.max(1, Math.min(8, Number(bankCount) || 1));
-  const active = Math.max(0, Math.min(count - 1, Number(activeIndex) || 0));
-  bankHud.replaceChildren();
-  const dots = document.createDocumentFragment();
-  for (let index = 0; index < count; index++) {
-    const dot = document.createElement('span');
-    dot.className = `live-hud-bank-dot${index === active ? ' is-active' : ''}`;
-    dot.setAttribute('aria-hidden', 'true');
-    dots.appendChild(dot);
-  }
-  bankHud.appendChild(dots);
-  const label = `Active device bank: ${active + 1} of ${count}`;
-  bankHud.setAttribute('aria-label', label);
-  bankHud.title = label;
-}
-
-function renderLiveStrip(errs = validate()){
-  const strip = document.getElementById('live-strip');
-  if (!strip) return;
-  const state = connState();
-  const allowed = state === 'CONNECTED_LIVE';
-  strip.dataset.state = state;
-  strip.title = liveHudManipulable()
-    ? 'Live values received from the device · drag to move · corner button to resize'
-    : 'Live values received from the device';
-
-  const bank = cfg.banks[liveBank] || cfg.banks[activeBank];
-  if (!bank) { updateContextualLiveStrip(); return; }
-  renderLiveHudBankDots(cfg.banks.length, liveBank);
+// Live device state outside the editor fields (the live HUD is gone, Frank
+// 2026-10-01): which bank the hardware is on + live values in the section heads.
+function renderLiveState(){
   syncDeviceBankMarkers();
-  setTxt('live-f1-label-long', 'L');
-  setTxt('live-f1-label-short', 'L');
-  setTxt('live-f2-label-long', 'R');
-  setTxt('live-f2-label-short', 'R');
-  setTxt('live-f1-tech-ch', `Ch${bank.fader1.channel+1}`); setTxt('live-f1-tech-val', `CC${bank.fader1.cc}`);
-  setTxt('live-f2-tech-ch', `Ch${bank.fader2.channel+1}`); setTxt('live-f2-tech-val', `CC${bank.fader2.cc}`);
-  const liveIssues = sectionIssueKeys(liveBank, errs);
-  document.getElementById('live-f1-tech')?.classList.toggle('has-issue', liveIssues.has('fader1'));
-  document.getElementById('live-f2-tech')?.classList.toggle('has-issue', liveIssues.has('fader2'));
-  renderLiveFaderValues();
-
-  const mode = bank?.roller_mode || 'cc';
-  let rollerValue = '–';
-  if (allowed && mode === 'cc' && encLiveVal !== null) {
-    rollerValue = liveArticulationName(encLiveVal);
-  } else if (allowed && mode === 'keyswitch' && ksLiveNote !== null) {
-    rollerValue = ksLabel(bank, ksLiveNote);
-  } else if (allowed && mode === 'track_nav') {
-    // No live "key just triggered" signal exists (track_nav sends raw HID
-    // keystrokes straight to the OS, never over the MIDI/Serial link this
-    // app listens on) — show the configured combo instead (TODO #1, reduced
-    // scope, confirmed 2026-08-10).
-    rollerValue = `${keyComboLabel(bank.nav_keys_cw || [0x52])} / ${keyComboLabel(bank.nav_keys_ccw || [0x51])}`;
-  }
-  setTxt('live-roller-label', mode === 'keyswitch' ? 'ROLLER · KEYSWITCH' : mode === 'track_nav' ? 'ROLLER · NAVIGATION' : mode === 'cc_relative' ? 'ROLLER · RELATIVE CC' : 'ROLLER · ARTICULATION');
-  setTxt('live-roller-label-short', mode === 'keyswitch' ? 'KS' : mode === 'track_nav' ? 'NAV' : mode === 'cc_relative' ? 'REL' : 'ART');
-  const ksNotes = bank.ks_notes || [];
-  const ksRange = ksNotes.length ? noteRangeText(ksNotes, '→') : 'no notes';
-  setTxt('live-roller-tech', mode === 'keyswitch'
-    ? `Ch${(bank.ks_channel ?? bank.encoder.channel ?? 0)+1}·${ksRange}`
-    : mode === 'track_nav' ? 'HID·keys' : `Ch${bank.encoder.channel+1}·CC${bank.encoder.cc}`);
-  setTxt('live-roller-value', rollerValue);
-  const rollerValueEl = document.getElementById('live-roller-value');
-  if (rollerValueEl) {
-    const readableValue = mode === 'cc' && encLiveVal !== null ? uaccName(encLiveVal) : rollerValue;
-    rollerValueEl.classList.toggle('is-long', readableValue.length > 12);
-    rollerValueEl.classList.toggle('is-very-long', readableValue.length > 20);
-    rollerValueEl.title = mode === 'cc' && encLiveVal !== null ? `${readableValue} · CC${encLiveVal}`
-      : mode === 'keyswitch' && ksLiveNote !== null && bank.ks_names?.[ksLiveNote] ? `${readableValue} · ${noteName(ksLiveNote)}` : readableValue;
-    rollerValueEl.setAttribute('aria-label', readableValue);
-  }
   syncSectionLive();
-  updateContextualLiveStrip();
 }
 function updateNvmDegradedNotice() {
   const el = document.getElementById('nvm-degraded-notice');
@@ -6827,7 +6339,7 @@ function renderConnState(){
     status.setAttribute('aria-label',txt.textContent);
     status.title = txt.title || txt.textContent;
   }
-  renderLiveStrip();
+  renderLiveState();
   renderMidiDiagnostics();
   updateNvmDegradedNotice();
   updateOwnerRow();
@@ -7165,7 +6677,8 @@ function glideStageIntoColumn(closeWelcome) {
   stage.style.transformOrigin = `${after.left - stageBox.left}px ${after.top - stageBox.top}px`;
   stage.style.transform = `translate(${dx}px,${dy}px) scale(${scale})`;
   void stage.offsetWidth;
-  stage.style.transition = 'transform var(--dur-stage) var(--ease-out)';
+  // Fader-glow clock with a soft ramp-in (Frank 2026-10-01: --ease-out read as a sudden jerk).
+  stage.style.transition = 'transform var(--dur-link-out) var(--ease-glide)';
   stage.style.transform = '';
   let finished = false;
   const done = () => {
@@ -7174,11 +6687,10 @@ function glideStageIntoColumn(closeWelcome) {
     stage.removeEventListener('transitionend', onEnd);
     stage.style.removeProperty('transition');
     stage.style.removeProperty('transform-origin');
-    updateContextualLiveStrip();
   };
   const onEnd = e => { if (e.target === stage && e.propertyName === 'transform') done(); };
   stage.addEventListener('transitionend', onEnd);
-  setTimeout(done, 1400);
+  setTimeout(done, CONNECT_LINK_OUT_MS + 300);
 }
 function finalizeWelcomeExit() {
   stopOnbScrollSync();
@@ -7208,9 +6720,11 @@ function finalizeWelcomeExit() {
       void deviceImg.offsetWidth;
       deviceImg.style.transition = '';
     }
+    // A Connect & load fader settle keeps running through the layout swap
+    // (the glide starts mid-settle); it clears its own transition when done.
     controller.querySelectorAll('.fader-thumb').forEach(thumb => {
       thumb.style.removeProperty('animation');
-      thumb.style.removeProperty('transition');
+      if (!_connectThumbSettle) thumb.style.removeProperty('transition');
     });
   }
   const btn = document.getElementById('send-btn');
@@ -7259,7 +6773,9 @@ function finalizeWelcomeExit() {
 // keyframe animation sidesteps this cleanly. Skipped under
 // prefers-reduced-motion, matching every other motion-guarded spot in this
 // file.
-function revealPostConnectUI() {
+// delayMs: start together with the app chrome reveal (revealAppChrome()); the
+// animation's fill:both keeps the button at opacity 0 through the delay.
+function revealPostConnectUI(delayMs = 0) {
   const btn = document.getElementById('send-btn');
   const deviceImg = document.getElementById('device-img');
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -7267,18 +6783,22 @@ function revealPostConnectUI() {
     if (reduced) {
       btn.style.opacity = '1';
     } else {
-      // --dur-reveal (.6s) = 2x the original .3s (Frank, 2026-08-10 HW test:
-      // "udělej to pomalejší, dvojnásobně"); shared with the live HUD reveal
-      // below so the two land together exactly, not just approximately (they
-      // used to be .6s/.56s, a 40ms gap left over from doubling both
-      // independently -- Frank 2026-08-17 timing-consistency pass).
-      btn.style.animation = 'welcome-btn-reveal var(--dur-reveal) ease';
+      // Fader-glow clock, shared with the app chrome reveal so
+      // everything arriving after Connect & load lands as one (Frank 2026-10-01:
+      // "používat časy, které jsme vyladili pro záři faderů").
+      btn.style.animation = `welcome-btn-reveal var(--dur-link-in) var(--ease-link) ${delayMs}ms both`;
       btn.addEventListener('animationend', () => { btn.style.animation = ''; btn.style.opacity = ''; }, { once: true });
     }
   }
   // Bring the controller's shadow back at the same moment, so it doesn't
   // read as a separate, earlier event (Frank, 2026-07-22).
-  if (deviceImg) deviceImg.style.removeProperty('box-shadow');
+  if (deviceImg) {
+    if (!reduced) {
+      deviceImg.style.transition = `box-shadow var(--dur-link-in) var(--ease-link) ${delayMs}ms`;
+      setTimeout(() => { deviceImg.style.transition = ''; }, delayMs + CONNECT_LINK_IN_MS + 100);
+    }
+    deviceImg.style.removeProperty('box-shadow');
+  }
 }
 // The button must sit at the EXACT same on-screen spot it will occupy once
 // welcome closes (Frank, 2026-07-21 — "to tlačítko musí být ve stejné pozici
@@ -7529,7 +7049,7 @@ function showWelcome() {
     ws.scrollTop = 0;
     syncWelcomeOnboardingScroll();
   }
-  document.body.classList.remove('welcome-connecting','app-reveal-pending','app-reveal');
+  document.body.classList.remove('welcome-connecting','app-reveal-pending','app-reveal','live-note-held','live-note-reveal');
   const controller = sharedController();
   controller?.classList.remove('connect-success');
   if (controller) delete controller.dataset.onbFeature;
@@ -7568,9 +7088,23 @@ function resetAppScrollTop() {
   document.body.scrollTop = 0;
   root.style.scrollBehavior = previous;
 }
-function connectTransitionWelcome() {
+// Connect & load runs on the fader-glow clock (Frank 2026-10-01) – JS mirror of
+// --dur-link-in / --dur-link-out. Overlapping beats, one gesture ("welcome se
+// rozjede zároveň s pohybem faderů a do toho pomalu nabíhá pohyb doleva"):
+//   0      faders settle (IN) + greeting rises + welcome dissolves (IN / 3)
+//   IN/3   layout swap, controller glides left (OUT) while the faders land –
+//          early, so its ramp-in overlaps the faders' peak instead of leaving
+//          a still moment between the two moves (Frank 2026-10-01: "zasekne se")
+//   2 s    greeting fades out (IN); only once it is gone does the app chrome fade in (IN)
+const CONNECT_LINK_IN_MS = 1300, CONNECT_LINK_OUT_MS = 1800;
+const CONNECT_SWAP_MS = CONNECT_LINK_IN_MS / 3;   // = calc(var(--dur-link-in) / 3) in CSS
+const OWNER_GREETING_OUT_MS = 2000;   // .owner-greeting.is-handoff's owner-greeting-out delay
+const OWNER_GREETING_GONE_MS = OWNER_GREETING_OUT_MS + CONNECT_LINK_IN_MS;
+// greeting: owner name to greet as part of the hand-off ('' = none).
+function connectTransitionWelcome(greeting = '') {
   const ws = document.getElementById('welcome-screen');
   if (!ws || ws.classList.contains('hidden') || ws.classList.contains('connecting')) return;
+  _connectSettlePending = false;   // the settle below takes over from here
 
   // The fixed welcome overlay can hide an arbitrarily scrolled app underneath it.
   // Always reveal a deterministic top-of-app state.
@@ -7585,34 +7119,48 @@ function connectTransitionWelcome() {
   const devWrap = sharedController();
   const visual = document.getElementById('device-visual');
   const visualScale = visual?.offsetWidth ? visual.getBoundingClientRect().width / visual.offsetWidth : 1;
+  //    In % of the thumb's own height: the controller can change size at the
+  //    layout swap mid-settle, and a % target scales with it instead of
+  //    becoming a new px target that restarts the move (Frank 2026-10-01:
+  //    "zasekne se"). Thumb, track and travel all scale with the device width.
+  const pct = (th, px) => th.offsetHeight ? px / th.offsetHeight * 100 : 0;
+  const targetPct = (th, rail, v) => pct(th, (1 - v / 127) * (rail.offsetHeight - th.offsetHeight));
   if (thumbL && railL) {
     const curL = (thumbL.getBoundingClientRect().top - railL.getBoundingClientRect().top) / visualScale;
     thumbL.style.animation = 'none';
-    thumbL.style.transform = `translate3d(-50%,${curL}px,0)`;
+    thumbL.style.transform = `translate3d(-50%,${pct(thumbL, curL)}%,0)`;
   }
   if (thumbR && railR) {
     const curR = (thumbR.getBoundingClientRect().top - railR.getBoundingClientRect().top) / visualScale;
     thumbR.style.animation = 'none';
-    thumbR.style.transform = `translate3d(-50%,${curR}px,0)`;
+    thumbR.style.transform = `translate3d(-50%,${pct(thumbR, curR)}%,0)`;
   }
 
   // 2. Settle to the device snapshot already applied by serialReadInfo() on the
-  //    fader-glow curve (--ease-link, Frank 2026-10-01: the old snap ease read as a
-  //    jump), finishing just before the 1.1s layout swap, which drops this
-  //    transition and would otherwise cut the settle short. This uses
-  //    the same 0–127 -> travel mapping as pF(), including the real rendered thumb height.
+  //    fader-glow clock with a soft ramp-in and landing (--ease-glide, Frank
+  //    2026-10-01: "pomalu, s náběhem a dojezdem"). It runs on through the
+  //    layout swap (_connectThumbSettle keeps finalizeWelcomeExit() off it) and
+  //    then drops its transition – the realtime MIDI path stays unanimated –
+  //    and hands back to pF() px positions (catching up any live values).
+  //    Same 0–127 -> travel mapping as pF(), incl. the real rendered thumb height.
+  _connectThumbSettle = true;
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (thumbL && railL) {
-      thumbL.style.transition = 'transform calc(var(--dur-stage) - .1s) var(--ease-link)';
-      pF('track-l','thumb-l',liveValues.f1);
+      thumbL.style.transition = 'transform var(--dur-link-in) var(--ease-glide)';
+      thumbL.style.transform = `translate3d(-50%,${targetPct(thumbL, railL, liveValues.f1)}%,0)`;
     }
     if (thumbR && railR) {
-      thumbR.style.transition = 'transform calc(var(--dur-stage) - .1s) var(--ease-link)';
-      pF('track-r','thumb-r',liveValues.f2);
+      thumbR.style.transition = 'transform var(--dur-link-in) var(--ease-glide)';
+      thumbR.style.transform = `translate3d(-50%,${targetPct(thumbR, railR, liveValues.f2)}%,0)`;
     }
+    setTimeout(() => {
+      _connectThumbSettle = false;
+      [thumbL, thumbR].forEach(th => th?.style.removeProperty('transition'));
+      positionThumbs();
+    }, CONNECT_LINK_IN_MS + 50);
   }));
 
-  // 3. Restrained success treatment: soft halo, hairline outline and one glass shimmer.
+  // 3. Restrained success treatment: soft halo and hairline outline.
   if (devWrap) {
     delete devWrap.dataset.onbFeature;
     devWrap.classList.remove('connect-success');
@@ -7620,99 +7168,89 @@ function connectTransitionWelcome() {
     devWrap.classList.add('connect-success');
   }
 
-  // 4. Fade out welcome text — same timing as the blur/button fade below
-  // (.72s delay, .34s duration, plain ease) so every part of the welcome
-  // screen fades out together, not staggered (Frank, 2026-07-22: "tlacitko
-  // zmizi pozdeji nez ty napisy. Slad to dohromady").
-  setTimeout(() => {
-    const tb = document.getElementById('welcome-text-block');
-    if (tb) tb.style.animation = 'welcome-text-out .34s ease forwards';
-  }, 720);
+  // 4. Fade out the welcome text, backdrop and floating button together (Frank,
+  // 2026-07-22: "Slad to dohromady") while the faders travel, gone by the swap.
+  const tb = document.getElementById('welcome-text-block');
+  if (tb) tb.style.animation = 'welcome-text-out calc(var(--dur-link-in) / 3) var(--ease-link) forwards';
 
-  // 5. Fade the blur overlay (and the floating Send button, via the
-  //    body.welcome-connecting CSS hook) after the shared faders reach the
-  //    hardware snapshot.
+  // 5. The greeting rises with the faders (Frank 2026-10-01) – first through the
+  // dissolving welcome, then from behind the controller as it glides away.
+  if (greeting) showOwnerGreeting(greeting, true);
+
+  // 6. Backdrop + floating Send button fade via the body.welcome-connecting CSS hook.
   ws.classList.add('connecting');
   document.body.classList.add('welcome-connecting');
-  // Hold the app chrome hidden while the welcome backdrop fades; it rises in
-  // only once the controller glide is under way (Frank 2026-10-01: sections
+  // Hold the app chrome hidden while the welcome fades; it only cross-fades in
+  // once the controller has cleared the column (Frank 2026-10-01: sections
   // used to appear over the moving controller in one frame).
-  document.body.classList.add('app-reveal-pending');
+  document.body.classList.add('app-reveal-pending', 'live-note-held');
   setTimeout(() => {
     resetAppScrollTop();
     // runValidation() (which sets the button's post-connect text/size —
     // "Connect & load" -> "Send to device", welcome-start's larger pill
     // padding -> the plain app size) must land in the SAME synchronous swap
-    // as finalizeWelcomeExit()'s class/position change, not earlier. It used
-    // to fire at 650ms — well before the .72s-delayed fade even starts — so
-    // the button visibly relabeled and resized while still fully opaque and
-    // floating, reading as "one button vanished, a different one appeared"
-    // instead of one continuous element (Frank, 2026-07-21: "neni to
-    // plynule"). Now both changes happen together, already hidden behind the
-    // fully-faded overlay. finalizeWelcomeExit() must run FIRST — it drops
-    // .welcome-floating, and runValidation() now deliberately skips touching
-    // the button's text/classes while that class is present (guards against
-    // the auto-connect path relabeling the still-visible welcome button —
-    // see runValidation()'s own comment), so calling it before the class is
-    // gone would silently no-op here too.
+    // as finalizeWelcomeExit()'s class/position change, not earlier — while
+    // the button was still visible it read as "one button vanished, a
+    // different one appeared" (Frank, 2026-07-21: "neni to plynule"). Now both
+    // changes happen together, already hidden behind the fully-faded overlay.
+    // finalizeWelcomeExit() must run FIRST — it drops .welcome-floating, and
+    // runValidation() deliberately skips touching the button's text/classes
+    // while that class is present (see runValidation()'s own comment).
     finalizeWelcomeExit();
     runValidation();
     onbAfterWelcome();
     glideStageIntoColumn(() => ws.classList.add('hidden'));
-    revealAppChrome();
-    // Welcome is now closed — reveal the live HUD immediately. Its
-    // .is-contextual-visible toggle keys off welcomeClosed, and without this
-    // call nothing re-runs it until the first scroll, so the HUD only appeared
-    // after the user scrolled down (Frank 2026-07-27).
-    // Run this one reveal at 2x the HUD's normal .28s opacity transition
-    // (Frank, 2026-08-10 HW test: "udělej to pomalejší, dvojnásobně" — matches
-    // the button's .6s below). The base .live-hud transition must stay at its
-    // normal speed for every OTHER toggle (scroll show/hide, drag, enlarge),
-    // so this only overrides it for the duration of this specific reveal,
-    // then clears itself once the opacity transition finishes.
-    const liveStrip = document.getElementById('live-strip');
-    if (liveStrip) {
-      liveStrip.style.transitionDuration = 'var(--dur-reveal)';
-      liveStrip.addEventListener('transitionend', e => {
-        if (e.propertyName === 'opacity') liveStrip.style.transitionDuration = '';
-      }, { once: true });
-    }
-    updateContextualLiveStrip();
-    // 6. Reveal the button in lockstep with the live HUD above — same
-    // callback as finalizeWelcomeExit(), not a second setTimeout(…,1100).
-    // Two separate same-delay timers raced here (Frank, 2026-08-10: "send to
-    // device pak nekdy kratce probline"): finalizeWelcomeExit() above drops
-    // .welcome-floating, which un-does body.welcome-connecting's
-    // `animation:welcome-screen-out…forwards` hold on the button (opacity
-    // was pinned at 0) — with nothing left constraining opacity, the base
-    // rule snaps it to 1 the instant the class is gone. If a paint landed
-    // between that jump and the second timer's callback, revealPostConnectUI()
-    // then started a fresh `welcome-btn-reveal` animation from its own
-    // `from{opacity:0}` keyframe, snapping the already-visible button back to
-    // 0 before animating up again — a visible flash, intermittent because it
-    // only showed up when the browser happened to paint in that gap. Calling
-    // it in the same synchronous callback as finalizeWelcomeExit() means the
-    // browser only ever paints the final, already-mid-animation state.
-    revealPostConnectUI();
-  }, 1100);
+    // 7. With a greeting the app chrome only fades in once the greeting is
+    // gone (no cross-fade over it); without one, from mid-glide, once the
+    // controller has mostly cleared the column. Delays below count from this swap.
+    const revealDelay = greeting ? OWNER_GREETING_GONE_MS - CONNECT_SWAP_MS : CONNECT_LINK_OUT_MS / 2;
+    revealAppChrome(revealDelay);
+    // The "Live positions unavailable" note only surfaces once every part of
+    // the intro (glide, greeting, chrome reveal) has come to rest.
+    const introEndMs = Math.max(CONNECT_LINK_OUT_MS, revealDelay + CONNECT_LINK_IN_MS);
+    setTimeout(revealLiveNote, introEndMs);
+    // 8. Reveal the button with the app chrome — in this same
+    // callback as finalizeWelcomeExit(), never a second timer (Frank,
+    // 2026-08-10: "send to device pak nekdy kratce probline"): dropping
+    // .welcome-floating un-pins the button's held opacity:0, and a paint
+    // between two timers showed it at 1 before the reveal snapped it back.
+    // Here the browser only ever paints the reveal animation's delayed
+    // fill:both opacity:0.
+    revealPostConnectUI(revealDelay);
+  }, CONNECT_SWAP_MS);
 }
 
-function hideWelcome() {
-  connectTransitionWelcome();
+// Ends live-note-held: the note fades in over 3 s (.live-note-reveal), then the
+// class drops so later state changes show/hide it as usual.
+function revealLiveNote() {
+  const body = document.body;
+  if (!body.classList.contains('live-note-held')) return;
+  body.classList.replace('live-note-held', 'live-note-reveal');
+  setTimeout(() => body.classList.remove('live-note-reveal'), 3100);
+}
+
+function hideWelcome(greeting = '') {
+  connectTransitionWelcome(greeting);
 }
 
 // Second half of the Connect & load choreography: header, sections and footer
-// fade/rise in on the fader-glow timing, delayed so the gliding controller has
-// already cleared the column. Classes drop once the sections' animation ends.
-function revealAppChrome() {
+// fade in on the fader-glow timing after delayMs (--app-reveal-delay). Classes
+// drop once the sections' animation ends.
+function revealAppChrome(delayMs = 0) {
   const body = document.body;
+  body.style.setProperty('--app-reveal-delay', `${delayMs}ms`);
   body.classList.remove('app-reveal-pending');
   body.classList.add('app-reveal');
   const sections = document.getElementById('settings-col');
   let cleared = false;
-  const clear = () => { if (!cleared) { cleared = true; body.classList.remove('app-reveal'); } };
+  const clear = () => {
+    if (cleared) return;
+    cleared = true;
+    body.classList.remove('app-reveal');
+    body.style.removeProperty('--app-reveal-delay');
+  };
   sections?.addEventListener('animationend', e => { if (e.target === sections) clear(); });
-  setTimeout(clear, 2200);   // fallback when animations are skipped
+  setTimeout(clear, delayMs + CONNECT_LINK_IN_MS + 300);   // fallback when animations are skipped
 }
 
 function loadDefaultDemoConfig() {
@@ -7752,7 +7290,6 @@ function finishWelcomeInstant() {
   runValidation();
   if (ws) ws.classList.add('hidden');
   onbAfterWelcome();
-  updateContextualLiveStrip();   // reveal the live HUD now, not on first scroll (Frank 2026-07-27)
   requestAnimationFrame(() => {
     resetAppScrollTop();
     // Re-measure, not just re-position: finalizeWelcomeExit() above already called
@@ -8640,7 +8177,6 @@ function scheduleViewportLayout(reason) {
     if (reasons & VIEWPORT_RESIZE) {
       syncWelcomeOnboardingScroll();
       positionLiveNote();
-      if (!onboarding) applyLiveHudState(false, false); // re-clamp custom HUD position
       if (!onboarding) {
         positionWelcomeAnchor();
         positionWelcomeFloatingButton();
@@ -8649,7 +8185,6 @@ function scheduleViewportLayout(reason) {
       positionThumbs();
     }
     if (reasons & (VIEWPORT_WINDOW_SCROLL | VIEWPORT_RESIZE)) {
-      updateContextualLiveStrip();
       if (_stickySectionRaf) {
         cancelAnimationFrame(_stickySectionRaf);
         _stickySectionRaf = 0;
@@ -8957,7 +8492,6 @@ window.addEventListener('beforeunload', e => {   // audit S5 — druhá síť
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('load',()=>{
   initDark();
-  initLiveHudPositioning();
   // Language: English only
   // device-img has inline base64 src — always available immediately
   const deviceImg  = document.getElementById('device-img');
