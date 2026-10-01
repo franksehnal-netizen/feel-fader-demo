@@ -923,14 +923,16 @@ html.dark .info-val{color:var(--t1)}
 @media(max-width:600px){#toasts{right:16px;bottom:calc(14px + env(safe-area-inset-bottom));left:16px;width:auto;align-items:center}.toast{max-width:min(100%,340px);transform-origin:center bottom}}
 @media(prefers-reduced-motion:reduce){.toast{animation:none;transition:none}.toast.is-leaving{display:none}}
 .sync-banner{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:250;   /* pod single-row header, nad stage (z-40) i toasty */
-  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);
-  border:1px solid rgba(232,160,58,.5);background:linear-gradient(rgba(230,162,60,.08),rgba(230,162,60,.08)),var(--glass-dialog);
+  /* Same flat card as .toast (Frank 2026-10-01: the amber glass banner was inconsistent with notifications). */
+  display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--bg-card);
   width:max-content;max-width:min(92vw,560px);flex-wrap:wrap;justify-content:center;
-  font-size:var(--fs-md);font-weight:600;box-shadow:0 14px 38px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.24);backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%)}
+  color:var(--t1);font:500 var(--fs-base)/1.4 'Mulish',sans-serif;box-shadow:var(--shadow-hud)}
+.sync-banner .tx{margin-left:0}
 .sync-banner[hidden]{display:none}   /* class display:flex jinak přebije UA pravidlo pro [hidden] */
 .nvm-degraded-notice[hidden]{display:none}   /* stejný gotcha — .hid-inline-notice je taky display:flex */
 .sync-btn{border:1px solid var(--border-s);background:var(--bg-input);
-  padding:5px 12px;font-size:var(--fs-md);font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  padding:5px 12px;font-size:var(--fs-md);font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .sync-btn-overwrite{border-color:color-mix(in srgb,var(--red) 42%,var(--border-s));color:var(--red)}
 /* Touch: enlarge tap targets to >=44px without bloating desktop */
 @media(pointer:coarse){
@@ -979,8 +981,8 @@ html.dark .info-val{color:var(--t1)}
   .bank-block-tab-add,.send-btn,.btn,.ui-select-trigger{min-height:44px}
   .tx{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   /* Keep toast chrome compact while the close button retains a 44px hit area. */
-  .toast .tx{position:relative;width:26px;height:26px;min-width:26px;min-height:26px}
-  .toast .tx::before{content:'';position:absolute;inset:-9px;border-radius:50%}
+  .toast .tx,.sync-banner .tx{position:relative;width:26px;height:26px;min-width:26px;min-height:26px}
+  .toast .tx::before,.sync-banner .tx::before{content:'';position:absolute;inset:-9px;border-radius:50%}
   .ks-keyboard-shell{grid-template-columns:44px minmax(0,1fr) 44px}
   .ks-key-scroll-btn{width:44px}
   .roller-mode-btn{min-height:44px}
@@ -1792,6 +1794,21 @@ body.app-reveal .center-col>.stage-collapse{z-index:170}
 .icon-btn-emoji{font-size:var(--fs-3xl);line-height:1}
 .icon-btn-label{font-size:var(--fs-sm);color:var(--t3);text-align:center;white-space:nowrap}
 .badge-btn .icon-btn-emoji{display:none}
+.icon-emoji-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.icon-btn-emoji-only{min-width:0;aspect-ratio:1;justify-content:center;padding:0}
+.icon-image-row{margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px solid var(--border)}
+.bank-icon-img{display:block;width:1.1em;height:1.1em;border-radius:50%;object-fit:cover}
+/* Bank images use all the room the control has and follow its curvature
+   (Frank 2026-10-01). Tab: a circle concentric with the pill's left end
+   (30px pill − 1px border − 1px gap = 26px). Trigger and picker tile: the
+   image fills the control and its own radius clips it (overflow:hidden). */
+.bank-block-tab.has-image{padding:1px 12px 1px 1px}
+.bank-block-tab.has-image .bank-icon-img{width:26px;height:26px}
+.icon-picker-trigger.has-image{padding:0;overflow:hidden;width:34px;height:34px;min-width:0;min-height:0}
+.icon-picker-trigger.has-image .bank-icon-display,.icon-picker-trigger.has-image .bank-icon-img{width:100%;height:100%;border-radius:0}
+.icon-image-row .icon-btn-emoji-only{overflow:hidden}
+.icon-image-row .icon-btn-emoji,.icon-image-row .bank-icon-img{width:100%;height:100%;border-radius:0}
+@media(pointer:coarse){.icon-picker-trigger.has-image{width:44px;height:44px}}
 /* Library badge */
 .lib-badge{
   display:inline-flex;align-items:center;justify-content:center;
@@ -2335,7 +2352,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
         </div>
         <div class="info-row info-row-action" data-tip="Enable HID to let the device send keystrokes – required for the Navigation roller mode and the button long-press macro.">
           <span class="info-lbl">Keyboard (HID)</span>
-          <label class="hid-switch" title="Required for Navigation and Button Macro">
+          <label class="hid-switch">
             <input type="checkbox" id="hid-toggle" onchange="onHidToggle(this.checked)" aria-label="Enable keyboard HID">
             <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
           </label>
@@ -2511,7 +2528,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 <!-- ICON PICKER MODAL -->
 <div class="icon-picker-overlay" id="icon-picker" style="display:none" aria-hidden="true" onclick="if(event.target===this)closeIconPicker()">
   <div class="icon-picker-modal" role="dialog" aria-modal="true" aria-labelledby="icon-picker-title">
-    <div class="icon-picker-title" id="icon-picker-title" data-i18n="icon.title">Instrument category</div>
+    <div class="icon-picker-title" id="icon-picker-title" data-i18n="icon.title">Bank icon</div>
     <div class="icon-grid" id="icon-grid"></div>
     <div class="icon-picker-foot">
       <button class="btn btn-ghost" onclick="clearIcon()" data-i18n="icon.no_icon">No icon</button>
@@ -3243,11 +3260,11 @@ function renderBankTabs() {
   const el = document.getElementById('bank-tabs');
   const tabsHtml = cfg.banks.map((b,i) => {
     const iconHtml = b.icon
-      ? `<span class="bank-tab-ic" aria-hidden="true">${escHtml(b.icon)}</span>`
+      ? `<span class="bank-tab-ic" aria-hidden="true">${bankIconHtml(b.icon)}</span>`
       : `<span class="bank-tab-fallback" aria-hidden="true">${i+1}</span>`;
     const nm = escHtml(b.name || 'Bank '+(i+1));
     const defaultName = !b.icon && /^Bank \d+$/.test(b.name || 'Bank '+(i+1));   // K-7: "1 Bank 1" → "Bank 1"
-    return `<button class="bank-block-tab ${i===activeBank?'active':''}${defaultName?' is-default-name':''}" onclick="selectBank(${i},event)" aria-label="Edit ${nm}" ${i===activeBank?'aria-current="true"':''}
+    return `<button class="bank-block-tab ${i===activeBank?'active':''}${defaultName?' is-default-name':''}${bankImageFor(b.icon)?' has-image':''}" onclick="selectBank(${i},event)" aria-label="Edit ${nm}" ${i===activeBank?'aria-current="true"':''}
       draggable="true" data-bank-index="${i}" ondragstart="onBankDragStart(event,${i})" ondragover="onBankDragOver(event,${i})" ondragleave="onBankDragLeave(event)" ondrop="onBankDrop(event,${i})" ondragend="onBankDragEnd()">${iconHtml}<span class="bank-tab-name">${nm}</span><span class="bank-tab-device-dot" aria-hidden="true"></span></button>`;
   }).join('');
   const addHtml = cfg.banks.length < MAX_BANKS
@@ -3312,9 +3329,9 @@ function renderPanels(errs = validate()) {
     <div class="bank-block-name">
       <div class="bank-eyebrow">Bank ${bi+1} of ${cfg.banks.length}<span id="bank-eyebrow-device" ${deviceBankIndex() === bi ? '' : 'hidden'}> · active on device</span></div>
       <div class="bank-block-name-top">
-        <button class="icon-picker-trigger ui-control ui-pill ui-glass" onclick="openIconPicker(${bi}, 'icon')" aria-label="Choose icon for bank ${bi+1}">
+        <button class="icon-picker-trigger ui-control ui-pill ui-glass${bankImageFor(b.icon)?' has-image':''}" onclick="openIconPicker(${bi}, 'icon')" aria-label="Choose icon for bank ${bi+1}">
           ${b.icon
-            ? `<span class="bank-icon-display">${escHtml(b.icon)}</span>`
+            ? `<span class="bank-icon-display">${bankIconHtml(b.icon)}</span>`
             : `<span class="bank-icon-empty"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 2"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>`}
         </button>
         <input class="bank-name-input bank-title-input" value="${bankLabel}"
@@ -3710,6 +3727,7 @@ function trackNavBody(bi){
   <div class="enc-unified-body">
     ${hidEnableNotice('Navigation')}
     <div class="uacc-note" style="margin:8px 0">Rotating the roller sends a key (HID). Click a field and press a key (also with Ctrl/Shift/Alt/Cmd).</div>
+    <div class="uacc-note" style="margin:0 0 8px">In Ableton Live, the Auto Arm Max for Live device arms each track you select, so you can record on it right away. <a href="pages/auto-arm.html" target="_blank" rel="noopener">Set up Auto Arm</a></div>
     <div class="section-field-row">
       <div class="field-block">
         <span class="field-label">ROLL UP</span>
@@ -3738,7 +3756,7 @@ function ccRelativeBody(ctrl, bi, errs = validate()) {
   <div class="enc-unified-body">
     ${featureFwWarning('cc_relative')}
     <div class="uacc-note" style="margin:8px 0">Rotating the roller sends relative steps on this CC/channel (1 = step up, 127 = step down). Your DAW or plugin decides what a step does, so no articulation list is stored here.</div>
-    <div class="uacc-note" style="margin:0 0 8px">In Ableton Live, the Keyswitch Stepper Max for Live device on the track turns these steps into keyswitch notes.</div>
+    <div class="uacc-note" style="margin:0 0 8px">In Ableton Live, the CC Remapper Max for Live device on the track turns these steps into keyswitch notes. <a href="pages/cc-remapper.html" target="_blank" rel="noopener">Set up CC Remapper</a></div>
     <div class="section-field-row" style="margin-top:10px">
       ${stepperFieldHtml(`b${bi}-encoder-ch`, 'MIDI CHANNEL', ctrl.channel+1, 1, 16,
         `stepCtrl(${bi},'encoder','channel',-1)`, `stepCtrl(${bi},'encoder','channel',1)`,
@@ -3776,7 +3794,7 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
   // variant so it reads as a heads-up, not a blocking error (this is NOT
   // wired into validate() — the config is valid and Send stays enabled).
   const headerWarn = schemaStale
-    ? `<span class="section-issue-dot warn" aria-hidden="true" title="Connected firmware only supports one macro for all banks"></span><span class="sr-only">Warning: connected firmware only supports one macro for all banks – this bank's macro will be ignored until it's updated.</span>`
+    ? `<span class="section-issue-dot warn" aria-hidden="true"></span><span class="sr-only">Warning: connected firmware only supports one macro for all banks – this bank's macro will be ignored until it's updated.</span>`
     : '';
   return `
     ${sectionHeaderHtml(bi,'macro','Button',summary,'A long-press (≥ 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks.',headerWarn)}
@@ -6572,7 +6590,7 @@ var TRANSLATIONS = {
     // Buttons
     'btn.send': 'Send to device',
     // Icon picker
-    'icon.title': 'Instrument category',
+    'icon.title': 'Bank icon',
     // Toasts
     'toast.config_sent': 'Configuration sent to device',
     'toast.already_in_sync': 'Already in sync',
@@ -7701,6 +7719,8 @@ function onbReplay() {
 var iconPickerBank = 0;
 var iconPickerMode = 'icon'; // 'icon' | 'library'
 
+// Emoji-only grid (Frank 2026-10-01): labels live in aria-label + hover tip,
+// no visible captions or category headers – the icon is just a visual tag.
 var ICON_ONLY_SECTIONS = [
   {
     icons: [
@@ -7713,9 +7733,56 @@ var ICON_ONLY_SECTIONS = [
       {icon:'🪗', label:'Accordion'},
       {icon:'🪕', label:'Plucked'},
       {icon:'🎸', label:'Electric'},
+      {icon:'🎙️', label:'Microphone'},
+      {icon:'🎼', label:'Score'},
+      {icon:'🎶', label:'Notes'},
+      {icon:'🎛️', label:'Knobs'},
+      {icon:'🎚️', label:'Fader'},
+      {icon:'🕹️', label:'Joystick'},
+      {icon:'⚡', label:'Lightning'},
+      {icon:'🖥️', label:'Computer'},
+      {icon:'⌨️', label:'Keyboard'},
+      {icon:'🔌', label:'Plug'},
+      {icon:'💾', label:'Floppy disk'},
+      {icon:'🎧', label:'Headphones'},
+      {icon:'🔊', label:'Speaker'},
+      {icon:'📻', label:'Radio'},
+      {icon:'🎬', label:'Clapperboard'},
     ]
   },
 ];
+
+// Bank images (Frank 2026-10-01): curated by us and shipped inside the app as
+// 96×96 data URIs. The device stores only the code 'm:<id>' (firmware
+// META_ICON_MAX = 16 → id max 14 chars), so every computer renders the same image.
+var BANK_IMAGE_PREFIX = 'm:';
+function bankImagePlaceholder(n, hue) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="hsl(${hue} 42% 40%)"/><text x="48" y="62" font-family="sans-serif" font-size="42" font-weight="700" text-anchor="middle" fill="#fff">${n}</text></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+var BANK_IMAGES = [
+  {id:'fanda', label:'Fanda borec', src:'data:image/webp;base64,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'},
+  {id:'slavi', label:'Slávi', src:'data:image/webp;base64,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'},
+  {id:'ph3', label:'Placeholder 3', src:bankImagePlaceholder(3, 150)},
+  {id:'ph4', label:'Placeholder 4', src:bankImagePlaceholder(4, 200)},
+  {id:'ph5', label:'Placeholder 5', src:bankImagePlaceholder(5, 260)},
+  {id:'ph6', label:'Placeholder 6', src:bankImagePlaceholder(6, 320)},
+];
+function bankImageFor(icon) {
+  if (!String(icon || '').startsWith(BANK_IMAGE_PREFIX)) return null;
+  const id = icon.slice(BANK_IMAGE_PREFIX.length);
+  return BANK_IMAGES.find(img => img.id === id) || {id, label:'Unknown image', src:''};
+}
+// Inner HTML for any bank-icon slot; images size to 1em of the slot's font-size.
+function bankIconHtml(icon) {
+  const img = bankImageFor(icon);
+  if (!img) return escHtml(icon);
+  return img.src ? `<img class="bank-icon-img" src="${img.src}" alt="" draggable="false">` : '🖼️';
+}
+function bankIconText(icon) {
+  const img = bankImageFor(icon);
+  return img ? `Image: ${img.label}` : icon;
+}
 
 var LIBRARY_ONLY_SECTIONS = [
   {
@@ -7743,7 +7810,7 @@ function openIconPicker(bi, mode = 'icon') {
   iconPickerBank = bi;
   iconPickerMode = mode;
   const current = cfg.banks[bi].icon || '';
-  const sections = ICON_ONLY_SECTIONS;
+  const sections = [...ICON_ONLY_SECTIONS, {images: BANK_IMAGES}];
   const title = t('icon.title');
   const grid = document.getElementById('icon-grid');
   const pickerTitle = document.querySelector('.icon-picker-title');
@@ -7753,12 +7820,22 @@ function openIconPicker(bi, mode = 'icon') {
   for (const section of sections) {
     if (section.label) out += `<div class="icon-section-label">${section.label}</div>`;
     if (section.icons) {
-      out += `<div class="icon-section-row">`;
+      out += `<div class="icon-section-row icon-emoji-grid">`;
       out += section.icons.map(({icon, label}) => `
-        <button class="icon-btn ${icon===current?'selected':''}" onclick="selectIcon('${icon}')" aria-label="Choose ${label}" ${icon===current?'aria-pressed="true"':''}>
+        <button class="icon-btn icon-btn-emoji-only ${icon===current?'selected':''}" onclick="selectIcon('${icon}')" aria-label="Choose ${label}" data-tip="${label}" ${icon===current?'aria-pressed="true"':''}>
           <span class="icon-btn-emoji">${icon}</span>
-          <span class="icon-btn-label">${label}</span>
         </button>`).join('');
+      out += `</div>`;
+    }
+    if (section.images) {
+      out += `<div class="icon-section-row icon-emoji-grid icon-image-row">`;
+      out += section.images.map(({id, label, src}) => {
+        const code = BANK_IMAGE_PREFIX + id;
+        return `
+        <button class="icon-btn icon-btn-emoji-only ${code===current?'selected':''}" onclick="selectIcon('${code}')" aria-label="Choose ${label}" data-tip="${label}" ${code===current?'aria-pressed="true"':''}>
+          <span class="icon-btn-emoji"><img class="bank-icon-img" src="${src}" alt="" draggable="false"></span>
+        </button>`;
+      }).join('');
       out += `</div>`;
     }
     if (section.badges) {
@@ -8031,7 +8108,7 @@ function quickSetupMenuHtml(query = '') {
     const preset = LIBRARY_PRESETS[name] || customLibraryPresets[name] || {};
     const icon = preset.icon || (preset.custom ? '★' : '♪');
     return `<button class="quick-setup-option" type="button" role="option" data-name="${escHtml(name)}" onclick="chooseQuickSetup(this.dataset.name)" onkeydown="quickSetupOptionKey(event)">
-      <span class="quick-setup-option-icon" aria-hidden="true">${escHtml(icon)}</span><span class="quick-setup-option-name">${escHtml(name)}</span><span class="quick-setup-option-kind">${kind}</span>
+      <span class="quick-setup-option-icon" aria-hidden="true">${bankIconHtml(icon)}</span><span class="quick-setup-option-name">${escHtml(name)}</span><span class="quick-setup-option-kind">${kind}</span>
     </button>`;
   };
   // UX audit 2026-09-25 F-2: say HOW a built-in setup switches articulations.
@@ -8148,7 +8225,7 @@ function libraryPresetPreviewRows(name, preset) {
     }
     const customNames = articulationNames(preset.articulations);
     if (customNames.length) rows.push(['Articulations', previewNamesText(customNames)]);
-    if (Object.prototype.hasOwnProperty.call(preset,'icon')) rows.push(['Bank icon', preset.icon || 'Remove icon']);
+    if (Object.prototype.hasOwnProperty.call(preset,'icon')) rows.push(['Bank icon', preset.icon ? bankIconText(preset.icon) : 'Remove icon']);
   } else {
     rows.push(['Roller', `${rollerModeTitle(preset.roller_mode || 'cc')} · CC${preset.encoder_cc ?? 32} · channel stays unchanged`]);
     const keyswitches = preset.ks_notes || [];
@@ -8157,7 +8234,7 @@ function libraryPresetPreviewRows(name, preset) {
       : `${(preset.uacc_values || []).length} UACC articulation values`]);
     const names = articulationNames(preset);
     if (names.length) rows.push(['Articulations', previewNamesText(names)]);
-    rows.push(['Bank icon', cfg.banks[activeBank]?.icon ? 'Keep current icon' : (preset.icon || 'No icon')]);
+    rows.push(['Bank icon', cfg.banks[activeBank]?.icon ? 'Keep current icon' : (preset.icon ? bankIconText(preset.icon) : 'No icon')]);
   }
   return rows.map(([label,value]) => `<div class="library-preview-row"><span class="library-preview-row-label">${escHtml(label)}</span><span class="library-preview-row-value">${escHtml(value)}</span></div>`).join('');
 }
