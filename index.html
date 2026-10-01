@@ -1113,7 +1113,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   transform:none;pointer-events:none;
 }
 #welcome-text-block.welcome-onboarding #onb-beats{
-  position:fixed;top:calc(var(--welcome-cta-bottom,50%) + 20px + var(--onb-notice-space,0px));left:50%;
+  position:fixed;top:calc(var(--welcome-cta-bottom,50%) + 20px);left:50%;
   width:min(560px,calc(100vw - 40px));height:176px;
   transform:translateX(-50%);pointer-events:auto;
 }
@@ -1298,7 +1298,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   #welcome-text-block.welcome-onboarding .welcome-wordmark{position:absolute}
   #welcome-text-block.welcome-onboarding .welcome-browser-notice{position:absolute}
   #welcome-text-block.welcome-onboarding #onb-beats{
-    position:absolute;top:calc(var(--welcome-cta-bottom,50%) + 20px + var(--onb-notice-space,0px));bottom:auto;
+    position:absolute;top:calc(var(--welcome-cta-bottom,50%) + 20px);bottom:auto;
     height:auto;max-height:none;padding-bottom:196px;
     box-sizing:border-box;overflow:visible;
   }
@@ -1338,7 +1338,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 #welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .welcome-wordmark{position:absolute}
 #welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding .welcome-browser-notice{position:absolute}
 #welcome-screen.welcome-scroll-fallback #welcome-text-block.welcome-onboarding #onb-beats{
-  position:absolute;top:calc(var(--welcome-cta-bottom,50%) + 20px + var(--onb-notice-space,0px));bottom:auto;
+  position:absolute;top:calc(var(--welcome-cta-bottom,50%) + 20px);bottom:auto;
   height:auto;max-height:none;padding-bottom:196px;
   box-sizing:border-box;overflow:visible;
 }
@@ -1493,18 +1493,6 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .s
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .device-home{
   width:220px!important;
-}
-/* Phone first run = the returning welcome's controller size and quiet notice line
-   (under the CTA, see positionWelcomeFloatingButton()), with the tour below. */
-@media(max-width:600px){
-  body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .device-home{
-    width:min(55vw,clamp(120px,calc(44.24vh - 126px),196px))!important;
-    width:min(55vw,clamp(120px,calc(44.24svh - 126px),196px))!important;
-  }
-  #welcome-text-block.welcome-onboarding .welcome-browser-notice{
-    padding:0;background:none;border:none;border-radius:0;box-shadow:none;
-    font-size:var(--fs-sm);font-weight:400;line-height:1.45;
-  }
 }
 /* .stage's own layout (feel-fader.html:290) centers its flex children
    vertically (justify-content:center) — fine for the main app, but during
@@ -2206,6 +2194,7 @@ button:focus-visible{outline-offset:3px;}
 .bank-position-stepper .step-btn:disabled{opacity:.35;cursor:default;background:none;transform:none}
 
 .onb-replay-btn{margin:0 0 12px;}
+@media(max-width:600px){.onb-replay-btn{display:none}}
 
 /* ── NEW DARK MODE RULES ── */
 html.dark .bank-block-tab{color:var(--t2);border-color:transparent;}  /* inactive tabs stay visually open; only the active pill gets a glass border */
@@ -6985,7 +6974,6 @@ function positionWelcomeFloatingButton() {
   if (!onboarding) {
     body.style.removeProperty('--onb-wordmark-bottom');
     body.style.removeProperty('--onb-notice-top');
-    body.style.removeProperty('--onb-notice-space');
     body.style.removeProperty('--onb-stage-pad-top');
     body.style.removeProperty('--onb-controller-top');
     body.style.removeProperty('--onb-controller-height');
@@ -7016,18 +7004,13 @@ function positionWelcomeFloatingButton() {
     const wordmarkHeight = document.querySelector('.welcome-wordmark')?.offsetHeight || 18;
     const notice = document.getElementById('welcome-browser-notice');
     const noticeShown = notice?.classList.contains('show');
-    // Phone: the notice is a quiet line under the CTA, not a card above the
-    // controller – same welcome as a returning visit (Frank 2026-10-01).
-    const phone = matchMedia('(max-width:600px)').matches;
-    const noticeAbove = noticeShown && !phone;
-    const noticeHeight = noticeAbove ? notice.offsetHeight : 0;
+    const noticeHeight = noticeShown ? notice.offsetHeight : 0;
     const wordmarkBottom = topMargin + wordmarkHeight;
     const noticeTop = wordmarkBottom + gap;
-    const noticeBottomPos = noticeAbove ? noticeTop + noticeHeight : wordmarkBottom;
+    const noticeBottomPos = noticeShown ? noticeTop + noticeHeight : wordmarkBottom;
     const restControllerTop = noticeBottomPos + 20;
     const restControllerHeight = controllerRect.height;
     const ctaBottom = restControllerTop + restControllerHeight + 18 + buttonHeight;
-    const noticeBelowSpace = noticeShown && phone ? 10 + notice.offsetHeight : 0;
     // Does the cluster still fit the viewport? If not — and the static
     // max-height:820px breakpoint hasn't already made #welcome-screen
     // scrollable — engage the same scrollable fallback via a JS-toggled class.
@@ -7040,7 +7023,7 @@ function positionWelcomeFloatingButton() {
     const beatsHeight = beatsEl?.offsetHeight || 176;
     const margin = 12;
     const ws = document.getElementById('welcome-screen');
-    const fitsViewport = (ctaBottom + noticeBelowSpace + 20 + beatsHeight) <= (window.innerHeight - margin);
+    const fitsViewport = (ctaBottom + 20 + beatsHeight) <= (window.innerHeight - margin);
     const mediaScrollable = matchMedia('(max-height:820px)').matches;
     if (!fitsViewport && !mediaScrollable) {
       ws?.classList.add('welcome-scroll-fallback');
@@ -7057,8 +7040,7 @@ function positionWelcomeFloatingButton() {
     const stageTop = document.querySelector('.stage')?.getBoundingClientRect().top || 0;
     const stagePadTop = Math.max(0, restControllerTop - stageTop);
     body.style.setProperty('--onb-wordmark-bottom', wordmarkBottom + 'px', 'important');
-    if (noticeShown) body.style.setProperty('--onb-notice-top', (phone ? ctaBottom + 10 : noticeTop) + 'px', 'important');
-    body.style.setProperty('--onb-notice-space', noticeBelowSpace + 'px');
+    if (noticeShown) body.style.setProperty('--onb-notice-top', noticeTop + 'px', 'important');
     body.style.setProperty('--onb-stage-pad-top', stagePadTop + 'px', 'important');
     body.style.setProperty('--onb-controller-top', restControllerTop + 'px', 'important');
     body.style.setProperty('--onb-controller-height', restControllerHeight + 'px', 'important');
@@ -7485,7 +7467,8 @@ function skipWelcome({ intro = false } = {}) {
 }
 
 // ── Onboarding (guided first-run) ──────────────────────────────
-function onbShouldRun() { return !storageGet('ff-onboarded'); }
+// No tour on phones – the plain welcome only (Frank 2026-10-01: "nevypadá to dobře").
+function onbShouldRun() { return !storageGet('ff-onboarded') && !matchMedia('(max-width:600px)').matches; }
 
 let _onbBeat = 0, _onbBeatTimer = null;
 const _ONB_BEATS = [
