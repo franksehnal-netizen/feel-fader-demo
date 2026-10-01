@@ -6,13 +6,23 @@
   --t1:#1d1d1f;--t2:#505057;--t3:#6f6f76;--red:#e45745;
   --ft-bg:#2a2a2c;--ft-t3:rgba(255,255,255,.5);
   --r-sm:6px;--r:12px;--fs-sm:11px;
+  /* App header glass + link hover timing (feel-fader.html :root / html.dark). */
+  --chrome-glass-bg:linear-gradient(180deg,rgba(255,255,255,.68),rgba(242,242,247,.48));
+  --chrome-glass-filter:blur(22px) saturate(170%);
+  --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.72),0 8px 28px rgba(31,31,36,.09);
+  --ease-link:cubic-bezier(.22,.61,.36,1);--hover-in:1.3s var(--ease-link);--hover-out:1.8s var(--ease-link);
 }
-html.dark{--bg:#0f0f11;--bg-card:#1c1c1e;--border:rgba(255,255,255,.08);--t1:#f5f5f7;--t2:#aeaeb2;--t3:#8e8e93}
+html.dark{--bg:#0f0f11;--bg-card:#1c1c1e;--border:rgba(255,255,255,.08);--t1:#f5f5f7;--t2:#aeaeb2;--t3:#8e8e93;
+  --chrome-glass-bg:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
+  --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18)}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--t2);font:400 15px/1.7 'Mulish',sans-serif}
 
-.legal-top{border-bottom:1px solid var(--border)}
+/* The app header's sticky glass band, in both themes (Frank 2026-10-01:
+   "horní lištu stejným způsobem, jako ji má aplikace v dark režimu"). */
+.legal-top{position:sticky;top:0;z-index:50;background:var(--chrome-glass-bg);
+  backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);box-shadow:var(--chrome-glass-shadow)}
 /* Edge-to-edge like the app's own <header> (feel-fader.html), not capped to
    the 760px reading column `main` uses below – otherwise the bar looked
    narrower than the app it belongs to (Frank 2026-10-01: "stejně široká jako
@@ -29,8 +39,9 @@ body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var
    velikost"). */
 .legal-brand{font-weight:700;font-size:var(--fs-sm);letter-spacing:.12em;text-transform:uppercase;color:var(--t2);text-decoration:none}
 .legal-nav{display:flex;gap:20px;font-size:14px}
-.legal-nav a{color:var(--t2);text-decoration:none}
-.legal-nav a:hover{color:var(--t1)}
+/* Hover fades with the app's link timing instead of snapping (Frank 2026-10-01). */
+.legal-nav a{color:var(--t2);text-decoration:none;transition:color var(--hover-out)}
+.legal-nav a:hover{color:var(--t1);transition:color var(--hover-in)}
 .legal-nav a[aria-current="page"]{color:var(--t1);font-weight:700}
 
 main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:48px 20px 96px}
@@ -47,13 +58,68 @@ a{color:var(--red)}
 /* Documentation: contents list and spec tables */
 .doc-toc{margin:0 0 8px;padding:16px 20px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-card)}
 .doc-toc ol{margin:0;padding-left:20px;columns:2;column-gap:32px;font-size:14px}
-.doc-toc a{color:var(--t2);text-decoration:none}
-.doc-toc a:hover{color:var(--t1)}
+.doc-toc a{color:var(--t2);text-decoration:none;transition:color var(--hover-out)}
+.doc-toc a:hover{color:var(--t1);transition:color var(--hover-in)}
 h2[id]{scroll-margin-top:24px}
 .doc-table{width:100%;margin:0 0 12px;border-collapse:collapse;font-size:14px}
 .doc-table th,.doc-table td{padding:9px 12px 9px 0;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
 .doc-table th{width:34%;font-weight:600;color:var(--t1)}
 @media(max-width:600px){.doc-toc ol{columns:1}.doc-table th{width:40%}}
+code{font:500 .86em/1 ui-monospace,Consolas,monospace;color:var(--t1);overflow-wrap:anywhere}
+.doc-figure{margin:28px 0 8px}
+.doc-figure img{display:block;max-width:100%;height:auto;border:1px solid var(--border);border-radius:var(--r-sm)}
+.doc-figure figcaption{margin-top:8px;font-size:13px;color:var(--t3)}
+
+/* FOOTER – the app's full footer (feel-fader.html › FOOTER, .site-footer),
+   used by pages that carry the same footer as the app (cc-remapper.html).
+   Rules copied 1:1; the app's tokens it needs are scoped onto .site-footer
+   because this stylesheet doesn't define them. Change both together. */
+.site-footer{
+  --ft-bg:#2a2a2c;--ft-t1:#f5f5f7;--ft-t2:rgba(255,255,255,.72);--ft-t3:rgba(255,255,255,.5);
+  --fs-xs:10px;--fs-base:13px;--fs-lg:14px;--space-1:4px;--space-4:16px;--space-6:24px;
+  color:var(--ft-t2);background:var(--ft-bg);
+  /* The app's body type is 13px / `normal`; this stylesheet's body is 15px / 1.7. */
+  font-size:13px;line-height:normal;
+  /* In the app the footer spans .center-col's grid (controller column + gap +
+     680px editor, 16px gutters); here it is a direct child of <body>, so the
+     same content width comes from padding. --ft-w = that grid's width. */
+  --ft-w:calc(980px + clamp(32px,4vw,64px));
+  padding:40px max(16px,calc((100% - var(--ft-w))/2)) 18px;
+}
+@media(min-width:900px) and (max-width:1099px){.site-footer{--ft-w:954px}}
+@media(max-width:899px){.site-footer{--ft-w:668px}}
+.site-footer .footer-h{line-height:normal}
+.footer-main{
+  display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);
+  gap:var(--space-6) 32px;padding-bottom:40px;
+}
+.footer-brand{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-4)}
+.site-footer #footer-logo{height:30px;width:auto;max-width:180px;object-fit:contain;filter:grayscale(1) invert(1);opacity:.95}
+.footer-claim{margin:0;max-width:250px;font-size:var(--fs-base);font-weight:600;line-height:1.65;color:var(--ft-t1)}
+.footer-social{display:flex;gap:var(--space-4);margin-top:var(--space-1)}
+.footer-col{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.footer-h{margin:0 0 var(--space-1);font-size:var(--fs-lg);font-weight:700;color:var(--ft-t1)}
+.footer-col a,.footer-social a{
+  font-size:var(--fs-base);color:var(--ft-t2);text-decoration:none;transition:color var(--hover-out);
+}
+.footer-social a,.footer-social .no-link{display:inline-flex}
+.footer-social .no-link{color:var(--ft-t2);cursor:default}
+.footer-social svg{width:18px;height:18px}
+.footer-col a:hover,.footer-social a:hover{color:var(--ft-t1);transition:color var(--hover-in)}
+.footer-bottom{
+  display:flex;flex-wrap:wrap;gap:8px 20px;
+  font-size:var(--fs-xs);letter-spacing:.06em;text-transform:uppercase;color:var(--ft-t3);
+}
+.footer-version{text-transform:none}
+.footer-bottom-group{display:flex;flex-wrap:wrap;gap:4px 0}
+.footer-bottom-group span{white-space:nowrap}
+.footer-bottom-group span+span::before{content:"·";margin:0 8px}
+.footer-bottom-end{margin-left:auto}
+@media(max-width:600px){
+  .footer-main{grid-template-columns:auto auto;justify-content:start;column-gap:40px}
+  .footer-brand{grid-column:1/-1}
+  .footer-bottom-end{margin-left:0}
+}
 
 .legal-foot{background:var(--ft-bg);color:var(--ft-t3);font-size:12px;line-height:1.6}
 .legal-foot-inner{max-width:760px;margin:0 auto;padding:24px 20px}
