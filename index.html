@@ -208,6 +208,9 @@ header{
   -webkit-backdrop-filter:var(--chrome-glass-filter);
   box-shadow:var(--chrome-glass-shadow);
 }
+/* Dark: header + footer share the page background (--bg), separated by hairlines only (fewer grays, Frank 2026-10-02). */
+html.dark header{background:var(--bg);box-shadow:inset 0 -1px 0 var(--border)}
+html.dark .site-footer{--ft-bg:var(--bg);border-image:linear-gradient(var(--border) 0 1px,var(--ft-bg) 1px) fill 0/0/0 100vmax}
 /* transition:opacity – governed by the welcome-onboarding !important hide rule
    below. .top-sticky had none, so the instant its condition stopped matching
    (onboarding -> Connect & load finishing), the header — including "FEEL
@@ -2063,7 +2066,7 @@ button:focus-visible{outline-offset:3px;}
 }
 /* Dark: the edited bank takes the footer's lighter gray so it reads against the page (card-dark was nearly invisible on --bg);
    heavier weight + --border-s keep it apart from the --bg-input hover tint, which is almost the same gray. */
-html.dark .bank-block-tabs .bank-block-tab.active{background:var(--chrome-gray);font-weight:700;box-shadow:0 0 0 1px var(--border-s),0 0 14px rgba(255,255,255,.14)}
+html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);font-weight:700;box-shadow:0 0 0 1px var(--border-s),0 0 14px rgba(255,255,255,.14)}
 .bank-tab-device-dot{display:none;width:5px;height:5px;border-radius:50%;background:var(--green);flex:0 0 auto;margin-left:var(--space-1)}
 .bank-block-tab.is-on-device .bank-tab-device-dot{display:inline-block}
 /* A default "Bank N" name already carries its number, so the number slot hides
