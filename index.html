@@ -258,7 +258,7 @@ main{width:100%;}
    (UX audit 2026-09-28, N-4, variant A). Shadow room as above. */
 @media(min-width:900px) and (max-width:1099px){
   body:has(#welcome-screen.hidden) .center-col{--stage-col:246px;column-gap:28px}
-  body:has(#welcome-screen.hidden) .device-home{width:min(166px,clamp(120px,calc(44.24vh - 126px),220px))}
+  body:has(#welcome-screen.hidden) .device-home{width:min(166px,clamp(120px,calc(44.24vh - 126px),220px));width:min(166px,clamp(120px,calc(44.24svh - 126px),220px))}
 }
 /* Single-column desktop: the change note under Send ends ~11px below .stage,
    which clipped it (UX audit 2026-09-28, N-3). It still fits inside the 32px
@@ -301,7 +301,9 @@ main{width:100%;}
   gap:0;
   padding:32px 0 86px;
 }
-.device-home{position:relative;width:min(65vw,clamp(120px,calc(44.24vh - 126px),220px));aspect-ratio:380/859;flex-shrink:0}
+/* svh, not vh: iOS Chrome changes vh by a few px at the welcome -> app swap, which shrank the
+   controller under the glide (Frank 2026-10-01: "škubne sebou doleva"). vh stays as the fallback. */
+.device-home{position:relative;width:min(65vw,clamp(120px,calc(44.24vh - 126px),220px));width:min(65vw,clamp(120px,calc(44.24svh - 126px),220px));aspect-ratio:380/859;flex-shrink:0}
 .device-wrap{position:relative;width:100%;user-select:none;flex-shrink:0}
 .device-img{width:100%;display:block;border-radius:var(--r-lg);box-shadow:0 18px 44px rgba(0,0,0,.18),0 6px 16px rgba(0,0,0,.12);pointer-events:none;transition:box-shadow .6s ease}
 .fader-tracks{position:absolute;top:0;left:0;right:0;bottom:0}
@@ -681,7 +683,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   .settings-col{gap:var(--space-3);padding-bottom:96px}
   .section-field-row{display:flex;flex-direction:row;align-items:flex-start;gap:var(--space-4);flex-wrap:wrap;}
   .btn-remove-bank{font-size:var(--fs-lg);}
-  .device-home{width:min(55vw,clamp(120px,calc(44.24vh - 126px),196px));}
+  .device-home{width:min(55vw,clamp(120px,calc(44.24vh - 126px),196px));width:min(55vw,clamp(120px,calc(44.24svh - 126px),196px));}
   .panel{min-width:0;}
   .h-status{width:7px;min-width:7px;flex:0 0 7px}
   .h-status-text{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
