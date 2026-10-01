@@ -5,7 +5,7 @@
   --bg:#f5f5f7;--bg-card:#ffffff;--border:rgba(0,0,0,.08);
   --t1:#1d1d1f;--t2:#505057;--t3:#6f6f76;--red:#e45745;
   --ft-bg:#2a2a2c;--ft-t3:rgba(255,255,255,.5);
-  --r-sm:6px;--r:12px;
+  --r-sm:6px;--r:12px;--fs-sm:11px;
 }
 html.dark{--bg:#0f0f11;--bg-card:#1c1c1e;--border:rgba(255,255,255,.08);--t1:#f5f5f7;--t2:#aeaeb2;--t3:#8e8e93}
 *,*::before,*::after{box-sizing:border-box}
@@ -13,8 +13,21 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--t2);font:400 15px/1.7 'Mulish',sans-serif}
 
 .legal-top{border-bottom:1px solid var(--border)}
-.legal-top-inner{max-width:760px;margin:0 auto;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.legal-brand{font-weight:700;font-size:15px;letter-spacing:.18em;color:var(--t1);text-decoration:none}
+/* Edge-to-edge like the app's own <header> (feel-fader.html), not capped to
+   the 760px reading column `main` uses below – otherwise the bar looked
+   narrower than the app it belongs to (Frank 2026-10-01: "stejně široká jako
+   hlavní aplikace"). Same height as the app's header (40px) too – 18px
+   padding made this bar visibly taller (Frank 2026-10-01, follow-up: "lišta
+   je stále vyšší"). This page has no buttons, so its own text line-height
+   alone never reaches the app header's 40px – min-height pins the total to
+   match (border-box here, so min-height IS the full 40px, not just the
+   content box). */
+.legal-top-inner{padding:5px 28px;min-height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+/* Same color + size as the app's wordmark (.h-title / .welcome-wordmark-text
+   in feel-fader.html) – kept in sync by eye since this is a separate
+   stylesheet (Frank 2026-10-01: "nápis feel fader ať má stejnou barvu a
+   velikost"). */
+.legal-brand{font-weight:700;font-size:var(--fs-sm);letter-spacing:.12em;text-transform:uppercase;color:var(--t2);text-decoration:none}
 .legal-nav{display:flex;gap:20px;font-size:14px}
 .legal-nav a{color:var(--t2);text-decoration:none}
 .legal-nav a:hover{color:var(--t1)}
