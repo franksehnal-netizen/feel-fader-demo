@@ -1,16 +1,16 @@
 {
-  "latest": "1.4.0",
-  "notes": "Your Feel Fader can now store your name, so the app greets you. Adds a long-press action, steadier fader readings and fixes for roller order and navigation direction.",
+  "latest": "1.4.1",
+  "notes": "The app now shows, live, the shortcut the roller just sent in Keys mode. Fixes a rare case where the device stopped answering the app until it was unplugged and plugged back in.",
   "files": [
     {
       "name": "ff_main.py",
-      "size": 38129,
-      "crc": "3b45d10b"
+      "size": 38747,
+      "crc": "84a2c23d"
     },
     {
       "name": "ff_config.py",
-      "size": 20200,
-      "crc": "a5846e54"
+      "size": 21056,
+      "crc": "4d033942"
     },
     {
       "name": "ff_update.py",
