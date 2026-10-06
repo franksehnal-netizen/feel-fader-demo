@@ -2019,7 +2019,11 @@ button:focus-visible{outline-offset:3px;}
   display:flex;
   align-items:center;
   gap:0;
-  padding:8px 0;margin:-8px 0;   /* room for the active chip's glow; overflow-x:auto would clip it vertically */
+  /* Room for the active chip's 14px glow – overflow-x:auto clips it on every side (Frank
+     2026-10-06: hard edge left of an active first bank). Only the left margin pulls back:
+     a negative right one moves the strip's clip edge under the status dot on a phone. */
+  padding:8px 14px;margin:-8px 0 -8px -14px;
+  scroll-padding-inline:14px;   /* scrollIntoView() keeps the glow room too */
   background:transparent;
   min-width:0;
   overflow-x:auto;
