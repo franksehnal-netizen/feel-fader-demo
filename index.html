@@ -7541,8 +7541,8 @@ function loadDefaultDemoConfig() {
 // Shared by a scripted skipWelcome() and onDeviceConnected()'s silent
 // auto-reconnect — both want the welcome screen gone with no ceremony, as
 // opposed to connectTransitionWelcome()'s celebration, which is reserved for a
-// deliberate "Connect & load" (doStart()) or a "Continue without device" click
-// with an owner name to greet (skipWelcome({intro:true})). Caller must load/sync
+// deliberate "Connect & load" (doStart()) or "Continue without device" click
+// (skipWelcome({intro:true})). Caller must load/sync
 // config and call render()/renderConnState() BEFORE this — it just tears
 // down the welcome chrome and reconciles the button/HUD to whatever state is
 // already set.
@@ -7580,8 +7580,8 @@ function finishWelcomeInstant() {
   });
 }
 // intro: the "Continue without device" / "Try without device" click. It plays the
-// Connect & load intro only to greet a device's stored owner name; otherwise, like a
-// bare call (probes, scripted entry), it cuts straight into the app.
+// Connect & load intro, greeting a device's stored owner name if there is one; a bare
+// call (probes, scripted entry) cuts straight into the app.
 function skipWelcome({ intro = false } = {}) {
   if (document.getElementById('welcome-screen')?.classList.contains('connecting')) return;   // intro already running
   // Reset to predictable demo defaults only on a genuinely fresh browser
@@ -7593,10 +7593,10 @@ function skipWelcome({ intro = false } = {}) {
   // no undo, no warning. `cfg` is already the correct value here (set from
   // _savedCfg at module load) — just establish the synced baseline against it.
   if (_savedCfg) { markConfigSynced(); render(); } else { loadDefaultDemoConfig(); }
-  // Greeting only for a stored owner name (Frank 2026-10-06, launch audit U-3): the
-  // nameless "Welcome" intro held an empty page for ~4 s before the editor showed.
-  const owner = intro ? takeOwnerGreeting() : '';
-  if (owner) connectTransitionWelcome(owner);
+  // The click always glides the controller into the app (Frank 2026-10-06: the instant
+  // cut made it "skočí dolů" on a phone); the greeting only for a stored owner name
+  // (launch audit U-3: the nameless "Welcome" held an empty page for ~4 s).
+  if (intro) connectTransitionWelcome(takeOwnerGreeting());
   else finishWelcomeInstant();
 }
 
