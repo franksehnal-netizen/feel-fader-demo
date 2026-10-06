@@ -2,8 +2,10 @@
    from the app footer. Same tokens as feel-fader.html; no third-party loads. */
 @font-face{font-family:'Mulish';font-style:normal;font-weight:300 700;font-display:swap;src:url(mulish.woff2) format('woff2')}
 :root{
-  --bg:#f5f5f7;--bg-card:#ffffff;--border:rgba(0,0,0,.08);
+  --bg:#f5f5f7;--bg-card:#ffffff;--border:rgba(0,0,0,.08);--border-s:rgba(0,0,0,.12);
   --t1:#1d1d1f;--t2:#505057;--t3:#6f6f76;--red:#e45745;
+  /* Red text: same token as the app (feel-fader.html --red-text, launch audit U-2). */
+  --red-text:#c8412f;
   --ft-bg:#2a2a2c;--ft-t3:rgba(255,255,255,.5);
   --r-sm:6px;--r:12px;--fs-sm:11px;
   /* App header glass + link hover timing (feel-fader.html :root / html.dark). */
@@ -12,7 +14,7 @@
   --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.72),0 8px 28px rgba(31,31,36,.09);
   --ease-link:cubic-bezier(.22,.61,.36,1);--hover-in:1.3s var(--ease-link);--hover-out:1.8s var(--ease-link);
 }
-html.dark{--bg:#0f0f11;--bg-card:#1c1c1e;--border:rgba(255,255,255,.08);--t1:#f5f5f7;--t2:#aeaeb2;--t3:#8e8e93;
+html.dark{--red-text:var(--red);--bg:#0f0f11;--bg-card:#1c1c1e;--border:rgba(255,255,255,.08);--border-s:rgba(255,255,255,.13);--t1:#f5f5f7;--t2:#aeaeb2;--t3:#8e8e93;
   --chrome-glass-bg:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
   --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18)}
 *,*::before,*::after{box-sizing:border-box}
@@ -23,6 +25,11 @@ body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var
    "horní lištu stejným způsobem, jako ji má aplikace v dark režimu"). */
 .legal-top{position:sticky;top:0;z-index:50;background:var(--chrome-glass-bg);
   backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);box-shadow:var(--chrome-glass-shadow)}
+/* Dark: like the app (feel-fader.html › html.dark header / .site-footer) the top
+   bar and the footers share the page background, hairlines only (Frank 2026-10-02). */
+html.dark .legal-top{background:var(--bg);box-shadow:inset 0 -1px 0 var(--border)}
+html.dark .site-footer{--ft-bg:var(--bg);border-image:linear-gradient(var(--border) 0 1px,var(--ft-bg) 1px) fill 0/0/0 100vmax}
+html.dark .legal-foot{--ft-bg:var(--bg);box-shadow:inset 0 1px 0 var(--border)}
 /* Edge-to-edge like the app's own <header> (feel-fader.html), not capped to
    the 760px reading column `main` uses below – otherwise the bar looked
    narrower than the app it belongs to (Frank 2026-10-01: "stejně široká jako
@@ -50,7 +57,7 @@ h2{margin:40px 0 10px;font-size:19px;line-height:1.35;font-weight:700;color:var(
 p{margin:0 0 12px}
 ul{margin:0 0 12px;padding-left:22px}
 li{margin-bottom:4px}
-a{color:var(--red)}
+a{color:var(--red-text)}
 .legal-meta{margin-bottom:28px;font-size:14px;color:var(--t3)}
 .legal-draft{margin:0 0 20px;padding:10px 14px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--t1);font-size:14px}
 .legal-tbd{background:color-mix(in srgb,#f5c000 32%,transparent);color:inherit;padding:0 3px;border-radius:var(--r-sm)}
@@ -86,7 +93,6 @@ code{font:500 .86em/1 ui-monospace,Consolas,monospace;color:var(--t1);overflow-w
   --ft-w:calc(980px + clamp(32px,4vw,64px));
   padding:40px max(16px,calc((100% - var(--ft-w))/2)) 18px;
 }
-@media(min-width:900px) and (max-width:1099px){.site-footer{--ft-w:954px}}
 @media(max-width:899px){.site-footer{--ft-w:668px}}
 .site-footer .footer-h{line-height:normal}
 .footer-main{
@@ -105,6 +111,10 @@ code{font:500 .86em/1 ui-monospace,Consolas,monospace;color:var(--t1);overflow-w
 .footer-social a,.footer-social .no-link{display:inline-flex}
 .footer-social .no-link{color:var(--ft-t2);cursor:default}
 .footer-social svg{width:18px;height:18px}
+/* >=24px hit area (WCAG 2.5.8) without moving anything: the padding grows the
+   target, the equal negative margin keeps the layout (launch audit U-8). */
+.footer-col a{padding:4px 0;margin:-4px 0}
+.footer-social a,.footer-social .no-link{padding:3px;margin:-3px}
 .footer-col a:hover,.footer-social a:hover{color:var(--ft-t1);transition:color var(--hover-in)}
 .footer-bottom{
   display:flex;flex-wrap:wrap;gap:8px 20px;
@@ -131,3 +141,9 @@ a:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:va
   h1{font-size:26px}
   .legal-top-inner,.legal-foot-inner{padding-left:16px;padding-right:16px}
 }
+/* The app's thin scrollbar (feel-fader.html › macOS-style scrollbar): also keeps the footer's
+   content width equal to the app's when the window is narrower than the footer grid. */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:var(--t3)}

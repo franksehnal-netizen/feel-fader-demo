@@ -2,12 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Impressum – Feel Fader</title>
   <meta name="description" content="Legal information about Acoustic Empire s.r.o., the maker of Feel Fader.">
+  <meta property="og:title" content="Impressum – Feel Fader">
+  <meta property="og:description" content="Legal information about Acoustic Empire s.r.o., the maker of Feel Fader.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cstyle%3E.g%7Bfill:%231d1d1f%7D.a%7Bfill:%23e45745%7D%40media(prefers-color-scheme:dark)%7B.g%7Bfill:%23f5f5f7%7D%7D%3C/style%3E%3Cpath class='g' d='M3 3h26v11h-4V7H7v7H3z'/%3E%3Crect class='g' x='3' y='17' width='4' height='12'/%3E%3Crect class='g' x='25' y='17' width='4' height='12'/%3E%3Crect class='g' x='12' y='11' width='2' height='18' rx='1'/%3E%3Crect class='g' x='18' y='11' width='2' height='18' rx='1'/%3E%3Crect class='a' x='9.5' y='21' width='7' height='5' rx='1.5'/%3E%3Crect class='g' x='15.5' y='13' width='7' height='5' rx='1.5'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="pages.css">
-  <!-- Same theme as the app: dark only when the app's own toggle is on. -->
-  <script>try{if(localStorage.getItem('ff-dark')==='1')document.documentElement.classList.add('dark')}catch(_){}</script>
+  <!-- Same theme as the app: its saved toggle, else the OS setting. -->
+  <script src="theme.js"></script>
 </head>
 <body>
   <header class="legal-top">
