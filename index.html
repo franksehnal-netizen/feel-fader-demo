@@ -147,7 +147,9 @@
      breathing, status-dot pulse, key-capture pulse, first-run setup cue) are
      deliberately distinct single-use durations, not part of any simultaneous
      group, so they're left as literals. Anywhere two+ elements visibly change
-     together, though, they should share one of these. */
+     together, though, they should share one of these. Since UI audit 2026-10-24
+     (K-9) every other transition/animation uses a token – design-consistency-probe
+     whitelists the decorative literals. */
   --ease-out:cubic-bezier(.16,1,.3,1);      /* house ease-out — panel/structural motion */
   --ease-hero:cubic-bezier(.22,1,.36,1);    /* success/glow moments */
   --dur-press:.1s;    /* press-down scale feedback */
@@ -156,7 +158,11 @@
   --dur-glow:.46s;    /* hero glow/success */
   --dur-stage:1.1s;   /* major panel choreography */
   --dur-modal:.18s;   /* modal overlay fade-in + panel slide-up, same moment, must land together */
-  --dur-switch:.22s;  /* hid-switch track + thumb, same moment, must land together */
+  --dur-med:.22s;     /* small moves: chevrons, slide-ins, tab label reveal */
+  --dur-switch:var(--dur-med);  /* hid-switch track + thumb, same moment, must land together */
+  /* Owner greeting hold before it fades out (K-9); OWNER_GREETING_OUT_MS mirrors the handoff one. */
+  --greeting-hold:2.55s;
+  --greeting-hold-handoff:2s;
 }
 html.dark{
   color-scheme:dark;
@@ -235,7 +241,7 @@ html.dark .site-footer{--ft-bg:var(--bg);border-image:linear-gradient(var(--bord
    (onboarding -> Connect & load finishing), the header — including "FEEL
    FADER" — snapped straight to fully visible in a single frame (Frank
    2026-08-16, "problikne FEEL FADER"). */
-.top-sticky{position:sticky;top:0;z-index:50;pointer-events:none;transition:opacity .28s ease;}
+.top-sticky{position:sticky;top:0;z-index:50;pointer-events:none;transition:opacity var(--dur-base) ease;}
 /* Make the sticky wrapper click-through and re-enable only the header, so no
    band below the header swallows pointer events (Frank 2026-07-27). */
 .top-sticky>header{pointer-events:auto}
@@ -330,7 +336,7 @@ main{width:100%;}
    syncStableVh() only re-measures it on a width change on touch devices. vh is the fallback. */
 .device-home{position:relative;width:min(65vw,clamp(120px,calc(44.24vh - 126px),220px));width:min(65vw,clamp(120px,calc(var(--stable-vh,1svh) * 44.24 - 126px),220px));aspect-ratio:380/859;flex-shrink:0}
 .device-wrap{position:relative;width:100%;user-select:none;flex-shrink:0}
-.device-img{width:100%;display:block;border-radius:var(--r-lg);box-shadow:0 18px 44px rgba(0,0,0,.18),0 6px 16px rgba(0,0,0,.12);pointer-events:none;transition:box-shadow .6s ease}
+.device-img{width:100%;display:block;border-radius:var(--r-lg);box-shadow:0 18px 44px rgba(0,0,0,.18),0 6px 16px rgba(0,0,0,.12);pointer-events:none;transition:box-shadow var(--dur-glow) ease}
 .fader-tracks{position:absolute;top:0;left:0;right:0;bottom:0}
 .fader-track{position:absolute;user-select:none}
 /* Live MIDI is already frame-coalesced in flushFaderFrame(). A CSS transform
@@ -366,7 +372,7 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
   background:var(--red-fill);color:#fff;border:none;border-radius:var(--r-pill);
   font-family:'Mulish',sans-serif;font-size:var(--fs-base);font-weight:600;
   width:166px;min-height:var(--ctl-md);padding:8px 16px;cursor:pointer;white-space:nowrap;
-  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease,transform .18s ease;
+  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity var(--dur-base) ease,transform var(--dur-fast) ease;
   will-change:background-color,box-shadow;
   box-shadow:none;
 }
@@ -374,10 +380,10 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
 /* Hover rise = controller-glow timing (--hover-in). Not while .sent: that green glow keeps
    its own --dur-glow beat even under the cursor. Hover-out stays on the base glow timing,
    which the idle/red/sent state changes share. */
-.send-btn:not(.sent):hover{transition:background-color var(--hover-in),color var(--hover-in),border-color var(--dur-base) ease,box-shadow var(--hover-in),opacity .28s ease,transform .18s ease}
+.send-btn:not(.sent):hover{transition:background-color var(--hover-in),color var(--hover-in),border-color var(--dur-base) ease,box-shadow var(--hover-in),opacity var(--dur-base) ease,transform var(--dur-fast) ease}
 .send-btn:active{transform:scale(.97);}
 .send-btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
-.send-btn.sent{background:var(--green);box-shadow:0 4px 16px rgba(52,199,89,.4)}
+.send-btn.sent{background:var(--green);box-shadow:0 4px 16px color-mix(in srgb,var(--green) 40%,transparent)}
 .send-btn.sent:hover{background:var(--green)}
 .send-btn.sent:disabled{opacity:1;cursor:default}
 /* Nothing dirty yet (fresh load or already-synced config) — stay in place
@@ -425,7 +431,7 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
 }
 .send-change-note.is-visible.is-swapping{
   opacity:0;filter:blur(2px);transform:translate(-4px,-50%) scale(.985);
-  transition-duration:.18s,.18s,.18s,.18s,0s;
+  transition-duration:var(--dur-fast),var(--dur-fast),var(--dur-fast),var(--dur-fast),0s;
 }
 /* Desktop, controller visible: the note is one quiet line under Send (spec
    2026-09-26 §8). .send-anchor already reserves 68px (38 button + 30 below),
@@ -448,7 +454,7 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
   position:absolute;left:50%;top:calc(100% + 12px);z-index:30;width:min(300px,calc(100vw - 32px));padding:11px;
   transform:translate(-50%,-4px);border:0;border-radius:var(--r);
   background:var(--bg-card);box-shadow:0 0 0 1px var(--border),var(--shadow-hud);
-  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,transform .24s var(--ease-out),visibility 0s linear .24s;
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--dur-fast) ease,transform var(--dur-med) var(--ease-out),visibility 0s linear var(--dur-med);
 }
 .change-popover.is-open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);transition-delay:0s}
 .change-popover strong{display:block;font-size:var(--fs-sm);color:var(--t1);margin-bottom:6px}
@@ -476,12 +482,12 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
   from{opacity:0}
   to{opacity:1}
 }
-.bank-card.bank-anim{animation:bankFade .18s ease-out;}   /* T3: opacity fade celé karty */
+.bank-card.bank-anim{animation:bankFade var(--dur-fast) ease-out;}   /* T3: opacity fade celé karty */
 /* Theme changes are captured as two complete frames. The incoming frame fades over
    the old one, so gradients, glass panels and solid colors all move at one tempo. */
 html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.theme-snapshot *::after{transition:none!important}
 ::view-transition-old(root){animation:none}
-::view-transition-new(root){animation:theme-frame-in .36s ease both}
+::view-transition-new(root){animation:theme-frame-in var(--dur-base) ease both}
 @keyframes theme-frame-in{from{opacity:0}to{opacity:1}}
 header{view-transition-name:none}
 @media(prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
@@ -516,7 +522,7 @@ header{view-transition-name:none}
   width:calc((100% - 12px)/4);border-radius:var(--r-pill);background:var(--bg-card);
   transform:translateX(calc(var(--roller-index) * (100% + 2px)));
   box-shadow:var(--shadow-sm);
-  transition:transform .46s var(--ease-out),background-color .22s ease,box-shadow .22s ease;
+  transition:transform var(--dur-glow) var(--ease-out),background-color var(--dur-med) ease,box-shadow var(--dur-med) ease;
 }
 .roller-mode-btn{
   position:relative;z-index:1;min-width:0;min-height:var(--ctl-sm);padding:7px 10px;border:0;border-radius:var(--r-pill);touch-action:manipulation;
@@ -531,12 +537,12 @@ html.dark .roller-mode-row{background:var(--bg-input)}
 html.dark .roller-mode-row::before{background:var(--bg-card);box-shadow:var(--shadow-sm)}
 .roller-mode-content{opacity:1;transform:translateY(0);transition:opacity var(--dur-fast) ease,transform var(--dur-fast) var(--ease-out)}
 .roller-mode-content.is-leaving{opacity:0;transform:translateY(3px)}
-.roller-mode-content.is-entering{animation:rollerContentIn .30s var(--ease-out)}
+.roller-mode-content.is-entering{animation:rollerContentIn var(--dur-base) var(--ease-out)}
 .ks-basic-actions{display:flex;align-items:flex-end;gap:var(--space-3);flex-wrap:wrap}
 .roller-advanced{margin-top:2px;border-top:1px solid var(--border);padding-top:9px}
 .roller-advanced>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;cursor:pointer;color:var(--t2);font-size:var(--fs-sm);font-weight:600;padding:5px 2px}
 .roller-advanced>summary::-webkit-details-marker{display:none}
-.roller-advanced>summary::after{content:'⌄';color:var(--t3);transition:transform .22s var(--ease-out)}
+.roller-advanced>summary::after{content:'⌄';color:var(--t3);transition:transform var(--dur-med) var(--ease-out)}
 .roller-advanced[open]>summary::after{transform:rotate(180deg)}
 .roller-advanced-summary{font-size:var(--fs-xs);font-weight:400;color:var(--t3);margin-left:auto}
 .roller-advanced-body{padding-top:8px}
@@ -558,8 +564,8 @@ html.dark .roller-mode-row::before{background:var(--bg-card);box-shadow:var(--sh
 /* Was --red — read as an error flash on plain +/- taps, which aren't an
    error state (Frank, 2026-08-10). --green matches the app's other
    "acknowledged" feedback (.send-btn.sent, enabled toggles). */
-.step-btn:active{background:rgba(52,199,89,.12);color:var(--green);transform:scale(.94);transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease}
-.step-btn.active,.step-btn.active:hover{background:var(--bg-card);border:0;box-shadow:var(--shadow-sm);color:var(--t1);transition:color .18s ease,background-color .18s ease,transform var(--dur-press) ease}
+.step-btn:active{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green);transform:scale(.94);transition:color var(--dur-fast) ease,background-color var(--dur-fast) ease,transform var(--dur-press) ease}
+.step-btn.active,.step-btn.active:hover{background:var(--bg-card);border:0;box-shadow:var(--shadow-sm);color:var(--t1);transition:color var(--dur-fast) ease,background-color var(--dur-fast) ease,transform var(--dur-press) ease}
 /* Key-capture button (Navigation keys, Button macro): one pill component with
    an explicit empty ("Not assigned") and capture ("Press keys…") state (K-2). */
 .ui-keycap{min-height:var(--ctl-sm);padding:4px 14px;color:var(--t1);font-size:var(--fs-md);font-weight:600;white-space:nowrap}
@@ -567,7 +573,7 @@ html.dark .roller-mode-row::before{background:var(--bg-card);box-shadow:var(--sh
 .ui-keycap.capturing{border-color:var(--red-text);color:var(--red-text);animation:cap-pulse 1.2s ease-in-out infinite}
 html.dark .stepper{background:var(--bg-input)}
 html.dark .stepper input{border-color:var(--control-glass-border);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow)}
-@keyframes cap-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.35)}50%{box-shadow:0 0 0 4px rgba(255,59,48,0)}}
+@keyframes cap-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 35%,transparent)}50%{box-shadow:0 0 0 4px transparent}}
 /* Keyswitch piano range picker */
 .ks-keyboard-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin:10px 4px 5px}
 .ks-keyboard-hint{font-size:var(--fs-xs);color:var(--t3);white-space:nowrap}
@@ -575,11 +581,11 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-keyboard-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border-s);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 88%,transparent);box-shadow:inset 0 1px 2px var(--border);scrollbar-width:thin;overscroll-behavior-x:contain}
 .ks-keyboard{--white-w:26px;position:relative;width:1950px;height:78px;user-select:none;touch-action:none}
 .ks-white-keys{display:flex;height:100%}
-.ks-key{appearance:none;padding:0;font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,filter var(--hover-out),transform var(--dur-press) ease}
+.ks-key{appearance:none;padding:0;font-family:'Mulish',sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,box-shadow var(--dur-fast) ease,filter var(--hover-out),transform var(--dur-press) ease}
 .ks-key-white{position:relative;flex:0 0 var(--white-w);height:100%;border:0;border-right:1px solid var(--border-s);background:var(--piano-white);color:var(--piano-black);z-index:1}
 .ks-key-white:last-child{border-right:0}
 .ks-key-black{position:absolute;top:0;width:16px;height:48px;border:1px solid color-mix(in srgb,var(--piano-black) 78%,transparent);border-radius:0 0 4px 4px;background:var(--piano-black);color:var(--piano-white);z-index:3;box-shadow:0 2px 3px var(--border-s)}
-.ks-key:hover{filter:brightness(.97);transition:background-color .14s ease,color .14s ease,box-shadow .14s ease,filter var(--hover-in),transform var(--dur-press) ease}
+.ks-key:hover{filter:brightness(.97);transition:background-color var(--dur-fast) ease,color var(--dur-fast) ease,box-shadow var(--dur-fast) ease,filter var(--hover-in),transform var(--dur-press) ease}
 .ks-key:active{transform:translateY(1px)}
 .ks-key.is-selected.ks-key-white{background:color-mix(in srgb,var(--red) 28%,var(--piano-white));color:var(--t1)}
 .ks-key.is-selected.ks-key-black{background:color-mix(in srgb,var(--red) 72%,var(--piano-black));border-color:color-mix(in srgb,var(--red) 82%,var(--piano-black))}
@@ -592,7 +598,7 @@ html.dark .stepper input{border-color:var(--control-glass-border);background:var
 .ks-key-scroll-btn:active{transform:scale(.96)}
 .ks-key-scroll-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(max-width:540px){.ks-keyboard-hint{display:none}.ks-keyboard{height:70px}.ks-key-black{height:43px}.ks-key-scroll-btn{min-height:70px}}
-.ks-bound-stepper .ks-stepval{min-width:66px;height:var(--ctl-sm);padding:0 8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);box-shadow:var(--control-glass-shadow);transition:background-color .18s ease,box-shadow .18s ease}
+.ks-bound-stepper .ks-stepval{min-width:66px;height:var(--ctl-sm);padding:0 8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);box-shadow:var(--control-glass-shadow);transition:background-color var(--dur-fast) ease,box-shadow var(--dur-fast) ease}
 .ks-convention-stepper .step-btn{width:auto;min-width:44px;padding:0 9px;white-space:nowrap}
 /* Custom listbox for RANGE PRESET (UX audit 2026-07-22, V-4) — same pattern as
    the Library setup picker's .quick-setup-menu/.quick-setup-option, just
@@ -648,7 +654,7 @@ html.dark .icon-picker-trigger svg{opacity:.7;}
   max-width:min(190px,100%);
   background:transparent;border:none;border-bottom:1px solid transparent;
   font-family:'Mulish',sans-serif;font-size:var(--fs-xl);font-weight:600;color:var(--t1);
-  outline:none;padding:2px 0;transition:border-color .14s;
+  outline:none;padding:2px 0;transition:border-color var(--dur-fast);
   text-align:left;letter-spacing:var(--track-tight);
 }
 .bank-name-input:focus{border-bottom-color:var(--t2);}
@@ -680,7 +686,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
    lit section fade out on the same timing, so the row reads as one surface instead
    of a rounded box overhanging the 18px divider inset. The card's own rounding
    frames the last section (inherit, since mobile doesn't clip the card). */
-.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:0;transition:background var(--dur-link-in) var(--ease-link) var(--link-delay), box-shadow .2s;}
+.bank-section.fader-linked{background:var(--highlight-section-fill);border-radius:0;transition:background var(--dur-link-in) var(--ease-link) var(--link-delay), box-shadow var(--dur-med);}
 .bank-section.fader-linked:last-child{border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}
 .bank-section.fader-linked+.bank-section-divider,.bank-section-divider:has(+.bank-section.fader-linked){opacity:0;transition:opacity var(--dur-link-in) var(--ease-link) var(--link-delay)}
 /* Hardware-zone highlight = white ring (Frank 2026-09-29, "A4" shape): a crisp
@@ -835,7 +841,7 @@ html.dark .info-val{color:var(--t1)}
 .midi-diagnostics>summary:hover .midi-diagnostics-chevron{color:var(--t1)}
 .midi-diagnostics>summary::-webkit-details-marker{display:none}
 .midi-diagnostics>summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:var(--r)}
-.midi-diagnostics-chevron{width:9px;height:14px;color:var(--t3);flex:none;transition:transform .18s var(--ease-out),color var(--hover-out)}
+.midi-diagnostics-chevron{width:9px;height:14px;color:var(--t3);flex:none;transition:transform var(--dur-fast) var(--ease-out),color var(--hover-out)}
 .midi-diagnostics[open] .midi-diagnostics-chevron{transform:rotate(90deg)}
 .midi-diagnostics-title{display:flex;min-width:0;flex-direction:column;gap:2px}
 .midi-diagnostics-title strong{font-size:var(--fs-md);font-weight:600}
@@ -937,8 +943,8 @@ html.dark .info-val{color:var(--t1)}
   border:1px solid var(--border);border-radius:var(--r);background:var(--bg-card);
   color:var(--t1);font:500 var(--fs-base)/1.4 'Mulish',sans-serif;pointer-events:auto;
   box-shadow:var(--shadow-hud);
-  animation:toast-in .32s var(--ease-out) both;transform-origin:right bottom;
-  transition:opacity .22s ease,transform .28s cubic-bezier(.4,0,1,1),filter .22s ease
+  animation:toast-in var(--dur-base) var(--ease-out) both;transform-origin:right bottom;
+  transition:opacity var(--dur-med) ease,transform var(--dur-base) cubic-bezier(.4,0,1,1),filter var(--dur-med) ease
 }
 @keyframes toast-in{from{opacity:0;transform:translate3d(10px,4px,0) scale(.97);filter:blur(4px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
 .toast.is-leaving{opacity:0;transform:translate3d(8px,3px,0) scale(.98);filter:blur(3px);pointer-events:none}
@@ -949,7 +955,7 @@ html.dark .info-val{color:var(--t1)}
 .toast.e .toast-message{color:color-mix(in srgb,var(--danger) 72%,var(--t1))}
 .tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 var(--fs-sm) 'Mulish',sans-serif;transition:background-color var(--hover-out),color var(--hover-out),opacity var(--hover-out),transform var(--dur-press) ease}
 .tx:hover,.tx:focus-visible{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);opacity:1;transition:background-color var(--hover-in),color var(--hover-in),opacity var(--hover-in),transform var(--dur-press) ease}.tx:active{transform:scale(.92)}
-.hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:var(--r-sm);font:var(--fs-md)/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-hud);opacity:0;pointer-events:none;transition:opacity .15s ease;}
+.hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:var(--r-sm);font:var(--fs-md)/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-hud);opacity:0;pointer-events:none;transition:opacity var(--dur-fast) ease;}
 .hover-tip.show{opacity:1;}
 .hover-tip[hidden]{display:none;}
 .toast-action{flex:0 0 auto;min-height:26px;border:0;background:var(--bg-input);color:var(--t1);border-radius:var(--r-pill);padding:4px 10px;font:600 var(--fs-md) 'Mulish',sans-serif;white-space:nowrap;cursor:pointer}
@@ -1041,11 +1047,11 @@ html.dark .info-val{color:var(--t1)}
   width:7px;height:7px;border-radius:50%;
   background:var(--t3);
   flex-shrink:0;
-  transition:background .3s;
+  transition:background var(--dur-base);
 }
 .h-status-dot.on{
   background:var(--green);
-  box-shadow:0 0 0 2px rgba(52,199,89,.2);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 20%,transparent);
 }
 .h-status-dot.err{background:var(--red)}
 .h-status-dot.warn{background:var(--amber)}
@@ -1054,7 +1060,7 @@ html.dark .info-val{color:var(--t1)}
   letter-spacing:0;
   margin-left:4px;
   max-width:20ch;overflow:hidden;white-space:nowrap;
-  transition:opacity .4s,max-width .4s ease,margin-left .4s ease;
+  transition:opacity var(--dur-glow),max-width var(--dur-glow) ease,margin-left var(--dur-glow) ease;
 }
 /* CONNECTED_LIVE/CONNECTED_BLIND only (`.reveal-on-interact`, set in renderConnState()):
    text stays collapsed to the dot until hover, keyboard focus, or a click/tap
@@ -1082,7 +1088,7 @@ html.dark .info-val{color:var(--t1)}
    previous 44px touch diameter. */
 @media(pointer:coarse){.dark-toggle{width:22px;height:22px}}
 .dark-toggle:hover{color:var(--t1)}
-.dark-toggle .theme-icon{position:absolute;width:14px;height:14px;transition:opacity .28s ease,transform .34s ease}
+.dark-toggle .theme-icon{position:absolute;width:14px;height:14px;transition:opacity var(--dur-base) ease,transform var(--dur-base) ease}
 .dark-toggle .theme-icon-moon{opacity:0;transform:rotate(-24deg) scale(.62)}
 html.dark .dark-toggle .theme-icon-sun{opacity:0;transform:rotate(45deg) scale(.62)}
 /* The crescent path isn't drawn centered in its own 14x14 viewBox (measured
@@ -1228,13 +1234,13 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   /* Space is reserved from the start (no display:none) and the button fades in via .show,
      so surfacing it after the timeout never shifts the text below (Frank 2026-07-09). */
   opacity:0;pointer-events:none;
-  transition:opacity .4s ease,background var(--hover-out),box-shadow var(--hover-out),transform .1s;
+  transition:opacity var(--dur-glow) ease,background var(--hover-out),box-shadow var(--hover-out),transform var(--dur-press);
 }
 .welcome-start.show{opacity:1;pointer-events:auto;}
 /* .send-btn's fixed 166px width left a longer label ("Try without device") overflowing
    its padding, so it sat off-centre – let the pill grow to fit (Frank 2026-10-01). */
 #send-btn.welcome-start{width:auto;box-sizing:border-box;text-align:center}
-.welcome-start:hover{background:var(--red-fill2);transition:opacity .4s ease,background var(--hover-in),box-shadow var(--hover-in),transform .1s}
+.welcome-start:hover{background:var(--red-fill2);transition:opacity var(--dur-glow) ease,background var(--hover-in),box-shadow var(--hover-in),transform var(--dur-press)}
 /* K-7 (UX audit 2026-09-25): #send-btn carries .idle on welcome (nothing dirty
    yet), and .send-btn.idle's glass look buried the only primary action as a
    secondary pill. Welcome keeps the red primary; .idle glass resumes in-app. */
@@ -1463,7 +1469,7 @@ body:has(#welcome-screen.welcome-scroll-fallback) .device-wrap.welcome-mode[data
    functional break. */
 .stage-collapse:has(.change-popover.is-open)>.stage{overflow:visible}
 body.welcome-connecting #send-btn.welcome-floating{
-  /* .send-btn's own base rule declares `transition:...,opacity .28s ease,...`
+  /* .send-btn's own base rule declares `transition:...,opacity var(--dur-base) ease,...`
      — a transition on the SAME property the animation below drives fights it
      for control (transitions outrank animations in the cascade), so opacity
      never actually reached 0 without this override (reproduced 2026-07-21:
@@ -1614,7 +1620,7 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
      Everything else from the base rule (feel-fader.html:324) is repeated here
      minus transform, not dropped outright — the opacity/color/etc. transitions
      still matter for this button's normal reveal/feedback animations. */
-  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease!important;
+  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity var(--dur-base) ease!important;
 }
 .device-wrap.welcome-mode[data-onb-feature="configure"] #send-btn.welcome-floating{
   /* white like the controller-zone ring (Frank 2026-09-29), not green – green is live-only */
@@ -1634,7 +1640,7 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   left:50%!important;
   top:calc(var(--onb-cta-bottom) - var(--onb-cta-height))!important;
   transform:translateX(-50%)!important;
-  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease!important;
+  transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity var(--dur-base) ease!important;
 }
 /* floatDeviceHomeNative() moves #device-home here (see its own comment) — same
    native-scroll treatment as the button above, for the controller. --onb-
@@ -1669,7 +1675,7 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding)::after{
   content:'';position:fixed;z-index:225;left:0;right:0;bottom:0;height:96px;
   pointer-events:none;background:linear-gradient(to bottom,transparent 0%,var(--bg) 72%);
-  opacity:0;transition:opacity .22s ease;
+  opacity:0;transition:opacity var(--dur-med) ease;
 }
 body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding)::after{opacity:1}
 @media(max-width:900px){
@@ -1707,7 +1713,7 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 }
 @media(prefers-reduced-motion:reduce){
   .device-wrap.connect-success .welcome-flash{animation:none}
-  .device-wrap.connect-success .device-img{animation:welcome-device-glow .35s ease-out both}
+  .device-wrap.connect-success .device-img{animation:welcome-device-glow var(--dur-base) ease-out both}
 }
 /* Opacity only — NOT filter. A `filter` on #welcome-text-block (even
    blur(0px)) makes it a containing block for its position:fixed/absolute
@@ -1729,14 +1735,14 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 .owner-greeting{position:fixed;inset:0;z-index:160;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none;
   /* Soft scrim so the greeting never reads over the sections beneath it. */
   background:color-mix(in srgb,var(--bg) 70%,transparent);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
-  animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-out) var(--ease-link) 2.55s forwards}
+  animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-out) var(--ease-link) var(--greeting-hold) forwards}
 /* Connect & load hand-off: the greeting rises with the faders while the controller
    glides out of the center, then leaves on its own – shorter (out from 2 s over
    --dur-link-in) and fully gone before the app appears (Frank 2026-10-01: "nechal
    bych to zmizet a teprve potom zobrazil aplikaci"). No scrim – it would veil the
    dissolving welcome and the gliding controller. */
 .owner-greeting.is-handoff{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;
-  animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-in) var(--ease-link) 2s forwards}
+  animation:owner-greeting-fade var(--dur-link-in) var(--ease-link) both,owner-greeting-out var(--dur-link-in) var(--ease-link) var(--greeting-hold-handoff) forwards}
 /* Below the two-column layout the controller never glides out of the center, so
    the hand-off greeting would stay hidden behind it – greet in the free band
    above the controller instead, over it in the stack (Frank 2026-10-01: "na
@@ -1756,15 +1762,15 @@ body.welcome-onboarding-scrollable:has(#welcome-screen:not(.hidden) #welcome-tex
 @keyframes owner-greeting-in-flat{from{opacity:0;filter:blur(10px)}to{opacity:1;filter:none}}
 .owner-greeting-pre{font:400 var(--fs-xl)/1.2 'Mulish',sans-serif;color:var(--t2);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) both}
 .owner-greeting-name{max-width:92vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  font:700 calc(var(--fs-3xl) * 2)/1.15 'Mulish',sans-serif;letter-spacing:var(--track-display);color:var(--t1);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) .15s both}
+  font:700 calc(var(--fs-3xl) * 2)/1.15 'Mulish',sans-serif;letter-spacing:var(--track-display);color:var(--t1);animation:owner-greeting-in var(--dur-link-in) var(--ease-link) var(--dur-fast) both}
 @keyframes owner-greeting-in{from{opacity:0;transform:translateY(14px);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
 @keyframes owner-greeting-out{to{opacity:0;transform:scale(.985);filter:blur(8px)}}
 @keyframes owner-greeting-fade{from{opacity:0}to{opacity:1}}
 @keyframes owner-greeting-fade-out{to{opacity:0}}
 @media(prefers-reduced-motion:reduce){
-  .owner-greeting{animation:owner-greeting-fade .3s ease both,owner-greeting-fade-out .3s ease 2.55s forwards}
-  .owner-greeting.is-handoff{animation:owner-greeting-fade .3s ease both,owner-greeting-fade-out .3s ease 2s forwards}
-  .owner-greeting-pre,.owner-greeting-name{animation:owner-greeting-fade .3s ease both}
+  .owner-greeting{animation:owner-greeting-fade var(--dur-base) ease both,owner-greeting-fade-out var(--dur-base) ease var(--greeting-hold) forwards}
+  .owner-greeting.is-handoff{animation:owner-greeting-fade var(--dur-base) ease both,owner-greeting-fade-out var(--dur-base) ease var(--greeting-hold-handoff) forwards}
+  .owner-greeting-pre,.owner-greeting-name{animation:owner-greeting-fade var(--dur-base) ease both}
 }
 @keyframes welcome-text-out{
   from{opacity:1}
@@ -1792,7 +1798,7 @@ body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-foote
    greeting emerges from behind it, as it did under the welcome (z 205). */
 body.app-reveal .center-col>.stage-collapse{z-index:170}
 @keyframes app-chrome-fade{from{opacity:0}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-footer{animation-duration:.3s;animation-timing-function:ease;animation-delay:0s}}
+@media(prefers-reduced-motion:reduce){body.app-reveal header,body.app-reveal #settings-col,body.app-reveal .site-footer{animation-duration:var(--dur-base);animation-timing-function:ease;animation-delay:0s}}
 #welcome-screen.connecting::before{animation:welcome-screen-out calc(var(--dur-link-in) / 3) var(--ease-link) forwards}
 
 /* ── INSTRUMENT ICON PICKER ── */
@@ -1814,11 +1820,11 @@ body.app-reveal .center-col>.stage-collapse{z-index:170}
 .icon-btn{
   display:flex;flex-direction:column;align-items:center;gap:var(--space-1);
   padding:8px;border-radius:var(--r);border:1px solid var(--border);
-  background:var(--bg-input);cursor:pointer;transition:all .13s,border-color var(--hover-out),background-color var(--hover-out);
+  background:var(--bg-input);cursor:pointer;transition:all var(--dur-fast),border-color var(--hover-out),background-color var(--hover-out);
   min-width:58px;
 }
-.icon-btn:hover{border-color:var(--border-s);background:var(--bg);transition:all .13s,border-color var(--hover-in),background-color var(--hover-in)}
-.icon-btn.selected{border-color:var(--t1);background:var(--highlight-section-fill);transition:all .13s}
+.icon-btn:hover{border-color:var(--border-s);background:var(--bg);transition:all var(--dur-fast),border-color var(--hover-in),background-color var(--hover-in)}
+.icon-btn.selected{border-color:var(--t1);background:var(--highlight-section-fill);transition:all var(--dur-fast)}
 .icon-btn-emoji{font-size:var(--fs-3xl);line-height:1}
 .icon-btn-label{font-size:var(--fs-sm);color:var(--t3);text-align:center;white-space:nowrap}
 .badge-btn .icon-btn-emoji{display:none}
@@ -1891,7 +1897,7 @@ html.dark .confirm-danger{color:var(--bg)}   /* light wine fill in dark mode: da
 }
 .bank-section{
   padding:0 18px;
-  transition:background var(--dur-link-out) var(--ease-link), box-shadow .2s;   /* same timing as the controller-zone ring */
+  transition:background var(--dur-link-out) var(--ease-link), box-shadow var(--dur-med);   /* same timing as the controller-zone ring */
 }
 .bank-section.is-open>.section-collapse-body{padding:4px 0 18px 36px}
 .section-head.section-toggle{width:100%;text-align:left;background:none;border:0;font-family:'Mulish',sans-serif;color:inherit}
@@ -1938,7 +1944,7 @@ html.dark .confirm-danger{color:var(--bg)}   /* light wine fill in dark mode: da
 .section-summary-label{font:400 var(--fs-sm) 'Mulish',sans-serif;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
 .section-summary-meta{font:600 var(--fs-sm) 'Mulish',sans-serif;letter-spacing:0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .section-summary-sep{color:var(--t3);font:600 var(--fs-xs) 'Mulish',sans-serif}
-.section-chevron{width:9px;height:14px;flex:none;color:var(--t3);transition:transform .25s var(--ease-out)}
+.section-chevron{width:9px;height:14px;flex:none;color:var(--t3);transition:transform var(--dur-med) var(--ease-out)}
 .bank-section.is-open .section-chevron{transform:rotate(90deg)}
 .section-collapse-body[hidden]{display:none}
 @media(min-width:601px){
@@ -1955,7 +1961,7 @@ html.dark .confirm-danger{color:var(--bg)}   /* light wine fill in dark mode: da
   .bank-section.is-open>.section-head{
     position:sticky;top:var(--section-sticky-top,42px);z-index:18;
     background:transparent;box-shadow:none;
-    transition:background .18s ease,box-shadow .18s ease;
+    transition:background var(--dur-fast) ease,box-shadow var(--dur-fast) ease;
   }
   .bank-section.is-open>.section-head.is-stuck{
     background:var(--bg-card);
@@ -2035,7 +2041,7 @@ button:focus-visible{outline-offset:3px;}
   font-family:'Mulish',sans-serif;
   font-size:var(--fs-base);font-weight:600;
   color:var(--t2);
-  transition:all .15s,color var(--hover-out),background-color var(--hover-out);
+  transition:all var(--dur-fast),color var(--hover-out),background-color var(--hover-out);
   white-space:nowrap;
   display:flex;align-items:center;gap:var(--space-1);
 }
@@ -2062,11 +2068,11 @@ button:focus-visible{outline-offset:3px;}
 .bank-block-tab.active .bank-tab-fallback{opacity:.9}
 .bank-block-tab .bank-tab-name{
   display:inline-block;max-width:96px;opacity:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
-  transition:max-width .2s ease,opacity .2s ease,margin-left .2s ease;margin-left:0;
+  transition:max-width var(--dur-med) ease,opacity var(--dur-med) ease,margin-left var(--dur-med) ease;margin-left:0;
 }
 .bank-block-tab.active .bank-tab-name{max-width:140px;opacity:1;margin-left:5px;text-overflow:ellipsis;}
 .bank-block-tabs.tabs-fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);}
-.bank-block-tab:hover{color:var(--t2);background:var(--bg-input);transition:all .15s,color var(--hover-in),background-color var(--hover-in)}
+.bank-block-tab:hover{color:var(--t2);background:var(--bg-input);transition:all var(--dur-fast),color var(--hover-in),background-color var(--hover-in)}
 .bank-block-tab[draggable="true"]{cursor:grab}
 .bank-block-tab.is-dragging{opacity:.42;cursor:grabbing}
 .bank-block-tab.drag-before,.bank-block-tab.drag-after{position:relative}
@@ -2084,7 +2090,7 @@ button:focus-visible{outline-offset:3px;}
   border-color:transparent;
   border-radius:var(--r-pill);
   box-shadow:0 0 0 1px var(--border),0 0 14px rgba(0,0,0,.16);   /* soft grey glow (dark: white, below) */
-  transition:all .15s;   /* selecting a bank snaps; only the hover tint rides the glow timing */
+  transition:all var(--dur-fast);   /* selecting a bank snaps; only the hover tint rides the glow timing */
 }
 /* Dark: the edited bank takes the footer's lighter gray so it reads against the page (card-dark was nearly invisible on --bg);
    heavier weight + --border-s keep it apart from the --bg-input hover tint, which is almost the same gray. */
@@ -2104,10 +2110,10 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
   cursor:pointer;
   font-size:var(--fs-xl);
   color:var(--t3);
-  transition:all .14s,color var(--hover-out),background-color var(--hover-out);
+  transition:all var(--dur-fast),color var(--hover-out),background-color var(--hover-out);
   display:flex;align-items:center;
 }
-.bank-block-tab-add:hover{color:var(--t1);background:var(--bg-input);transition:all .14s,color var(--hover-in),background-color var(--hover-in)}
+.bank-block-tab-add:hover{color:var(--t1);background:var(--bg-input);transition:all var(--dur-fast),color var(--hover-in),background-color var(--hover-in)}
 .bank-block-name{
   display:flex;flex-direction:column;gap:2px;
   padding:18px 18px 14px;
@@ -2161,7 +2167,7 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
    (--bg-card + hairline + --shadow-hud, no glass), the option rows, the
    group labels and the secondary text. Components above keep only layout. */
 .ui-select-trigger{display:inline-flex;align-items:center;gap:8px;min-height:var(--ctl-md);padding:6px 12px 6px 14px;color:var(--t1);font:600 var(--fs-md) 'Mulish',sans-serif;text-align:left}
-.ui-select-trigger svg{width:14px;height:14px;flex:none;color:var(--t3);transition:transform .18s var(--ease-out)}
+.ui-select-trigger svg{width:14px;height:14px;flex:none;color:var(--t3);transition:transform var(--dur-fast) var(--ease-out)}
 .ui-select-trigger[aria-expanded="true"] svg{transform:rotate(180deg)}
 .library-popover,.quick-setup-menu,.response-select-menu,.uacc-preset-dropdown{padding:6px;border:0;border-radius:var(--r);background:var(--bg-card);box-shadow:0 0 0 1px var(--border),var(--shadow-hud)}
 /* Nested in the popover the list is plain content, not a second surface. */
@@ -3175,7 +3181,7 @@ let _sendInlineTimer = null;
 let _sendInlineFeedback = '';
 let _sendNoteSwapTimer = null;
 const SEND_INLINE_FEEDBACK_MS = 2200;
-const SEND_NOTE_SWAP_MS = 180;
+const SEND_NOTE_SWAP_MS = 160;   // = --dur-fast, the .is-swapping fade
 function setSendChangeNoteText(text) {
   const note = document.getElementById('send-change-note');
   if (!note) return;
@@ -6759,7 +6765,7 @@ function applyTheme(isDark, animate = true) {
   const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   if (!animate || reduceMotion || typeof document.startViewTransition !== 'function') {
     // Instant switch: without .theme-snapshot the .ui-control buttons ran their
-    // own .14s colour transitions while everything else snapped (Windows with
+    // own --dur-fast colour transitions while everything else snapped (Windows with
     // animations off reports reduced motion, Frank 2026-09-29).
     root.classList.add('theme-snapshot');
     commit();
@@ -7187,7 +7193,7 @@ function positionWelcomeFloatingButton() {
     }
     return;
   }
-  // .send-btn has `transition:...,transform .18s ease`. Toggling the class
+  // .send-btn has `transition:...,transform var(--dur-fast) ease`. Toggling the class
   // off (position:fixed + transform:translate(...) -> none) after the page
   // has already painted the floating state would animate that change — a
   // getBoundingClientRect() read immediately after would catch it mid-flight,
