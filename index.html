@@ -57,15 +57,7 @@
   --focus:#4f7cff;
   --danger:#b42318;
   --danger-bg:rgba(180,35,24,.08);
-  --glass-card:rgba(255,255,255,.66);
   --glass-soft:rgba(255,255,255,.48);
-  --glass-dialog:rgba(255,255,255,.78);
-  --glass-border:rgba(255,255,255,.72);
-  --glass-shadow:0 14px 38px rgba(31,31,36,.09),inset 0 1px 0 rgba(255,255,255,.72);
-  --chrome-glass-bg:linear-gradient(180deg,rgba(255,255,255,.68),rgba(242,242,247,.48));
-  --chrome-glass-filter:blur(22px) saturate(170%);
-  --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.72),0 8px 28px rgba(31,31,36,.09);
-  --chrome-float-border:rgba(255,255,255,.38);
   /* Compact controls (steppers, segmented, pills, keycaps) are flat since the
      minimal hybrid pass (spec 2026-09-26 §1): one fill, no blur, no bevel.
      Names kept so every .ui-glass / control call site follows without edits. */
@@ -169,14 +161,7 @@ html.dark{
   --red-text2:var(--red2);
   --focus:#7d9cff;
   --danger-bg:rgba(255,117,102,.10);
-  --glass-card:rgba(30,30,35,.68);
   --glass-soft:rgba(28,28,33,.50);
-  --glass-dialog:rgba(32,32,38,.82);
-  --glass-border:rgba(255,255,255,.12);
-  --glass-shadow:0 18px 46px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08);
-  --chrome-glass-bg:linear-gradient(180deg,rgba(34,34,40,.62),rgba(18,18,22,.48));
-  --chrome-glass-shadow:inset 0 -1px 0 rgba(255,255,255,.09),0 8px 28px rgba(0,0,0,.18);
-  --chrome-float-border:rgba(255,255,255,.10);
   --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.2);
   --shadow-sm:0 1px 2px rgba(0,0,0,.2);
   --shadow-hud:0 8px 24px rgba(0,0,0,.35);
@@ -225,13 +210,12 @@ input,textarea,[contenteditable="true"],.selectable,.info-val.selectable{-webkit
 /* HEADER */
 header{
   display:flex;align-items:center;justify-content:space-between;padding:5px 28px;
-  background:var(--chrome-glass-bg);
-  backdrop-filter:var(--chrome-glass-filter);
-  -webkit-backdrop-filter:var(--chrome-glass-filter);
-  box-shadow:var(--chrome-glass-shadow);
+  /* Opaque page background + hairline in both themes (dark since Frank 2026-10-02, light since
+     UI audit 2026-10-24 S-4: the glass let the red fader caps smear through while scrolling). */
+  background:var(--bg);
+  box-shadow:inset 0 -1px 0 var(--border);
 }
-/* Dark: header + footer share the page background (--bg), separated by hairlines only (fewer grays, Frank 2026-10-02). */
-html.dark header{background:var(--bg);box-shadow:inset 0 -1px 0 var(--border)}
+/* Dark: the footer shares the page background (--bg), separated by a hairline only (fewer grays, Frank 2026-10-02). */
 html.dark .site-footer{--ft-bg:var(--bg);border-image:linear-gradient(var(--border) 0 1px,var(--ft-bg) 1px) fill 0/0/0 100vmax}
 /* transition:opacity – governed by the welcome-onboarding !important hide rule
    below. .top-sticky had none, so the instant its condition stopped matching
@@ -371,15 +355,15 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
   width:166px;min-height:38px;padding:9px 16px;cursor:pointer;white-space:nowrap;
   transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity .28s ease,transform .18s ease;
   will-change:background-color,box-shadow;
-  box-shadow:0 3px 12px rgba(228,87,69,.24);
+  box-shadow:none;
   letter-spacing:.01em;
 }
-.send-btn:hover{background:var(--red-fill2);box-shadow:0 6px 20px rgba(228,87,69,.34);}
+.send-btn:hover{background:var(--red-fill2);}
 /* Hover rise = controller-glow timing (--hover-in). Not while .sent: that green glow keeps
    its own --dur-glow beat even under the cursor. Hover-out stays on the base glow timing,
    which the idle/red/sent state changes share. */
 .send-btn:not(.sent):hover{transition:background-color var(--hover-in),color var(--hover-in),border-color var(--dur-base) ease,box-shadow var(--hover-in),opacity .28s ease,transform .18s ease}
-.send-btn:active{transform:scale(.97);box-shadow:0 2px 8px rgba(228,87,69,.26);}
+.send-btn:active{transform:scale(.97);}
 .send-btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
 .send-btn.sent{background:var(--green);box-shadow:0 4px 16px rgba(52,199,89,.4)}
 .send-btn.sent:hover{background:var(--green)}
@@ -450,9 +434,8 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
 }
 .change-popover{
   position:absolute;left:50%;top:calc(100% + 12px);z-index:30;width:min(300px,calc(100vw - 32px));padding:11px;
-  transform:translate(-50%,-4px);border:1px solid var(--glass-border);border-radius:var(--r);
-  background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));box-shadow:var(--glass-shadow);
-  backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+  transform:translate(-50%,-4px);border:0;border-radius:var(--r);
+  background:var(--bg-card);box-shadow:0 0 0 1px var(--border),var(--shadow-hud);
   opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,transform .24s var(--ease-out),visibility 0s linear .24s;
 }
 .change-popover.is-open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);transition-delay:0s}
@@ -932,7 +915,7 @@ html.dark .info-val{color:var(--t1)}
 /* MODAL */
 .overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.28);backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi var(--dur-modal) ease}
 @keyframes fi{from{opacity:0}to{opacity:1}}
-.modal{background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.28);backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su var(--dur-modal) ease}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su var(--dur-modal) ease}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 /* TOASTS */
 #toasts{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;width:min(360px,calc(100vw - 32px));flex-direction:column;align-items:flex-end;gap:7px;pointer-events:none}
@@ -954,7 +937,7 @@ html.dark .info-val{color:var(--t1)}
 .toast.e .toast-message{color:color-mix(in srgb,var(--danger) 72%,var(--t1))}
 .tx{display:grid;width:26px;height:26px;flex:0 0 26px;margin-left:1px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--t2);cursor:pointer;font:600 var(--fs-sm) 'Mulish',sans-serif;transition:background-color var(--hover-out),color var(--hover-out),opacity var(--hover-out),transform var(--dur-press) ease}
 .tx:hover,.tx:focus-visible{background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);color:var(--t1);opacity:1;transition:background-color var(--hover-in),color var(--hover-in),opacity var(--hover-in),transform var(--dur-press) ease}.tx:active{transform:scale(.92)}
-.hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:var(--r-sm);font:var(--fs-md)/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--chrome-glass-bg);backdrop-filter:var(--chrome-glass-filter);-webkit-backdrop-filter:var(--chrome-glass-filter);border:1px solid var(--chrome-float-border);box-shadow:var(--chrome-glass-shadow);opacity:0;pointer-events:none;transition:opacity .15s ease;}
+.hover-tip{position:fixed;z-index:300;max-width:220px;padding:6px 10px;border-radius:var(--r-sm);font:var(--fs-md)/1.4 'Mulish',sans-serif;color:var(--t1);background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-hud);opacity:0;pointer-events:none;transition:opacity .15s ease;}
 .hover-tip.show{opacity:1;}
 .hover-tip[hidden]{display:none;}
 .toast-action{flex:0 0 auto;min-height:26px;border:0;background:var(--bg-input);color:var(--t1);border-radius:var(--r-pill);padding:4px 10px;font:600 var(--fs-md) 'Mulish',sans-serif;white-space:nowrap;cursor:pointer}
@@ -1077,7 +1060,6 @@ html.dark .info-val{color:var(--t1)}
 .dark-toggle{
   position:relative;display:grid;place-items:center;width:30px;height:30px;padding:0;
   color:var(--t2);overflow:hidden;flex:0 0 auto;
-  backdrop-filter:blur(14px) saturate(155%);-webkit-backdrop-filter:blur(14px) saturate(155%);
 }
 /* Placed AFTER the base rule above on purpose — at equal specificity the
    LATER rule wins the cascade regardless of media-query match, so this is
@@ -1230,7 +1212,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   display:inline-block;margin:0;
   background:var(--red-fill);color:#fff;border:none;border-radius:var(--r-pill);
   font-family:'Mulish',sans-serif;font-size:var(--fs-base);font-weight:600;letter-spacing:.01em;
-  min-width:166px;padding:11px 36px;cursor:pointer;box-shadow:0 4px 16px rgba(228,87,69,.30);
+  min-width:166px;padding:11px 36px;cursor:pointer;box-shadow:none;
   /* Space is reserved from the start (no display:none) and the button fades in via .show,
      so surfacing it after the timeout never shifts the text below (Frank 2026-07-09). */
   opacity:0;pointer-events:none;
@@ -1240,12 +1222,12 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 /* .send-btn's fixed 166px width left a longer label ("Try without device") overflowing
    its padding, so it sat off-centre – let the pill grow to fit (Frank 2026-10-01). */
 #send-btn.welcome-start{width:auto;box-sizing:border-box;text-align:center}
-.welcome-start:hover{background:var(--red-fill2);box-shadow:0 6px 20px rgba(228,87,69,.34);transition:opacity .4s ease,background var(--hover-in),box-shadow var(--hover-in),transform .1s}
+.welcome-start:hover{background:var(--red-fill2);transition:opacity .4s ease,background var(--hover-in),box-shadow var(--hover-in),transform .1s}
 /* K-7 (UX audit 2026-09-25): #send-btn carries .idle on welcome (nothing dirty
    yet), and .send-btn.idle's glass look buried the only primary action as a
    secondary pill. Welcome keeps the red primary; .idle glass resumes in-app. */
-.welcome-start.idle{background:var(--red-fill);color:#fff;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 4px 16px rgba(228,87,69,.30)}
-.welcome-start.idle:hover{background:var(--red-fill2);color:#fff;box-shadow:0 6px 20px rgba(228,87,69,.34)}
+.welcome-start.idle{background:var(--red-fill);color:#fff;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+.welcome-start.idle:hover{background:var(--red-fill2);color:#fff}
 .welcome-start:active{transform:scale(.97);}
 .welcome-start:disabled{opacity:.6;cursor:default;}
 .welcome-start-msg{width:100%;height:14px;min-height:14px;margin:6px 0 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:var(--fs-sm);line-height:14px;color:var(--danger);}
@@ -1809,9 +1791,8 @@ body.app-reveal .center-col>.stage-collapse{z-index:170}
   animation:fi var(--dur-fast) ease;
 }
 .icon-picker-modal{
-  background:linear-gradient(145deg,var(--glass-dialog),var(--glass-card));border:1px solid var(--glass-border);
-  border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.26);
-  backdrop-filter:blur(26px) saturate(165%);-webkit-backdrop-filter:blur(26px) saturate(165%);
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.26);
   padding:20px;width:360px;max-height:82vh;overflow-y:auto;
 }
 .icon-picker-title{font-size:var(--fs-lg);font-weight:600;color:var(--t1);margin-bottom:16px}
@@ -2159,7 +2140,6 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
    bottom edge fades while more options follow (UX audit 2026-09-28, N-7). */
 .quick-setup-menu.has-more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 32px),transparent)}
 .quick-setup-group+.quick-setup-group{margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
-.quick-setup-option-icon{width:20px;text-align:center;font-size:var(--fs-lg);flex-shrink:0}
 .quick-setup-option-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .quick-setup-option-kind{white-space:nowrap}
 /* ONE dropdown language (Frank 2026-09-29): Fader response, Range preset,
@@ -2272,11 +2252,6 @@ html.dark .bank-name-input{color:var(--t1);}
    so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
 html.dark .advanced-toggle-btn{color:var(--t1);}
 
-/* Glass fallback + lighter compositor load on small screens. Inputs and steppers
-   deliberately remain opaque so configuration values retain maximum contrast. */
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .modal,.icon-picker-modal,.sync-banner{background:var(--bg-card)}
-}
 </style>
 </head>
 <body>
@@ -2383,8 +2358,6 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <!-- Subsekce: Device -->
       <div class="settings-subhead">Device</div>
       <div class="info-grid">
-        <div class="info-row"><span class="info-lbl"><span data-i18n="device.product">Product</span></span><span class="info-val">Feel Fader</span></div>
-        <div class="info-row"><span class="info-lbl">Manufacturer</span><span class="info-val">Acoustic Empire</span></div>
         <div class="info-row"><span class="info-lbl">Firmware</span><span class="info-val selectable" id="di-firmware" style="color:var(--t2)">–</span></div>
         <div class="info-row info-row-action" id="fw-update-row" hidden>
           <span class="info-lbl" id="fw-update-label">Firmware update available</span>
@@ -2426,7 +2399,7 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <div class="settings-subhead">Diagnostics</div>
       <details class="midi-diagnostics" id="midi-diagnostics" ontoggle="if(this.open)renderMidiDiagnostics()">
         <summary>
-          <span class="midi-diagnostics-title"><strong>MIDI diagnostics</strong><span>Inspect the active mapping and last event without adding permanent UI.</span></span>
+          <span class="midi-diagnostics-title"><strong>MIDI diagnostics</strong><span>Last MIDI event and the active mapping.</span></span>
           <svg class="midi-diagnostics-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </summary>
         <div class="midi-diagnostics-body">
@@ -3581,10 +3554,10 @@ function ccEncoderBody(ctrl, bi, errs = validate()) {
             <button type="button" class="seq-link" onclick="toggleUaccPresets()" id="uacc-preset-btn">Templates…</button>
             <div class="uacc-preset-dropdown" id="uacc-preset-dropdown" style="display:none">
               <div class="uacc-dropdown-section">Library articulation lists</div>
-              <button onclick="applyArticulationList('Spitfire BBC Symphony Orchestra')">🎻 Spitfire BBC Symphony Orchestra</button>
-              <button onclick="applyArticulationList('Spitfire Chamber Strings')">🎻 Spitfire Chamber Strings</button>
-              <button onclick="applyArticulationList('Spitfire UACC – Brass')">🎺 Spitfire UACC – Brass</button>
-              <button onclick="applyArticulationList('Spitfire UACC – Woodwinds')">🎷 Spitfire UACC – Woodwinds</button>
+              <button onclick="applyArticulationList('Spitfire BBC Symphony Orchestra')">Spitfire BBC Symphony Orchestra</button>
+              <button onclick="applyArticulationList('Spitfire Chamber Strings')">Spitfire Chamber Strings</button>
+              <button onclick="applyArticulationList('Spitfire UACC – Brass')">Spitfire UACC – Brass</button>
+              <button onclick="applyArticulationList('Spitfire UACC – Woodwinds')">Spitfire UACC – Woodwinds</button>
               <div class="uacc-dropdown-section">General patterns</div>
               <button onclick="applyUaccTemplate('spitfire')">UACC common techniques</button>
               <button onclick="applyUaccTemplate('legato')">Legato family</button>
@@ -3831,9 +3804,8 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
   const summary = DEVICE_INFO.hid_enabled
     ? (combo === '–' ? {label:'Not assigned'} : {label: isGlobal ? 'All banks' : 'This bank', meta: combo})
     : {label:'Keyboard off'};
-  const scopeNote = isGlobal
-    ? 'One key combo shared by every bank.'
-    : 'This bank has its own key combo; other banks keep theirs.';
+  // Global needs no note – the "Global – same macro for all banks" switch says it (UI audit 2026-10-24, S-1).
+  const scopeNote = isGlobal ? '' : 'This bank has its own key combo; other banks keep theirs.';
   // schema_version === null covers both "never connected" and "connected but
   // the device didn't report schema_version" (Number(info.schema_version) ||
   // null in handleSysEx/serialReadInfo folds a missing/0 field to null) —
@@ -3855,7 +3827,7 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
     <div class="section-collapse-body" id="section-body-${bi}-macro" ${open?'':'hidden'}>
     <div class="section-fields">
       ${hidEnableNotice('Button Macro')}
-      <div class="uacc-note" style="margin:0 0 8px">${escHtml(scopeNote)}</div>
+      ${scopeNote ? `<div class="uacc-note" style="margin:0 0 8px">${escHtml(scopeNote)}</div>` : ''}
       <div class="field-block">
         <span class="field-label">LONG-PRESS KEY</span>
         <div style="display:flex;align-items:center;gap:var(--space-2)">
@@ -6712,7 +6684,6 @@ var TRANSLATIONS = {
     // keys, 'btn.export'/'btn.import'/'btn.reset'/'btn.copy'/'advanced.*_desc', were
     // removed 2026-08-11 launch-audit text pass, not restored here.)
     'welcome.skip': 'Continue without device',
-    'device.product': 'Product',
     'icon.no_icon': 'No icon',
     'icon.close': 'Close',
     'footer.claim': 'At Acoustic Empire we are passionate about high-quality acoustic solutions that make your music shine.',
@@ -8189,9 +8160,8 @@ function quickSetupMenuHtml(query = '') {
   const matches = name => !q || name.toLocaleLowerCase().includes(q);
   const option = (name, kind) => {
     const preset = libraryPresetByName(name) || {};
-    const icon = preset.icon || (preset.custom ? '★' : '♪');
     return `<button class="quick-setup-option" type="button" role="option" data-name="${escHtml(name)}" onclick="chooseQuickSetup(this.dataset.name)" onkeydown="quickSetupOptionKey(event)">
-      <span class="quick-setup-option-icon" aria-hidden="true">${bankIconHtml(icon)}</span><span class="quick-setup-option-name">${escHtml(name)}</span><span class="quick-setup-option-kind">${kind}</span>
+      <span class="quick-setup-option-name">${escHtml(name)}</span><span class="quick-setup-option-kind">${kind}</span>
     </button>`;
   };
   // UX audit 2026-09-25 F-2: say HOW a built-in setup switches articulations.
