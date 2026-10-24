@@ -2,8 +2,8 @@
    from the app footer. Same tokens as feel-fader.html; no third-party loads. */
 @font-face{font-family:'Mulish';font-style:normal;font-weight:300 700;font-display:swap;src:url(mulish.woff2) format('woff2')}
 :root{
-  --bg:#f5f5f7;--bg-card:#ffffff;--border:rgba(0,0,0,.08);--border-s:rgba(0,0,0,.12);
-  --t1:#1d1d1f;--t2:#505057;--t3:#6f6f76;--red:#e45745;
+  --bg:#f2f2f2;--bg-card:#ffffff;--border:rgba(0,0,0,.08);--border-s:rgba(0,0,0,.16);
+  --t1:#0d0d0d;--t2:#444444;--t3:#666666;--red:#e45745;
   /* Red text: same token as the app (feel-fader.html --red-text, launch audit U-2). */
   --red-text:#c8412f;
   --ft-bg:#2a2a2c;--ft-t3:rgba(255,255,255,.5);
@@ -11,7 +11,7 @@
   /* App link hover timing (feel-fader.html :root). */
   --ease-link:cubic-bezier(.22,.61,.36,1);--hover-in:1.3s var(--ease-link);--hover-out:1.8s var(--ease-link);
 }
-html.dark{--red-text:var(--red);--bg:#0f0f11;--bg-card:#1c1c1e;--border:rgba(255,255,255,.08);--border-s:rgba(255,255,255,.13);--t1:#f5f5f7;--t2:#aeaeb2;--t3:#8e8e93}
+html.dark{--red-text:var(--red);--bg:#0a0a0a;--bg-card:#161616;--border:rgba(255,255,255,.08);--border-s:rgba(255,255,255,.16);--t1:#f2f2f2;--t2:#b3b3b3;--t3:#8a8a8a}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--t2);font:400 15px/1.7 'Mulish',sans-serif}
@@ -30,7 +30,7 @@ html.dark .legal-foot{--ft-bg:var(--bg);box-shadow:inset 0 1px 0 var(--border)}
    alone never reaches the app header's 40px – min-height pins the total to
    match (border-box here, so min-height IS the full 40px, not just the
    content box). */
-.legal-top-inner{padding:5px 28px;min-height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.legal-top-inner{padding:5px 28px;min-height:38px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 /* Same color + size as the app's wordmark (.h-title / .welcome-wordmark-text
    in feel-fader.html) – kept in sync by eye since this is a separate
    stylesheet (Frank 2026-10-01: "nápis feel fader ať má stejnou barvu a
@@ -48,7 +48,9 @@ h2{margin:40px 0 10px;font-size:19px;line-height:1.35;font-weight:700;color:var(
 p{margin:0 0 12px}
 ul{margin:0 0 12px;padding-left:22px}
 li{margin-bottom:4px}
-a{color:var(--red-text)}
+/* Prose links match the app's text actions (UI audit 2026-10-24 K-4): --t1, quiet underline. */
+a{color:var(--t1);text-decoration-color:var(--border-s);text-underline-offset:3px;transition:text-decoration-color var(--hover-out)}
+a:hover{text-decoration-color:currentColor;transition:text-decoration-color var(--hover-in)}
 .legal-meta{margin-bottom:28px;font-size:14px;color:var(--t3)}
 .legal-draft{margin:0 0 20px;padding:10px 14px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--t1);font-size:14px}
 .legal-tbd{background:color-mix(in srgb,#f5c000 32%,transparent);color:inherit;padding:0 3px;border-radius:var(--r-sm)}
