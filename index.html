@@ -648,8 +648,7 @@ padding:6px 14px;font:600 var(--fs-md) 'Mulish',sans-serif;color:var(--t1)}
 .hid-inline-copy strong::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
 .hid-inline-help{color:var(--t1);font-weight:600;text-decoration:underline;text-decoration-color:var(--border-s);text-underline-offset:3px;cursor:pointer;white-space:nowrap;transition:text-decoration-color var(--hover-out)}
 .hid-inline-help:hover{text-decoration-color:currentColor;transition:text-decoration-color var(--hover-in)}
-.hid-inline-action{flex-shrink:0;min-height:var(--ctl-sm);padding:4px 14px;color:var(--t1);font:600 var(--fs-md) 'Mulish',sans-serif}
-@media(max-width:540px){.hid-inline-notice{align-items:flex-start;flex-wrap:wrap}.hid-inline-action{margin-left:auto}}
+@media(max-width:540px){.hid-inline-notice{align-items:flex-start;flex-wrap:wrap}}
 
 .icon-picker-trigger{
   padding:3px 6px;color:var(--t2);
@@ -831,6 +830,14 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .hid-switch input:disabled + .hid-switch-track{cursor:not-allowed}
 .hid-switch input:disabled + .hid-switch-track .hid-switch-thumb{opacity:.42}
 html.dark .hid-switch-thumb{background:rgba(245,245,247,.90)}
+/* Keyboard (HID) switch at the features that need it – Button and Navigation – not under Device (Frank 2026-10-25). */
+.hid-row{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.hid-row-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;font-size:var(--fs-md);line-height:1.4;color:var(--t2)}
+.hid-row-title{color:var(--t1);font-weight:600}
+.hid-row-note:empty{display:none}
+.enc-unified-body > .hid-row{margin-bottom:0}   /* the body's flex gap already spaces it */
+.hid-row .hid-switch{flex:none}
+.hid-row .hid-switch::before{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
 .macro-global-switch{display:flex;margin:10px 0 0}
 /* The one uppercase eyebrow (K-5): group captions in Device, Help, icon picker, library
    menus and the library preview. Field labels are not eyebrows. */
@@ -2415,13 +2422,6 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
           <input class="owner-name-input" id="owner-input" maxlength="24" placeholder="Optional" autocomplete="off" spellcheck="false"
             onkeydown="onOwnerKeydown(event)" onblur="saveOwnerName()">
         </div>
-        <div class="info-row info-row-action" data-tip="Enable HID to let the device send keystrokes – required for the Navigation roller mode and the button long-press macro.">
-          <span class="info-lbl">Keyboard (HID)</span>
-          <label class="hid-switch">
-            <input type="checkbox" id="hid-toggle" onchange="onHidToggle(this.checked)" aria-label="Enable keyboard HID">
-            <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
-          </label>
-        </div>
         <div class="info-row info-row-action" data-tip="Controls how the device filters and interpolates both physical faders. Saved with Send to device.">
           <span class="info-lbl">Fader response</span>
           <div class="response-select" id="fader-response-select">
@@ -2496,9 +2496,9 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
       <div class="settings-subhead" id="help-keyswitch">Keyswitch mode</div>
       <p style="margin:0 0 12px">In Keyswitch mode the roller sends MIDI note keyswitches on the configured channel. Click one piano key or drag across a range; rotating the roller steps through the selected notes. Reorder long sequences by dragging rows or with Alt + arrow keys.</p>
       <div class="settings-subhead" id="help-macro">Button macro (long-press)</div>
-      <p style="margin:0 0 12px">A <b>long-press</b> (≥ 0.5 s) of the device button sends a defined key combo – e.g. play/stop or a DAW shortcut. Requires Keyboard (HID). A <b>short press</b> still cycles banks. The Button Macro panel remains visible while HID is off and offers a direct Enable Keyboard action.</p>
+      <p style="margin:0 0 12px">A <b>long-press</b> (≥ 0.5 s) of the device button sends a defined key combo – e.g. play/stop or a DAW shortcut. Requires Keyboard (HID). A <b>short press</b> still cycles banks. You can set the key combo while Keyboard is off; it is sent once Keyboard is on.</p>
       <div class="settings-subhead" id="help-hid">Keyboard (HID)</div>
-      <p style="margin:0 0 12px">Enable HID (under Device) to let the device send keystrokes – required for the Navigation roller mode and the button long-press macro.</p>
+      <p style="margin:0 0 12px">Turn Keyboard on to let the device send keystrokes – required for the Navigation roller mode and the button long-press macro. The switch sits at the top of the Button section and of Navigation; it is one setting for the whole device. Changing it needs Feel Fader connected, in Chrome or Edge on a computer.</p>
       <div class="settings-subhead">MIDI diagnostics</div>
       <p style="margin:0 0 12px">Open MIDI diagnostics under Device to inspect the active bank mapping, last received MIDI event, firmware, HID state and config hash, or copy a support snapshot.</p>
       <div class="settings-subhead">Switching banks</div>
@@ -3789,13 +3789,42 @@ function encoderPanel(ctrl, bi, errs = validate()) {
   </div>`;
 }
 
-function hidEnableNotice(feature) {
-  if (DEVICE_INFO.hid_enabled) return '';
-  const canEnable = !!(_ffConnected || _serialPort || DEVICE_INFO.hid_available);
-  return `<div class="hid-inline-notice">
-    <div class="hid-inline-copy"><strong>Keyboard (HID) is off</strong><span>${escHtml(feature)} can be configured now, but sends keys only after Keyboard is enabled. <a href="#help-hid" class="hid-inline-help" onclick="event.preventDefault();openHelpAt('help-hid')">What's this?</a></span></div>
-    <button type="button" class="hid-inline-action ui-control ui-pill ui-glass" onclick="requestEnableHid()">${canEnable ? 'Enable Keyboard…' : 'Connect to enable'}</button>
+// Keyboard (HID) is one device setting, switched where it is needed – Button
+// and Navigation (Frank 2026-10-25). Not connected = no state shown:
+// hid_enabled is not reset on disconnect, so it may be stale.
+function hidLinked() { return _ffConnected || !!_serialPort; }
+function hidKnownOn() { return hidLinked() && !!DEVICE_INFO.hid_enabled; }
+function hidCanToggle() { return !!navigator.serial && hidLinked() && !_fwUpdating && !_hidPending; }   // HID set goes only via Web Serial
+function hidRowCopy(scope) {
+  const reason = !navigator.serial ? 'Use Chrome or Edge on a computer.' : !hidLinked() ? 'Connect Feel Fader to change this.' : '';
+  if (hidKnownOn()) return { desc: 'On for the whole device.', note: reason };   // known on via MIDI info, e.g. Firefox
+  const need = scope === 'nav' ? 'needed for Navigation and the button long-press' : 'needed for this long-press and Navigation';
+  return {
+    desc: `Lets Feel Fader send key presses – ${need}. <a href="#help-hid" class="hid-inline-help" onclick="event.preventDefault();openHelpAt('help-hid')">What's this?</a>`,
+    note: 'You can set this up now; it works once Keyboard is on.' + (reason ? ' ' + reason : '')
+  };
+}
+function hidSwitchRowHtml(bi, scope) {
+  const id = `hid-${bi}-${scope}`;
+  const { desc, note } = hidRowCopy(scope);
+  return `<div class="hid-row" data-hid-switch="${scope}">
+    <div class="hid-row-copy">
+      <span class="hid-row-title" id="${id}-label">Keyboard</span>
+      <span class="hid-row-desc" id="${id}-desc">${desc}</span>
+      <span class="hid-row-note" id="hid-note-${bi}-${scope}">${escHtml(note)}</span>
+    </div>
+    <label class="hid-switch">
+      <input type="checkbox" onchange="onHidToggle(this.checked,this)" aria-labelledby="${id}-label" aria-describedby="${id}-desc hid-note-${bi}-${scope}"${hidKnownOn()?' checked':''}${hidCanToggle()?'':' disabled'}>
+      <span class="hid-switch-track" aria-hidden="true"><span class="hid-switch-thumb"></span></span>
+    </label>
   </div>`;
+}
+// Amber dot in the Button header while Keyboard is not confirmed on; skipped
+// when the schema warning already shows its own amber dot there.
+function hidHeadWarnHtml(withDot = true) {
+  if (hidKnownOn()) return '';
+  const dot = withDot ? '<span class="section-issue-dot warn" aria-hidden="true"></span>' : '';
+  return `${dot}<span class="sr-only">${hidLinked() ? 'Keyboard is off' : 'Keyboard state unknown'}</span>`;
 }
 function trackNavBody(bi){
   const b = cfg.banks[bi];
@@ -3803,7 +3832,7 @@ function trackNavBody(bi){
   const ccwLbl = keyComboLabel(b.nav_keys_ccw || [0x51]);
   return `
   <div class="enc-unified-body">
-    ${hidEnableNotice('Navigation')}
+    ${hidSwitchRowHtml(bi, 'nav')}
     <div class="uacc-note" style="margin:8px 0">Rotating the roller sends a key (HID). Click a field and press a key (also with Ctrl/Shift/Alt/Cmd).</div>
     <div class="uacc-note m4l-note" style="margin:0 0 8px"><span class="m4l-chip">Max for Live</span><span class="m4l-text">In Ableton Live, the Auto Arm device arms each track you select, so you can record on it right away. <a class="m4l-link" href="pages/auto-arm.html" target="_blank" rel="noopener">Set up Auto Arm<svg class="m4l-ext" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7 9M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg></a></span></div>
     <div class="section-field-row">
@@ -3852,9 +3881,7 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
   const open = isSectionOpen('macro');
   const isGlobal = cfg.macro_global !== false;
   const combo = keyComboLabel(activeMacroKeys(bi));
-  const summary = DEVICE_INFO.hid_enabled
-    ? (combo === '–' ? {label:'Not assigned'} : {label: isGlobal ? 'All banks' : 'This bank', meta: combo})
-    : {label:'Keyboard off'};
+  const summary = combo === '–' ? {label:'Not assigned'} : {label: isGlobal ? 'All banks' : 'This bank', meta: combo};
   // Global needs no note – the "Global – same macro for all banks" switch says it (UI audit 2026-10-24, S-1).
   const scopeNote = isGlobal ? '' : 'This bank has its own key combo; other banks keep theirs.';
   // schema_version === null covers both "never connected" and "connected but
@@ -3873,11 +3900,12 @@ function macroSectionContent(bi = activeBank) {   // long-press macro; per bank 
   const headerWarn = schemaStale
     ? `<span class="section-issue-dot warn" aria-hidden="true"></span><span class="sr-only">Warning: connected firmware only supports one macro for all banks – this bank's macro will be ignored until it's updated.</span>`
     : '';
+  const hidWarn = `<span data-hid-head-warn>${hidHeadWarnHtml(!schemaStale)}</span>`;
   return `
-    ${sectionHeaderHtml(bi,'macro','Button',summary,'A long-press (≥ 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks.',headerWarn)}
+    ${sectionHeaderHtml(bi,'macro','Button',summary,'A long-press (≥ 0.5 s) sends a configured key combo. Requires Keyboard (HID); a short press still cycles banks.',headerWarn + hidWarn)}
     <div class="section-collapse-body" id="section-body-${bi}-macro" ${open?'':'hidden'}>
     <div class="section-fields">
-      ${hidEnableNotice('Button Macro')}
+      ${hidSwitchRowHtml(bi, 'macro')}
       ${scopeNote ? `<div class="uacc-note" style="margin:0 0 8px">${escHtml(scopeNote)}</div>` : ''}
       <div class="field-block">
         <span class="field-label">Long-press key</span>
@@ -3932,10 +3960,26 @@ function renderUacc() {
   // UACC list is now rendered inline inside encoderPanel — no separate render needed
 }
 
-let _hidRebootPending=false;
+let _hidPending = false;     // CMD_HID in flight – switches stay disabled (no double tap / two dialogs)
+let _hidFocusScope = null;   // which row's switch to refocus after the write re-renders the section
 function updateHidToggle(){
-  const el=document.getElementById('hid-toggle');
-  if(el){ el.checked = !!DEVICE_INFO.hid_enabled; el.disabled = !(_ffConnected || DEVICE_INFO.hid_available); }
+  const on = hidKnownOn(), can = hidCanToggle();
+  document.querySelectorAll('[data-hid-switch]').forEach(row => {
+    const input = row.querySelector('input');
+    if (!input) return;
+    const { desc, note } = hidRowCopy(row.dataset.hidSwitch);
+    input.checked = on;
+    input.disabled = !can;
+    if (_hidPending) row.setAttribute('aria-busy', 'true'); else row.removeAttribute('aria-busy');
+    const d = row.querySelector('.hid-row-desc');
+    if (d && d.innerHTML !== desc) d.innerHTML = desc;
+    const n = row.querySelector('.hid-row-note');
+    if (n) n.textContent = note;
+  });
+  document.querySelectorAll('[data-hid-head-warn]').forEach(el => {
+    const html = hidHeadWarnHtml(!el.parentElement?.querySelector(':scope > .section-issue-dot.warn'));
+    if (el.innerHTML !== html) el.innerHTML = html;
+  });
 }
 // Owner name (feel-fader-firmware spec 2026-09-30-owner-name-design) – lives in
 // its own device slot, not in cfg: saved immediately like HID, never via Send.
@@ -4059,15 +4103,6 @@ document.addEventListener('pointerdown', event => {
   const select = document.getElementById('fader-response-select');
   if (select && !select.contains(event.target)) closeFaderResponseMenu();
 });
-function openDeviceSettingsAtHid() {
-  const body = document.getElementById('device-settings-body');
-  if (body?.style.display === 'none') toggleDeviceSettings();
-  requestAnimationFrame(() => {
-    const toggle = document.getElementById('hid-toggle');
-    toggle?.closest('.info-row')?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
-    toggle?.focus({preventScroll:true});
-  });
-}
 function openDeviceSettingsAtFirmware() {
   const body = document.getElementById('device-settings-body');
   if (body?.style.display === 'none') toggleDeviceSettings();
@@ -4087,16 +4122,8 @@ function openHelpAt(anchorId) {
     target.focus({preventScroll:true});
   });
 }
-function requestEnableHid() {
-  if (DEVICE_INFO.hid_enabled) { toast('i','Keyboard (HID) is already enabled'); return; }
-  if (!(_ffConnected || _serialPort || DEVICE_INFO.hid_available)) {
-    openDeviceSettingsAtHid();
-    toast('i','Connect Feel Fader before enabling Keyboard (HID)');
-    return;
-  }
-  onHidToggle(true);
-}
-function onHidToggle(want){
+function onHidToggle(want, el){
+  _hidFocusScope = el?.closest?.('[data-hid-switch]')?.dataset.hidSwitch || null;
   if (!want) { sendHidRequest(false); return; }
   updateHidToggle();
   openConfirm({
@@ -4109,6 +4136,9 @@ function onHidToggle(want){
 }
 async function sendHidRequest(enabled){
   if (_fwUpdating) { toast('i', 'Firmware update in progress – wait until the device restarts.'); updateHidToggle(); return; }
+  if (_hidPending) return;
+  _hidPending = true;
+  updateHidToggle();
   // HID set goes via Web Serial (reliable path; MIDI SysEx doesn't get through in some setups).
   try {
     if (protocolVersion === 2) {
@@ -4127,9 +4157,15 @@ async function sendHidRequest(enabled){
     const errReason = /^ERR:(.+)$/.exec(e.message || '');
     if (!errReason && e.message !== 'timeout' && e.name !== 'AbortError' && _serialPort) { try { await _serialPort.close(); } catch(_){} _serialPort=null; }
     if (errReason) toast('e', 'HID command failed: ' + errReason[1]);
-    else if (e.message === 'timeout') toast('e', 'No confirmation from device – HID state unknown, re-check below.');
+    else if (e.message === 'timeout') toast('e', 'No confirmation from device – Keyboard state unknown. Reconnect Feel Fader to check it.');
     else toast('e', serialErrMsg(e, 'HID command failed'));
+  } finally {
+    _hidPending = false;
     updateHidToggle();
+    // serialReadInfo() re-renders the section, so the focused switch is gone – put focus back on its successor.
+    const a = document.activeElement;
+    if (_hidFocusScope && (!a || a === document.body)) document.querySelector(`[data-hid-switch="${_hidFocusScope}"] input:not([disabled])`)?.focus({preventScroll:true});
+    _hidFocusScope = null;
   }
 }
 
@@ -4346,8 +4382,7 @@ function updateMacroUI(){
   const combo = keyComboLabel(activeMacroKeys(Number.isFinite(Number(el.getAttribute('data-bank'))) ? Number(el.getAttribute('data-bank')) : activeBank));
   el.textContent = combo === '–' ? 'Not assigned' : combo;
   el.classList.toggle('is-empty', combo === '–');
-  el.disabled = !DEVICE_INFO.hid_enabled;
-  el.title = DEVICE_INFO.hid_enabled ? 'Click and press a key (incl. Ctrl/Shift/Alt/Cmd)' : 'Requires HID enabled';
+  el.title = 'Click and press a key (incl. Ctrl/Shift/Alt/Cmd)';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4479,7 +4514,6 @@ function cancelKeyCapture(){   // Esc / klik mimo / blur (audit I4)
 }
 function startKeyCapture(bi, which){ _captureBegin({ bi, which }); }
 function startMacroCapture(bi = activeBank){
-  if (!DEVICE_INFO.hid_enabled) { toast('i','Macro requires Keyboard (HID) – enable it under Device'); return; }
   _captureBegin({ macro: true, bi });
 }
 window.addEventListener('keydown', e => {
@@ -5297,7 +5331,7 @@ function markSectionIssues(errs = validate()) {
     const section = document.querySelector(`.bank-section[data-fader="${key}"]`);
     const head = section && section.querySelector('.section-head');
     if (!head) return;
-    head.querySelector('.section-issue-dot')?.remove();
+    head.querySelector('.section-issue-dot:not(.warn)')?.remove();
     if (keys.has(key)) {
       const d = document.createElement('span');
       d.className = 'section-issue-dot'; d.setAttribute('aria-hidden','true');
@@ -6585,6 +6619,7 @@ function renderConnState(){
   const s = connState();
   _lastConnState = s;
   setTxt('di-firmware-summary', deviceSummaryText());
+  updateHidToggle();
   const revealOnInteract = (s === 'CONNECTED_LIVE' || s === 'CONNECTED_BLIND');
   if (s === 'CONNECTED_LIVE'){
     dot.className = 'h-status-dot on';
@@ -8903,7 +8938,6 @@ window.selectIcon        = selectIcon;
 window.clearIcon         = clearIcon;
 window.toggleDeviceSettings = toggleDeviceSettings;
 window.onFaderResponseChange = onFaderResponseChange;
-window.requestEnableHid = requestEnableHid;
 window.renderMidiDiagnostics = renderMidiDiagnostics;
 window.copyMidiDiagnostics = copyMidiDiagnostics;
 window.toggleHelp        = toggleHelp;
