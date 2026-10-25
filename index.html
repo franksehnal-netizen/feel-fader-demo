@@ -2236,22 +2236,21 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
 .library-preview-overlay{z-index:165}
 .library-preview-overlay[hidden]{display:none}
 .library-preview-modal{max-width:500px;overflow:hidden}
-.library-preview-head{padding:18px 20px 12px;border-bottom:1px solid var(--border)}
+.library-preview-head{padding:18px 20px 0}
 .library-preview-head strong{display:block;font-size:var(--fs-xl);color:var(--t1);margin-bottom:4px}
 .library-preview-head span{display:block;font-size:var(--fs-md);line-height:1.45;color:var(--t2)}
-.library-preview-body{padding:14px 20px;display:grid;gap:var(--space-2)}
-.library-preview-row{display:grid;grid-template-columns:108px minmax(0,1fr);gap:var(--space-3);padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 68%,transparent)}
+.library-preview-body{padding:14px 20px 4px;display:grid;gap:var(--space-2)}
+.library-preview-row{display:grid;grid-template-columns:108px minmax(0,1fr);gap:var(--space-3);padding:8px 10px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 68%,transparent)}
 .library-preview-row-value{min-width:0;font-size:var(--fs-md);line-height:1.4;color:var(--t1)}
-.library-preview-note{padding:8px 10px;border-left:2px solid var(--amber);font-size:var(--fs-sm);line-height:1.45;color:var(--t2)}
-.library-preview-actions{display:flex;align-items:center;justify-content:flex-end;gap:var(--space-2);padding:14px 20px 18px;border-top:1px solid var(--border);flex-wrap:wrap}
+.library-preview-note{display:flex;align-items:flex-start;gap:6px;padding:4px 0 0;font-size:var(--fs-md);line-height:1.45;color:var(--t2)}
+.library-preview-note .section-issue-dot{margin-top:calc((1.45em - 6px) / 2)}
+.library-preview-actions{display:flex;align-items:center;justify-content:flex-end;gap:var(--space-2);padding:16px 20px 18px;flex-wrap:wrap}
 .library-preview-articulations[hidden]{display:none}
 @media(max-width:540px){
   .custom-preset-scopes{grid-template-columns:1fr}
   .custom-preset-foot{align-items:stretch;flex-direction:column}
   .custom-preset-foot-left,.custom-preset-foot-right{justify-content:flex-end}
   .library-preview-row{grid-template-columns:1fr;gap:3px}
-  .library-preview-actions{align-items:stretch;flex-direction:column}
-  .library-preview-actions .btn{justify-content:center;width:100%}
 }
 /* ADVANCED TOGGLE - clean */
 .advanced-toggle-btn{
@@ -8440,7 +8439,7 @@ function openLibraryPreview(name) {
       ? 'In the Spitfire plugin, set the articulation lock to "Locked to UACC" – otherwise CC 32 will not switch articulations.'
       : 'Built-in starting point – confirm CC and articulation support for the exact library patch and version before sending.';
   const body = document.getElementById('library-preview-body');
-  if (body) body.innerHTML = libraryPresetPreviewRows(name,preset) + `<div class="library-preview-note">${escHtml(note)}</div>`;
+  if (body) body.innerHTML = libraryPresetPreviewRows(name,preset) + `<div class="library-preview-note"><span class="section-issue-dot warn" aria-hidden="true"></span><span>${escHtml(note)}</span></div>`;
   const articulationBtn = document.getElementById('library-preview-articulations');
   if (articulationBtn) {
     articulationBtn.hidden = !libraryPresetHasArticulations(preset);
