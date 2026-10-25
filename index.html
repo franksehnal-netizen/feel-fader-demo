@@ -8314,7 +8314,10 @@ function toggleLibraryPopover(bi, force) {
   const open = force ?? pop.hidden;
   pop.hidden = !open;
   link.setAttribute('aria-expanded', String(open));
-  if (open) document.getElementById(`quick-setup-input-${bi}`)?.focus();   // onfocus opens the list
+  // A touch tap shows the list without focusing search: iOS would raise the
+  // keyboard and scroll the page to keep the field above it (Frank 2026-10-25).
+  if (open && matchMedia('(pointer:coarse)').matches) openQuickSetupMenu(bi);
+  else if (open) document.getElementById(`quick-setup-input-${bi}`)?.focus();   // onfocus opens the list
   else closeQuickSetupMenu(bi);
   refreshBankMenuLayer();
 }
