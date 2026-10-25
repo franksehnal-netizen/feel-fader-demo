@@ -549,6 +549,16 @@ html.dark .roller-mode-row::before{background:var(--bg-card);box-shadow:var(--sh
 .roller-advanced[open]>summary::after{transform:rotate(180deg)}
 .roller-advanced-summary{font-size:var(--fs-xs);font-weight:400;color:var(--t3);margin-left:auto}
 .roller-advanced-body{padding-top:8px}
+/* Narrow phones: four labels don't fit one row (≤414 px cut "Articulati…"), so the segments
+   become a 2×2 grid – each still 28 px, full labels; the indicator moves by column and row. */
+@media(max-width:440px){
+  .roller-mode-row{--roller-col:0;--roller-row:0;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:var(--r-lg)}
+  .roller-mode-row[data-mode="keyswitch"]{--roller-col:1}
+  .roller-mode-row[data-mode="track_nav"]{--roller-row:1}
+  .roller-mode-row[data-mode="cc_relative"]{--roller-col:1;--roller-row:1}
+  .roller-mode-row::before{width:calc((100% - 8px)/2);height:calc((100% - 8px)/2);bottom:auto;
+    transform:translate(calc(var(--roller-col) * (100% + 2px)),calc(var(--roller-row) * (100% + 2px)))}
+}
 @keyframes rollerContentIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){
   .roller-mode-row::before,.roller-mode-btn,.roller-mode-content,.ks-key{transition:none;animation:none}
@@ -624,7 +634,7 @@ padding:6px 14px;font:600 var(--fs-md) 'Mulish',sans-serif;color:var(--t1)}
    the link carries an external-link arrow because it opens a new tab. */
 .m4l-note{display:flex;align-items:baseline;gap:8px}
 .m4l-text{min-width:0}
-.m4l-chip{flex:none;font:700 var(--fs-sm) 'Mulish',sans-serif;line-height:1.6;color:var(--t2);border:1px solid var(--border-s);border-radius:var(--r-pill);padding:0 8px;white-space:nowrap}
+.m4l-chip{flex:none;font:700 var(--fs-sm) 'Mulish',sans-serif;line-height:1.6;color:var(--t2);background:var(--control-glass-bg);border:1px solid var(--control-glass-border);border-radius:var(--r-pill);padding:0 8px;white-space:nowrap}
 .m4l-link{color:var(--t1);font-weight:600;white-space:nowrap}
 .m4l-ext{vertical-align:-1px;margin-left:3px}
 .fw-min-note{font-size:var(--fs-md);color:var(--t1);background:color-mix(in srgb,var(--amber) 14%,transparent);border-radius:var(--r-sm);padding:8px 10px;margin:8px 0}
@@ -817,7 +827,9 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .hid-switch input:checked + .hid-switch-track{background:var(--green);border-color:color-mix(in srgb,var(--green) 72%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--green) 25%,transparent),inset 0 1px 2px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.24)}
 .hid-switch input:checked + .hid-switch-track .hid-switch-thumb{transform:translateX(14px)}
 .hid-switch input:focus-visible + .hid-switch-track{outline:2px solid var(--focus);outline-offset:3px}
-.hid-switch input:disabled + .hid-switch-track{opacity:.42;cursor:not-allowed}
+/* Disabled: the track keeps its fill, only the thumb dims (Frank 2026-10-25, same as disabled pills). */
+.hid-switch input:disabled + .hid-switch-track{cursor:not-allowed}
+.hid-switch input:disabled + .hid-switch-track .hid-switch-thumb{opacity:.42}
 html.dark .hid-switch-thumb{background:rgba(245,245,247,.90)}
 .macro-global-switch{display:flex;margin:10px 0 0}
 /* The one uppercase eyebrow (K-5): group captions in Device, Help, icon picker, library
@@ -2265,6 +2277,8 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
 .bank-actions-body{padding:12px 18px 18px}
 .bank-actions-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
 .bank-actions-row [data-bank-action="delete"]{margin-left:auto}
+/* Phone: the row wraps, so Delete continues the flow from the left instead of hanging alone on the right. */
+@media(max-width:540px){.bank-actions-row [data-bank-action="delete"]{margin-left:0}}
 .bank-actions-body .btn{padding:6px 10px;border-radius:var(--r-pill);font-size:var(--fs-sm)}
 .bank-position-value{min-width:58px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;box-sizing:border-box;border:1px solid var(--control-glass-border);border-radius:var(--r-pill);background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow);font:600 var(--fs-md) 'Mulish',sans-serif;font-variant-numeric:tabular-nums;color:var(--t1)}
 .bank-position-stepper .step-btn:disabled{opacity:.35;cursor:default;background:none;transform:none}
