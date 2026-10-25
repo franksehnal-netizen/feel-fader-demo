@@ -8436,7 +8436,7 @@ function openLibraryPreview(name) {
   const note = preset.custom
     ? 'This is your saved setup. Only the parts included when it was saved will change.'
     : Array.isArray(preset.uacc_values)
-      ? 'In the Spitfire plugin, set the articulation lock to "Locked to UACC" – otherwise CC 32 will not switch articulations.'
+      ? 'In the Spitfire plugin, set the articulation lock to "Locked to UACC" – otherwise CC32 will not switch articulations.'
       : 'Built-in starting point – confirm CC and articulation support for the exact library patch and version before sending.';
   const body = document.getElementById('library-preview-body');
   if (body) body.innerHTML = libraryPresetPreviewRows(name,preset) + `<div class="library-preview-note"><span class="section-issue-dot warn" aria-hidden="true"></span><span>${escHtml(note)}</span></div>`;
