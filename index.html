@@ -201,7 +201,8 @@ html.dark select{color-scheme:dark}
 .ui-control.ui-glass{border:1px solid var(--control-glass-border);background:var(--control-glass-bg);backdrop-filter:var(--control-glass-filter);-webkit-backdrop-filter:var(--control-glass-filter);box-shadow:var(--control-glass-shadow)}
 .ui-control.ui-glass:hover{background:var(--control-glass-bg);box-shadow:var(--control-glass-shadow-hover)}
 /* Destructive actions (Reset): outline + --danger text, so they never read as the
-   red brand CTA (Send, Apply) they sit next to (UX audit 2026-09-25, K-4). */
+   red brand CTA (Send, Apply) they sit next to (UX audit 2026-09-25, K-4).
+   !important: a modifier on top of the button skins (.btn-ghost colour, hover fill). */
 .ui-danger{color:var(--danger)!important;border:1px solid color-mix(in srgb,var(--danger) 45%,transparent)!important;background:var(--control-glass-bg)!important;box-shadow:var(--control-glass-shadow)!important}
 .ui-danger:hover{background:var(--danger-bg)!important;border-color:var(--danger)!important}
 /* Reserve the scrollbar gutter always, so the viewport width never changes
@@ -484,7 +485,8 @@ body.live-note-reveal .live-note{transition:opacity 3s var(--ease-link)}
 }
 .bank-card.bank-anim{animation:bankFade var(--dur-fast) ease-out;}   /* T3: opacity fade celé karty */
 /* Theme changes are captured as two complete frames. The incoming frame fades over
-   the old one, so gradients, glass panels and solid colors all move at one tempo. */
+   the old one, so gradients, glass panels and solid colors all move at one tempo.
+   !important: no transition anywhere may survive the snapshot, inline ones included. */
 html.theme-snapshot,html.theme-snapshot *,html.theme-snapshot *::before,html.theme-snapshot *::after{transition:none!important}
 ::view-transition-old(root){animation:none}
 ::view-transition-new(root){animation:theme-frame-in var(--dur-base) ease both}
@@ -869,10 +871,12 @@ html.dark .info-val{color:var(--t1)}
    viditelná zůstává jen inline věta u pole a tečky v hlavičce sekce /
    na tabu banky. Element zůstává jako assertive live region, aby odečítač
    obrazovky o chybě dál věděl. Vedlejší efekt: nic nevstupuje do flow,
-   takže se pod ním nehne stepper (Frank, HW test 2026-08-08). */
+   takže se pod ním nehne stepper (Frank, HW test 2026-08-08).
+   !important: visually-hidden utilita musí přebít styl komponenty, na které sedí
+   (stejně .h-status-text na telefonu). */
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
 .vbar{display:block}
-.validation-target{box-shadow:0 0 0 2px color-mix(in srgb,var(--danger) 28%,transparent)!important}
+.validation-target{box-shadow:0 0 0 2px color-mix(in srgb,var(--danger) 28%,transparent)}
 
 /* FOOTER */
 /* Layout of the acoustic-empire.cz footer: brand + claim, link columns,
@@ -1123,7 +1127,7 @@ html.dark .dark-toggle .theme-icon-moon{opacity:1;transform:rotate(0) scale(1) t
      shift). */
   scrollbar-gutter:stable both-edges;
 }
-#welcome-screen.hidden{display:none !important;}
+#welcome-screen.hidden{display:none;}
 html:has(#welcome-screen:not(.hidden)),
 body:has(#welcome-screen:not(.hidden)){overflow:hidden}
 .welcome-inner{
@@ -1261,7 +1265,7 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
   -webkit-tap-highlight-color:transparent;
 }
 .welcome-skip.welcome-skip-floating{
-  z-index:230;display:block!important;
+  z-index:230;display:block;
 }
 @media(min-width:901px){
   .welcome-skip.welcome-skip-floating{
@@ -1269,7 +1273,6 @@ body:has(#welcome-screen:not(.hidden)){overflow:hidden}
     color:var(--t1);font-size:var(--fs-base);font-weight:600;opacity:1;
   }
 }
-.welcome-skip.welcome-skip-floating{display:block!important}
 /* Phone onboarding scrolls its copy under the pinned link – fade the copy out
    behind it instead of letting the two lines overlap (Frank 2026-10-01). */
 @media(max-width:600px){
@@ -1483,6 +1486,7 @@ body.welcome-connecting #send-btn.welcome-floating{
   #welcome-screen.connecting::before,
   body.welcome-connecting #send-btn.welcome-floating{animation:none}
 }
+/* !important: outranks the markup's inline display:none, which onImgLoad() lifts in the app. */
 .device-wrap.welcome-mode .fader-tracks{display:block!important;pointer-events:none;z-index:2}
 .device-wrap.welcome-mode[data-onb-feature] .device-img,
 .device-wrap.welcome-mode[data-onb-feature] .fader-tracks,
@@ -1511,6 +1515,8 @@ body.welcome-connecting #send-btn.welcome-floating{
    double-applying during the two cases that already have their own
    z-index:205 rule (onboarding above; .connect-success below). */
 .device-wrap.welcome-mode:not([data-onb-feature]):not(.connect-success) .device-visual{z-index:205;pointer-events:none}
+/* !important: the hide holds even against the app-reveal chrome fade (an
+   animation, which out-ranks plain declarations) while the intro is still up. */
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .top-sticky,
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .center-col>:not(.stage-collapse){
   opacity:0!important;visibility:hidden!important;pointer-events:none!important;
@@ -1518,10 +1524,10 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .c
 /* The controller is the onboarding's main visual: keep both the grid row and
    its contents fully expanded while the intro is open. */
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .stage-collapse{
-  grid-template-rows:minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr);
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .stage-collapse>.stage{
-  opacity:1!important;transform:none!important;
+  opacity:1;transform:none;
   /* .stage's permanent overflow:hidden (line ~281, for the bank-switch collapse
      animation) clips ANY content that moves past its own border-box — including
      the controller's onboarding "fake scroll" (device-visual's translateY
@@ -1531,10 +1537,10 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .s
      the controller off flush at .stage's edge — read by Frank as a bar
      covering it (real-device video, 2026-08-17), when it's actually just a
      hard clip, not a bar at all. */
-  overflow:visible!important;
+  overflow:visible;
 }
 body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding) .device-home{
-  width:220px!important;
+  width:220px;
 }
 /* .stage's own layout (feel-fader.html:290) centers its flex children
    vertically (justify-content:center) — fine for the main app, but during
@@ -1594,20 +1600,22 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
   --onb-controller-bottom:calc(var(--onb-controller-top) + var(--onb-controller-height));
   --onb-cta-bottom:calc(var(--onb-controller-bottom) + 18px + var(--onb-cta-height));
 }
+/* !important: outranks the inline values positionWelcomeAnchor() and
+   positionWelcomeFloatingButton() write on #welcome-screen. */
 #welcome-screen:has(#welcome-text-block.welcome-onboarding){
   --welcome-controller-top:var(--onb-controller-top)!important;
   --welcome-controller-bottom:var(--onb-controller-bottom)!important;
   --welcome-cta-bottom:var(--onb-cta-bottom)!important;
 }
 .device-wrap.welcome-mode[data-onb-feature] #send-btn.welcome-floating{
-  left:50%!important;
-  top:calc(var(--onb-controller-bottom) + 18px + var(--onb-cta-half))!important;
+  left:50%;
+  top:calc(var(--onb-controller-bottom) + 18px + var(--onb-cta-half));
   /* Scroll-offset applied via transform, not baked into `top` — `top` is a layout
      property, so animating it on every scroll tick forces a synchronous reflow each
      time (visibly janky on real devices, Frank 2026-08-17: "pohyb je trhaný"), unlike
      the device artwork's own scroll-tracking (translateY, compositor-only). Composes
      with the base rule's translate(-50%,-50%) centering — same net position, smooth. */
-  transform:translate(-50%,-50%) translateY(var(--welcome-onb-scroll-offset,0px))!important;
+  transform:translate(-50%,-50%) translateY(var(--welcome-onb-scroll-offset,0px));
   /* .send-btn's own base rule (feel-fader.html:324) puts transform on a .18s ease
      transition (for its normal float-in/dock animations) — during a continuous
      onboarding scroll, --welcome-onb-scroll-offset updates every frame (see
@@ -1619,7 +1627,9 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
      that here is what actually keeps them visually locked together mid-gesture.
      Everything else from the base rule (feel-fader.html:324) is repeated here
      minus transform, not dropped outright — the opacity/color/etc. transitions
-     still matter for this button's normal reveal/feedback animations. */
+     still matter for this button's normal reveal/feedback animations.
+     !important: outranks the inline transition:none that
+     positionWelcomeFloatingButton() toggles on the button. */
   transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity var(--dur-base) ease!important;
 }
 .device-wrap.welcome-mode[data-onb-feature="configure"] #send-btn.welcome-floating{
@@ -1632,14 +1642,15 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
    needed at all. --onb-cta-bottom/--onb-cta-height are already computed
    (positionWelcomeFloatingButton()) for the transform-tracking button; this
    rest-frame top is the exact same reference, just consumed differently.
-   Must out-rank the transform-tracking rule above (same !important tier, so
-   source order + the extra .onb-native-scroll class specificity both apply
-   here as belt-and-suspenders). */
+   The transform-tracking rule above stops matching once the button leaves
+   .device-wrap; the extra .onb-native-scroll class out-ranks the base
+   #send-btn.welcome-floating rule. Only the transition keeps !important (same
+   inline transition:none as above). */
 #send-btn.welcome-floating.onb-native-scroll{
-  position:absolute!important;
-  left:50%!important;
-  top:calc(var(--onb-cta-bottom) - var(--onb-cta-height))!important;
-  transform:translateX(-50%)!important;
+  position:absolute;
+  left:50%;
+  top:calc(var(--onb-cta-bottom) - var(--onb-cta-height));
+  transform:translateX(-50%);
   transition:background-color var(--dur-glow) var(--ease-hero),color var(--dur-base) ease,border-color var(--dur-base) ease,box-shadow var(--dur-glow) var(--ease-hero),opacity var(--dur-base) ease!important;
 }
 /* floatDeviceHomeNative() moves #device-home here (see its own comment) — same
@@ -1649,12 +1660,13 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block.welcome-onboarding){
    instead of a JS-polled transform. The scroll-offset transform on its own
    children must be turned off here — position:absolute + native scroll already
    moves the whole box, so also applying the old translateY would move it
-   twice, doubling the scroll distance. */
+   twice, doubling the scroll distance. That translateY rule (max-height:820px
+   block) is more specific, hence the !important on the transform:none. */
 .device-home.onb-native-scroll{
-  position:absolute!important;
-  top:var(--onb-controller-top)!important;
-  left:50%!important;
-  transform:translateX(-50%)!important;
+  position:absolute;
+  top:var(--onb-controller-top);
+  left:50%;
+  transform:translateX(-50%);
 }
 .device-home.onb-native-scroll .device-visual,
 .device-home.onb-native-scroll #zone-roller,
