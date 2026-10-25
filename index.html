@@ -962,7 +962,8 @@ html.dark .info-val{color:var(--t1)}
 }
 
 /* MODAL */
-.overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.28);backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi var(--dur-modal) ease}
+/* Plain dim, no blur (Frank 2026-10-25, A+C); only confirm, Save setup and library preview use .overlay. */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(12,12,16,.42);display:flex;align-items:center;justify-content:center;padding:20px;animation:fi var(--dur-modal) ease}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.24);width:100%;max-width:500px;max-height:88vh;overflow-y:auto;animation:su var(--dur-modal) ease}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -1890,8 +1891,8 @@ body.app-reveal .center-col>.stage-collapse{z-index:170}
 .confirm-danger{background:var(--danger);border-color:var(--danger);color:#fff}
 html.dark .confirm-danger{color:var(--bg)}   /* light wine fill in dark mode: dark text */
 .confirm-danger:hover{filter:brightness(.92)}
-.confirm-primary{background:var(--red-fill);border-color:var(--red-fill);color:#fff}
-.confirm-primary:hover{background:var(--red-fill2);border-color:var(--red-fill2)}
+.confirm-primary{background:var(--t1);border-color:var(--t1);color:var(--bg-card)}
+.confirm-primary:hover{background:var(--t2);border-color:var(--t2)}
 
 
 /* ── BANK CARD ── */
@@ -2214,24 +2215,30 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
 .quick-preset-btn{min-height:28px;padding:4px 12px;font-size:var(--fs-sm);white-space:nowrap;color:var(--t1)}
 .custom-preset-overlay[hidden]{display:none}
 .custom-preset-modal{max-width:520px;overflow:hidden}
-.custom-preset-head{padding:18px 20px 12px;border-bottom:1px solid var(--border)}
+.custom-preset-head{padding:18px 20px 0}
 .custom-preset-head strong{display:block;font-size:var(--fs-lg);color:var(--t1);margin-bottom:4px}
 .custom-preset-head span{font-size:var(--fs-md);line-height:1.45;color:var(--t2)}
 .custom-preset-body{padding:16px 20px;display:grid;gap:15px}
+.custom-preset-body .field-label{display:block;margin-bottom:8px}
 .custom-preset-name{width:100%;border:1px solid transparent;border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:8px 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
 .custom-preset-name:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
 .owner-name-input{flex:1;min-width:0;max-width:220px;height:var(--ctl-md);border:1px solid transparent;border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:0 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
 .owner-name-input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
 .custom-preset-scopes{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
 .custom-preset-scope{display:flex;align-items:center;gap:var(--space-2);font-size:var(--fs-md);color:var(--t2);line-height:1.35;cursor:pointer}
-.custom-preset-list{display:grid;gap:6px;max-height:190px;overflow:auto}
+.custom-preset-list{display:grid;gap:0;max-height:190px;overflow:auto}
 .custom-preset-empty{font-size:var(--fs-md);color:var(--t3);padding:10px 0}
-.custom-preset-row{display:flex;align-items:center;gap:var(--space-2);padding:7px 9px;border:1px solid var(--border);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 72%,transparent)}
+/* One block with hairlines, like the library preview rows. */
+.custom-preset-row{display:flex;align-items:center;gap:var(--space-2);padding:8px 10px 8px 14px;background:color-mix(in srgb,var(--bg-input) 68%,transparent)}
+.custom-preset-row:first-child{border-radius:var(--r-sm) var(--r-sm) 0 0}
+.custom-preset-row:last-child{border-radius:0 0 var(--r-sm) var(--r-sm)}
+.custom-preset-row:only-child{border-radius:var(--r-sm)}
+.custom-preset-row+.custom-preset-row{box-shadow:inset 0 1px 0 var(--border)}
 .custom-preset-row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-md);color:var(--t1)}
 .custom-preset-row button{border:0;background:transparent;color:var(--t2);font:var(--fs-sm) 'Mulish',sans-serif;cursor:pointer;padding:3px 6px;border-radius:var(--r-sm);transition:background var(--hover-out),color var(--hover-out)}
 .custom-preset-row button:hover{background:var(--bg-input);color:var(--t1);transition:background var(--hover-in),color var(--hover-in)}
 .custom-preset-row .custom-preset-delete:hover{color:var(--danger)}
-.custom-preset-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 20px 18px;border-top:1px solid var(--border)}
+.custom-preset-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 20px 18px}
 .custom-preset-foot-left,.custom-preset-foot-right{display:flex;align-items:center;gap:var(--space-2)}
 .library-preview-overlay{z-index:165}
 .library-preview-overlay[hidden]{display:none}
@@ -2239,18 +2246,36 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
 .library-preview-head{padding:18px 20px 0}
 .library-preview-head strong{display:block;font-size:var(--fs-xl);color:var(--t1);margin-bottom:4px}
 .library-preview-head span{display:block;font-size:var(--fs-md);line-height:1.45;color:var(--t2)}
-.library-preview-body{padding:14px 20px 4px;display:grid;gap:var(--space-2)}
-.library-preview-row{display:grid;grid-template-columns:108px minmax(0,1fr);gap:var(--space-3);padding:8px 10px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-input) 68%,transparent)}
+.library-preview-body{padding:14px 20px 4px;display:grid;gap:0}
+/* Rows are one block with hairlines; the note is always the body's last child. */
+.library-preview-row{display:grid;grid-template-columns:108px minmax(0,1fr);gap:var(--space-3);padding:10px 14px;background:color-mix(in srgb,var(--bg-input) 68%,transparent)}
+.library-preview-row:first-child{border-radius:var(--r-sm) var(--r-sm) 0 0}
+.library-preview-row:nth-last-child(2){border-radius:0 0 var(--r-sm) var(--r-sm)}
+.library-preview-row+.library-preview-row{box-shadow:inset 0 1px 0 var(--border)}
 .library-preview-row-value{min-width:0;font-size:var(--fs-md);line-height:1.4;color:var(--t1)}
-.library-preview-note{display:flex;align-items:flex-start;gap:6px;padding:4px 0 0;font-size:var(--fs-md);line-height:1.45;color:var(--t2)}
+.library-preview-note{display:flex;align-items:flex-start;gap:6px;margin-top:12px;font-size:var(--fs-md);line-height:1.45;color:var(--t2)}
 .library-preview-note .section-issue-dot{margin-top:calc((1.45em - 6px) / 2)}
 .library-preview-actions{display:flex;align-items:center;justify-content:flex-end;gap:var(--space-2);padding:16px 20px 18px;flex-wrap:wrap}
 .library-preview-articulations[hidden]{display:none}
+/* Phone: confirm, Save setup and library preview are bottom sheets – primary
+   button across the row on top, the rest as text buttons below (Frank 2026-10-25, C). */
+@keyframes sheet-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @media(max-width:540px){
+  .overlay{align-items:flex-end;padding:0}
+  .confirm-modal,.custom-preset-modal,.library-preview-modal{max-width:none;border:0;border-radius:var(--r-lg) var(--r-lg) 0 0;padding-bottom:env(safe-area-inset-bottom,0px);animation:sheet-up var(--dur-base) cubic-bezier(.2,.8,.2,1)}
+  .confirm-body,.custom-preset-head,.library-preview-head{padding-top:22px}
   .custom-preset-scopes{grid-template-columns:1fr}
-  .custom-preset-foot{align-items:stretch;flex-direction:column}
-  .custom-preset-foot-left,.custom-preset-foot-right{justify-content:flex-end}
   .library-preview-row{grid-template-columns:1fr;gap:3px}
+  .confirm-actions,.library-preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:18px 20px 12px}
+  .custom-preset-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:18px 20px 12px}
+  .custom-preset-foot-left,.custom-preset-foot-right{display:contents}
+  #confirm-ok,#library-preview-apply,#custom-preset-save{grid-column:1/-1;order:-2;justify-content:center}
+  .custom-preset-foot-right .btn-ghost{order:-1}
+  #confirm-cancel,.library-preview-actions:has(.library-preview-articulations[hidden]) .btn-ghost{grid-column:1/-1}
+  .confirm-actions .btn-ghost,.library-preview-actions .btn-ghost,.custom-preset-foot .btn-ghost{background:none;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;justify-content:center}
+}
+@media(max-width:540px) and (prefers-reduced-motion:reduce){
+  .confirm-modal,.custom-preset-modal,.library-preview-modal{animation:none}
 }
 /* ADVANCED TOGGLE - clean */
 .advanced-toggle-btn{
