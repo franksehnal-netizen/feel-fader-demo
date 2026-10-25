@@ -125,7 +125,8 @@
   --track-caps:.06em;
   --track-display:-.02em;   /* display titles: intro, bank name, greeting */
   /* Control heights (K-1): compact controls (steppers, pills, keycaps, tabs, inline row
-     actions) and text inputs / selects / the CTA. Touch keeps 44 px (pointer:coarse).
+     actions) and text inputs / selects / the CTA. Touch uses the same heights, its 44 px
+     target is a hit area (pointer:coarse block).
      md = the Send / Connect & load height the welcome and onboarding geometry is built on
      (.welcome-action-slot, --onb-cta-height), so it stays 38. */
   --ctl-sm:28px;
@@ -727,7 +728,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
   .h-status{width:7px;min-width:7px;flex:0 0 7px}
   .h-status-text{position:absolute!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
   header{padding:5px 16px;}
-  .btn.btn-ghost{padding:6px 12px;font-size:var(--fs-md);color:var(--t2);}
+  .btn.btn-ghost{font-size:var(--fs-md);color:var(--t2);}
 }
 .enc-unified-body{
   display:flex;
@@ -747,7 +748,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 }
 /* Composer-first keyswitch sequence chips — scoped away from articulation tags */
 .ks-sequence-head{display:flex;align-items:center;justify-content:space-between;margin:14px 2px 6px}
-.ks-name-input{width:112px;height:var(--ctl-sm);padding:0 8px;border:1px solid var(--border-s);border-radius:var(--r-pill);background:var(--bg-input);font:600 var(--fs-sm) 'Mulish',sans-serif;color:var(--t1)}
+.ks-name-input{width:112px;height:var(--ctl-sm);padding:0 8px;border:1px solid transparent;border-radius:var(--r-pill);background:var(--bg-input);font:600 var(--fs-sm) 'Mulish',sans-serif;color:var(--t1)}
 /* In the roller order row (final review 9) .ks-name-input replaces the flex:1
    .seq-name span – without flex:1 the fixed 112px width shifts the value and
    drag handle left while editing. */
@@ -817,6 +818,7 @@ html.dark .hid-switch-thumb{background:rgba(245,245,247,.90)}
    menus and the library preview. Field labels are not eyebrows. */
 .settings-subhead,.icon-section-label,.quick-setup-group-label,.uacc-dropdown-section,.library-preview-row-label{font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--t3)}
 .settings-subhead{margin:0 0 8px;user-select:none;}
+#help-body .settings-subhead{scroll-margin-top:calc(var(--section-sticky-top,42px) + 12px)}   /* openHelpAt() lands below the sticky app header, not under it */
 .settings-divider{height:1px;background:var(--border);margin:16px 0;}
 .info-lbl{font-size:var(--fs-sm);font-family:'Mulish',sans-serif;color:var(--t2);min-width:100px;flex-shrink:0;user-select:none;}
 .info-val{font-family:'Mulish',sans-serif;font-size:var(--fs-base);color:var(--t1);font-weight:400;}
@@ -824,7 +826,7 @@ html.dark .info-lbl{color:var(--t2)}
 html.dark .info-val{color:var(--t1)}
 
 /* BOTTOM */
-.btn{display:inline-flex;align-items:center;gap:var(--space-1);padding:8px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:var(--fs-md);font-weight:600;cursor:pointer;border:1px solid;transition:color var(--hover-out),background-color var(--hover-out),border-color var(--hover-out),transform var(--dur-press) ease,box-shadow var(--hover-out),filter var(--hover-out);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--ctl-sm);padding:4px 12px;border-radius:var(--r-pill);font-family:'Mulish',sans-serif;font-size:var(--fs-md);font-weight:600;cursor:pointer;border:1px solid;transition:color var(--hover-out),background-color var(--hover-out),border-color var(--hover-out),transform var(--dur-press) ease,box-shadow var(--hover-out),filter var(--hover-out);white-space:nowrap}
 .btn:hover{transition:color var(--hover-in),background-color var(--hover-in),border-color var(--hover-in),transform var(--dur-press) ease,box-shadow var(--hover-in),filter var(--hover-in)}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
@@ -979,23 +981,13 @@ html.dark .info-val{color:var(--t1)}
 .sync-btn-overwrite{border-color:color-mix(in srgb,var(--danger) 45%,var(--border-s));color:var(--danger)}
 /* Touch: enlarge tap targets to >=44px without bloating desktop */
 @media(pointer:coarse){
-  .step-btn{width:44px;height:44px}
-  /* .stepper .step-btn (line 420, no media query) is a 2-class compound
-     selector — higher specificity than the coarse-media .step-btn rule
-     above, so it kept winning even on touch and steppers stayed 24x24
-     instead of the intended 44x44 (functional-audit finding A8,
-     2026-07-20: the earlier A3/A7 touch-target fix existed but never
-     actually applied to the most-used control in the app). Match the
-     compound selector here so specificity ties and source order decides. */
-  .stepper .step-btn{width:44px;height:44px}
-  /* height:44px (was 24px, same as desktop) — buttons grew to a 44px touch
-     target but the number field between them didn't, so it floated as a
-     small pill inside the taller outer one instead of matching it (Frank
-     2026-08-18: "pilulky... maji jine proporce" than desktop, where
-     button/input share one height). width:62px keeps the SAME
-     button-to-input ratio as desktop (34/24 ≈ 1.42×24, scaled to
-     1.42×44≈62) rather than an arbitrary touch width. */
-  .stepper input{width:62px;height:44px}
+  /* Pill controls (steppers, keycaps, .btn, select triggers) keep their desktop size
+     on touch – one height per role, phone = PC (Frank 2026-10-25: "pill pole" were
+     28/38/44 side by side). The 44 px touch target is an invisible hit area instead,
+     vertical only: stepper buttons sit right next to their number field. The roller
+     segments clip it (overflow:hidden for the ellipsis) and stay 28, like the bank tabs. */
+  :where(.step-btn,.ui-keycap,.ui-select-trigger,.ui-pill,.btn){position:relative}
+  :where(.step-btn,.ui-keycap,.ui-select-trigger,.ui-pill,.btn)::before{content:'';position:absolute;left:0;right:0;top:50%;height:max(100%,44px);translate:0 -50%}
   .section-toggle-action{min-height:44px}
   /* 44px matched the era's blanket touch-target minimum, then reduced to
      36px (Frank 2026-08-16, docs/TODO.md) for reading as unusually
@@ -1021,15 +1013,13 @@ html.dark .info-val{color:var(--t1)}
      unconditional height rule, so this can stay right here — no source-
      order dance needed. */
   .bank-block-tab{min-height:var(--ctl-sm)}   /* = the desktop pill (Frank 2026-10-01: phone banks look like PC) */
-  .bank-block-tab-add,.send-btn,.btn,.ui-select-trigger{min-height:44px}
+  .bank-block-tab-add,.send-btn{min-height:44px}
   .tx{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   /* Keep toast chrome compact while the close button retains a 44px hit area. */
   .toast .tx,.sync-banner .tx{position:relative;width:26px;height:26px;min-width:26px;min-height:26px}
   .toast .tx::before,.sync-banner .tx::before{content:'';position:absolute;inset:-9px;border-radius:50%}
   .ks-keyboard-shell{grid-template-columns:44px minmax(0,1fr) 44px}
   .ks-key-scroll-btn{width:44px}
-  .roller-mode-btn{min-height:44px}
-  [id^=navcap-],#macro-capture{min-height:44px}
 }
 
 @media(max-width:600px){
@@ -2152,7 +2142,7 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
    also need overflow-hidden on .quick-setup-picker (which hosts the
    dropdown menu via position:absolute — clipping THAT would hide the menu). */
 .library-quick-input-scale{display:block;width:100%;height:var(--ctl-md);overflow:hidden;border-radius:var(--r-pill)}
-.library-quick-input{width:133.333%;height:calc(var(--ctl-md) / .75);border:1px solid var(--border-s);border-radius:var(--r-pill);background:color-mix(in srgb,var(--bg-input) 88%,transparent);color:var(--t1);padding:8px 13.333px;font:var(--fs-xl) 'Mulish',sans-serif;outline:none;transform:scale(.75);transform-origin:top left}
+.library-quick-input{width:133.333%;height:calc(var(--ctl-md) / .75);border:1px solid transparent;border-radius:var(--r-pill);background:color-mix(in srgb,var(--bg-input) 88%,transparent);color:var(--t1);padding:8px 13.333px;font:var(--fs-xl) 'Mulish',sans-serif;outline:none;transform:scale(.75);transform-origin:top left}
 .library-quick-input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
 .bank-quick-setup.is-first-run-highlight .library-browse-link{animation:library-setup-cue 1.65s var(--ease-out)}
 @keyframes library-setup-cue{
@@ -2181,6 +2171,8 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
 .ui-select-trigger{display:inline-flex;align-items:center;gap:8px;min-height:var(--ctl-md);padding:6px 12px 6px 14px;color:var(--t1);font:600 var(--fs-md) 'Mulish',sans-serif;text-align:left}
 .ui-select-trigger svg{width:14px;height:14px;flex:none;color:var(--t3);transition:transform var(--dur-fast) var(--ease-out)}
 .ui-select-trigger[aria-expanded="true"] svg{transform:rotate(180deg)}
+.ui-control.ui-pill:disabled{opacity:1;color:color-mix(in srgb,var(--t1) 35%,transparent)}   /* a disabled pill keeps its fill, only the content dims (Frank 2026-10-25) */
+.ui-control.ui-pill:disabled svg{opacity:.35}
 .library-popover,.quick-setup-menu,.response-select-menu,.uacc-preset-dropdown{padding:6px;border:0;border-radius:var(--r);background:var(--bg-card);box-shadow:0 0 0 1px var(--border),var(--shadow-hud)}
 /* Nested in the popover the list is plain content, not a second surface. */
 .library-popover .quick-setup-menu{padding:0;background:none;box-shadow:none}
@@ -2201,9 +2193,9 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
 .custom-preset-head strong{display:block;font-size:var(--fs-lg);color:var(--t1);margin-bottom:4px}
 .custom-preset-head span{font-size:var(--fs-md);line-height:1.45;color:var(--t2)}
 .custom-preset-body{padding:16px 20px;display:grid;gap:15px}
-.custom-preset-name{width:100%;border:1px solid var(--border-s);border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:8px 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
+.custom-preset-name{width:100%;border:1px solid transparent;border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:8px 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
 .custom-preset-name:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
-.owner-name-input{flex:1;min-width:0;max-width:220px;height:var(--ctl-md);border:1px solid var(--border-s);border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:0 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
+.owner-name-input{flex:1;min-width:0;max-width:220px;height:var(--ctl-md);border:1px solid transparent;border-radius:var(--r-pill);background:var(--bg-input);color:var(--t1);padding:0 11px;font:var(--fs-base) 'Mulish',sans-serif;outline:none}
 .owner-name-input:focus-visible{border-color:var(--focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--focus) 18%,transparent)}
 .custom-preset-scopes{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
 .custom-preset-scope{display:flex;align-items:center;gap:var(--space-2);font-size:var(--fs-md);color:var(--t2);line-height:1.35;cursor:pointer}
