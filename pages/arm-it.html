@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Auto Arm for Ableton Live – Feel Fader</title>
-  <meta name="description" content="AUTO ARM (for Feel Fader) – the Max for Live device that automatically arms the track you select in Ableton Live, made to pair with the Feel Fader roller's Navigation mode.">
-  <meta property="og:title" content="Auto Arm for Ableton Live – Feel Fader">
-  <meta property="og:description" content="AUTO ARM (for Feel Fader) – the Max for Live device that automatically arms the track you select in Ableton Live, made to pair with the Feel Fader roller's Navigation mode.">
+  <title>Arm It! for Ableton Live – Feel Fader</title>
+  <meta name="description" content="Arm It! – the Max for Live device that arms the track you select in Ableton Live, made to pair with the Feel Fader roller's Navigation mode.">
+  <meta property="og:title" content="Arm It! for Ableton Live – Feel Fader">
+  <meta property="og:description" content="Arm It! – the Max for Live device that arms the track you select in Ableton Live, made to pair with the Feel Fader roller's Navigation mode.">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cstyle%3Epath%7Bfill:%230d0d0d%7D%40media(prefers-color-scheme:dark)%7Bpath%7Bfill:%23f2f2f2%7D%7D%3C/style%3E%3Cpath d='M0 0h9v4H8V1H1v3H0zM0 5h1v4H0zM8 5h1v4H8zM2 6h1v3H2zM6 6h1v3H6zM4 4h1v5H4z'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="pages.css">
@@ -26,45 +26,57 @@
     </div>
   </header>
   <main>
-    <h1>Auto Arm for Ableton Live</h1>
-    <p class="legal-meta">Max for Live MIDI effect · by Acoustic Empire</p>
+    <h1>Arm It! for Ableton Live</h1>
+    <p class="legal-meta">Max for Live audio effect · by Acoustic Empire</p>
 
-    <p><strong>AUTO ARM (for Feel Fader)</strong> is a Max for Live device made by Acoustic Empire for Feel Fader. Whenever you select a track in Ableton Live – with the mouse, the keyboard or the roller – the device arms it and disarms the previous one. Together with the roller's <strong>Navigation</strong> mode you can step through your tracks and always be ready to record on the one you land on, without touching the mouse.</p>
+    <p><strong>Arm It!</strong> is a Max for Live device made by Acoustic Empire for Feel Fader. Select a track in Ableton Live – with the mouse, the arrow keys or the roller – and Arm It! arms it, so you can play it straight away; the previous track is disarmed. Together with the roller's <strong>Navigation</strong> mode you walk through your tracks and always play the one you stop on, without touching the mouse.</p>
 
     <figure class="doc-figure">
-      <!-- Shown at 58 % (228x169): 169px tall = the device's fixed height in Live,
-           so it matches what Ableton draws 1:1 (the file is a ~1.72x screenshot). -->
-      <img src="auto-arm.png" width="228" height="169" alt="AUTO ARM (for Feel Fader) device in Ableton Live: Track type switch (Both, Audio, MIDI) and Enabled toggle">
-      <figcaption>AUTO ARM (for Feel Fader) on a track in Ableton Live.</figcaption>
+      <!-- Shown at 169 px tall like the other device pages (the file is a ~1.6x
+           screenshot of the device with its title bar, taken in Live). -->
+      <img src="arm-it.png" width="133" height="169" alt="Arm It! device in Ableton Live: the armed track's name and type, a red roller, ARMED, and the EXCLUSIVE, AUDIO and MIDI switches">
+      <figcaption>Arm It! on the Main track in Ableton Live.</figcaption>
     </figure>
 
     <h2>What it does</h2>
     <ul>
-      <li><strong>Exclusive arm</strong> – the selected track is armed and the previously armed one is disarmed, so only one track is armed at a time.</li>
-      <li><strong>Track type</strong> – choose <em>Both</em>, <em>Audio</em> or <em>MIDI</em>. If the selected track does not match, it is ignored and the arm state stays as it was.</li>
-      <li><strong>Enabled</strong> – switches the whole behavior on or off.</li>
-      <li>The arm change is applied once the selection has settled for a moment, so flicking quickly through many tracks does not arm and disarm each one on the way.</li>
+      <li><strong>Arms the selected track</strong> and shows it: the track's name, MIDI or Audio, and a roller that glows red while the track is armed.</li>
+      <li><strong>EXCLUSIVE</strong> (on by default) – arming a track disarms all other tracks of the types Arm It! manages. Off: only the track Arm It! armed before is disarmed; tracks you armed by hand stay armed.</li>
+      <li><strong>AUDIO</strong> and <strong>MIDI</strong> – the track types Arm It! works on. With only MIDI on, an audio track you armed by hand (a microphone, say) stays armed even with EXCLUSIVE on.</li>
+      <li>Arm It! waits a moment after your last selection, so spinning quickly through many tracks arms only the one you stop on.</li>
+      <li>During recording Arm It! does not change arm at all, so the take stays on the track you started recording on. When recording ends, it arms the track that is selected.</li>
+      <li>All switches can be MIDI- or key-mapped like any other control in Live.</li>
     </ul>
+
+    <h2>When the selected track is not armed</h2>
+    <p>The armed track stays armed and shown on top, and two lines under the roller show the selected track and why it was not armed. They disappear when you select a track that Arm It! arms.</p>
+    <table class="doc-table">
+      <tr><th scope="row"><code>can’t be armed</code></th><td>Live does not allow arming it: a Return, Main or group track, or an audio track while Live has no audio device.</td></tr>
+      <tr><th scope="row"><code>frozen</code></th><td>The track is frozen.</td></tr>
+      <tr><th scope="row"><code>filtered: MIDI only</code> / <code>filtered: Audio only</code></th><td>AUDIO or MIDI is switched off for this type of track.</td></tr>
+      <tr><th scope="row"><code>AUDIO and MIDI off</code></th><td>Both are off, so Arm It! arms nothing.</td></tr>
+      <tr><th scope="row"><code>recording – not armed</code></th><td>Live is recording; Arm It! arms the track once recording ends.</td></tr>
+    </table>
 
     <h2>Requirements</h2>
     <ul>
-      <li>Ableton Live with Max for Live.</li>
+      <li>Ableton Live 12 with Max for Live (Live Suite, or Standard with the Max for Live add-on).</li>
       <li>For roller track navigation: Feel Fader with Keyboard (HID) enabled.</li>
     </ul>
 
     <h2>Set up Feel Fader</h2>
     <ol>
       <li>In the Feel Fader app, open the bank you use and set the roller to <strong>Navigation</strong>.</li>
-      <li>Enable <strong>Keyboard (HID)</strong> if it is off, and choose the keys for <em>Roll up</em> and <em>Roll down</em>.</li>
+      <li>Enable <strong>Keyboard (HID)</strong> if it is off. The roller sends the Up and Down arrow keys, which change the selected track in Live's Arrangement view. In the Session view they may move between scenes instead – there, choose the Left and Right arrows.</li>
       <li>Send the configuration to the device.</li>
-      <li>In Live, make sure those keys select the previous and next track (for example via a key mapping).</li>
+      <li>After you click into a device in Live, the arrow keys move through that device; click into the Arrangement or Session view first.</li>
     </ol>
 
     <h2>Install in Live</h2>
     <ol>
-      <li>Copy <code>AUTO ARM (for Feel Fader).amxd</code> to <code>User Library/Presets/MIDI Effects/Max MIDI Effect/</code>. <span class="legal-tbd">Download link coming soon.</span></li>
-      <li>Drag the device onto any track. One instance is enough – it follows your track selection.</li>
-      <li>Pick the <em>Track type</em> and make sure <em>Enabled</em> is on.</li>
+      <li>Copy <code>Arm It!.amxd</code> to <code>User Library/Presets/Audio Effects/Max Audio Effect/</code>. <span class="legal-tbd">Download link coming soon.</span></li>
+      <li>Drag it onto the <strong>Main</strong> track. One Arm It! per set – a second one shows <em>Second Arm It!</em> and does nothing.</li>
+      <li>If your set still has the older AUTO ARM device, remove it – the two would fight each other.</li>
     </ol>
   </main>
   <!-- Same footer as the app (feel-fader.html › .site-footer). Markup copied
