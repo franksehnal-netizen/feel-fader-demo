@@ -7897,7 +7897,7 @@ var BANK_SYMBOLS = [
   {id:'score', label:'Score', svg:'<path d="M2.5 9h19M2.5 13h19M2.5 17h19" opacity=".55"/><path d="M9.8 17.4V5.6l7.4-1.6v11.4M9.8 8.6l7.4-1.6"/><ellipse cx="8.2" cy="17.6" rx="1.9" ry="1.4" fill="currentColor" stroke="none"/><ellipse cx="15.6" cy="15.6" rx="1.9" ry="1.4" fill="currentColor" stroke="none"/>'},
   {id:'vocal', label:'Vocal', svg:'<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11c0 3.4 2.7 6 6 6s6-2.6 6-6M12 17v4M9 21h6"/>'},
 
-  {id:'lastclick', label:'Last Click', svg:'<defs><mask id="ffs-lastclick"><rect width="24" height="24" fill="#fff"/><path d="M12.2 11.4v9.6l2.5-2.4 1.8 3.9 1.7-.8-1.8-3.8h3.5Z" fill="#000" stroke="#000" stroke-width="4" stroke-linejoin="round"/></mask></defs><g mask="url(#ffs-lastclick)"><circle cx="9.4" cy="8.8" r="6"/></g><circle cx="7" cy="6.4" r="1.1" fill="currentColor" stroke="none"/><path d="M12.2 11.4v9.6l2.5-2.4 1.8 3.9 1.7-.8-1.8-3.8h3.5Z"/>'},
+  {id:'lastclick', label:'Click It!', svg:'<defs><mask id="ffs-lastclick"><rect width="24" height="24" fill="#fff"/><path d="M12.2 11.4v9.6l2.5-2.4 1.8 3.9 1.7-.8-1.8-3.8h3.5Z" fill="#000" stroke="#000" stroke-width="4" stroke-linejoin="round"/></mask></defs><g mask="url(#ffs-lastclick)"><circle cx="9.4" cy="8.8" r="6"/></g><circle cx="7" cy="6.4" r="1.1" fill="currentColor" stroke="none"/><path d="M12.2 11.4v9.6l2.5-2.4 1.8 3.9 1.7-.8-1.8-3.8h3.5Z"/>'},
 
   {id:'navigation', label:'Navigation', svg:'<rect x="6.5" y="2.5" width="11" height="8.5" rx="2"/><rect x="6.5" y="13" width="11" height="8.5" rx="2"/><path d="m9.8 7.8 2.2-2.2 2.2 2.2M9.8 16.2l2.2 2.2 2.2-2.2"/>'},
 
@@ -7933,7 +7933,7 @@ function bankSymbolFor(icon) {
   const id = icon.slice(BANK_SYMBOL_PREFIX.length);
   return BANK_SYMBOLS.find(sym => sym.id === id) || {id, label:'Unknown icon', svg:''};
 }
-// Masks need a document-unique id per rendered copy (strings bow, Last Click pointer).
+// Masks need a document-unique id per rendered copy (strings bow, Click It! pointer).
 function bankSymbolSvg(sym) {
   const n = ++_bankSymbolSeq;
   const svg = sym.svg.replace(/id="([\w-]+)"/g, `id="$1-${n}"`).replace(/url\(#([\w-]+)\)/g, `url(#$1-${n})`);
