@@ -721,7 +721,7 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 #zone-roller.fader-linked,#zone-macro.fader-linked,
 .device-wrap.welcome-mode[data-onb-feature="roller"] #zone-roller,.device-wrap.welcome-mode[data-onb-feature="button"] #zone-macro{transition:background var(--dur-link-in) var(--ease-link) var(--link-delay),box-shadow var(--dur-link-in) var(--ease-link) var(--link-delay),outline-color var(--dur-link-in) var(--ease-link) var(--link-delay)}
 /* Roller: same ring as onboarding's [data-onb-feature="roller"] #zone-roller. */
-#zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 0 1.5px rgba(var(--link-ring-rgb),.9),0 0 12px 5px rgba(var(--link-ring-rgb),.6),0 0 26px 11px rgba(var(--link-ring-rgb),.32);}
+#zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 .6px rgba(var(--link-ring-rgb),1),0 0 1.2px rgba(var(--link-ring-rgb),1),0 0 9px rgba(var(--link-ring-rgb),.6),0 0 20px rgba(var(--link-ring-rgb),.32);}
 /* Physical roller turn: the window edge on the turning side lights red and fades – the Click It!
    M4L lit edge (last_click_view.js): light from the edge INTO the window over ~57 % of its depth +
    a 2 px #ff6b52 line on the edge, fading toward the corners. Screen blend: the light brightens the
@@ -1525,7 +1525,7 @@ body.welcome-connecting #send-btn.welcome-floating{
 }
 .device-wrap.welcome-mode[data-onb-feature="roller"] #zone-roller{
   display:block;z-index:3;opacity:1;background:transparent;border-radius:8px;
-  outline:0;box-shadow:0 0 0 1.5px rgba(var(--link-ring-rgb),.9),0 0 12px 5px rgba(var(--link-ring-rgb),.6),0 0 26px 11px rgba(var(--link-ring-rgb),.32);
+  outline:0;box-shadow:0 0 .6px rgba(var(--link-ring-rgb),1),0 0 1.2px rgba(var(--link-ring-rgb),1),0 0 9px rgba(var(--link-ring-rgb),.6),0 0 20px rgba(var(--link-ring-rgb),.32);
 }
 .device-wrap.welcome-mode[data-onb-feature="button"] #zone-macro{
   display:block;z-index:3;opacity:1;border-radius:50%;clip-path:none;
