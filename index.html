@@ -4318,16 +4318,23 @@ async function uploadFirmware(m, files, onProgress) {
   const total = files.reduce((s, f) => s + f.size, 0);
   let done = 0;
   for (const f of files) {
-    let off = 0, retries = 0;
+    // resyncs: consecutive ERR:offset replies without an ACK in between. A lost
+    // ACK costs one resync; a device that keeps answering ERR:offset (or names
+    // an offset outside the file) would otherwise loop here forever.
+    let off = 0, retries = 0, resyncs = 0;
     while (off < f.size) {
       const chunk = f.bytes.subarray(off, off + FW_CHUNK);
       try {
         const next = Number(await serialRequest('CMD_UC', `${f.name}:${off}:${bytesToB64(chunk)}`, FW_CHUNK_TIMEOUT_MS));
         if (!Number.isInteger(next) || next <= off || next > f.size) throw new Error('ERR:protocol');
-        done += next - off; off = next; retries = 0;
+        done += next - off; off = next; retries = 0; resyncs = 0;
       } catch (e) {
         const resync = /^ERR:offset:(\d+)$/.exec(e.message || '');
-        if (resync) { const exp = +resync[1]; done += exp - off; off = exp; retries = 0; continue; }
+        if (resync) {
+          const exp = +resync[1];
+          if (exp > f.size || ++resyncs > 3) throw new Error('ERR:protocol');
+          done += exp - off; off = exp; retries = 0; continue;
+        }
         if (e.message === 'timeout' && ++retries <= 3) continue;
         throw e;
       }
@@ -6333,7 +6340,10 @@ async function doSend() {
   } catch(e) {
     console.warn('[Send] failed:', e);
     const errReason = /^ERR:(.+)$/.exec(e.message || '');
-    if (!errReason && e.name !== 'AbortError') await releaseSerialPort({forget:true});
+    // Only a timeout means "wrong endpoint" (silent DEV REPL console) – forget
+    // that grant so the next Send opens the picker. Any other failure (cable
+    // pulled, port busy) keeps the grant, so a replug reconnects silently.
+    if (!errReason && e.name !== 'AbortError') await releaseSerialPort({forget: e.message === 'timeout'});
     if (errReason) toast('e', 'Device rejected config: ' + errReason[1] + ' – kept as unsaved.');
     else if (e.message === 'timeout') toast('e', 'No confirmation from device – kept as unsaved. Retry send.');
     else toast('e', serialErrMsg(e, 'Send failed'));
@@ -6352,6 +6362,28 @@ function importP(){document.getElementById('fi').click();}
 // Import failures show one plain sentence; the parser/technical detail goes to
 // the console only (launch audit 2026-10-06 U-4).
 const IMPORT_BACKUP_ERR = "This file isn't a valid Feel Fader backup.";
+// A backup is untrusted input: keep only the keys the app and firmware know
+// and at most MAX_BANKS banks (adding banks in the UI enforces the same cap).
+// Extra keys would otherwise persist in localStorage and ride along on every
+// Send. Runs after normalizeFwConfig(), so values are already clamped.
+const IMPORT_CFG_KEYS = ['macro_keys', 'macro_global', 'fader_response'];
+const IMPORT_BANK_KEYS = ['name', 'icon', 'uacc_values', 'fader1', 'fader2', 'encoder', 'roller_mode',
+  'ks_notes', 'ks_names', 'ks_channel', 'ks_velocity', 'nav_keys_cw', 'nav_keys_ccw', 'nav_invert', 'macro_keys'];
+const IMPORT_CTRL_KEYS = ['cc', 'channel', 'label'];
+function pickKeys(src, keys) {
+  const out = {};
+  for (const k of keys) if (Object.prototype.hasOwnProperty.call(src, k)) out[k] = src[k];
+  return out;
+}
+function sanitizeImportedCfg(p) {
+  const out = pickKeys(p, IMPORT_CFG_KEYS);
+  out.banks = p.banks.slice(0, MAX_BANKS).map(b => {
+    const nb = pickKeys(b, IMPORT_BANK_KEYS);
+    for (const k of ['fader1', 'fader2', 'encoder']) if (nb[k]) nb[k] = pickKeys(nb[k], IMPORT_CTRL_KEYS);
+    return nb;
+  });
+  return { cfg: out, droppedBanks: Math.max(0, p.banks.length - MAX_BANKS) };
+}
 function onImport(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();r.onload=ev=>{
@@ -6365,7 +6397,8 @@ function onImport(e){
       const banksOk = p && typeof p==='object' && !Array.isArray(p) && Array.isArray(p.banks)
         && p.banks.every(b => b && typeof b==='object' && !Array.isArray(b));
       if(!banksOk){ console.warn('Config import: no banks array in file'); toast('e',IMPORT_BACKUP_ERR); return; }
-      p=normalizeFwConfig(p);
+      const imported=sanitizeImportedCfg(normalizeFwConfig(p));
+      p=imported.cfg;
       const prevCfg=cfg, prevLoaded=loaded, prevDirty=dirty, prevActiveBank=activeBank;
       cfg=p;loaded=true;dirty=true;activeBank=0;
       try{
@@ -6382,6 +6415,7 @@ function onImport(e){
       }
       cfgSave();
       toast('s',t('toast.preset_imported') + ' – send it to the device when ready');
+      if(imported.droppedBanks) toast('i',`Only the first ${MAX_BANKS} banks were imported – the device holds at most ${MAX_BANKS}.`);
     }catch(err){console.warn('Config import failed:', err);toast('e',IMPORT_BACKUP_ERR);}
   };r.readAsText(f);e.target.value='';
 }
