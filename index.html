@@ -3887,7 +3887,7 @@ function ccRelativeBody(ctrl, bi, errs = validate()) {
   <div class="enc-unified-body">
     ${featureFwWarning('cc_relative')}
     <div class="uacc-note" style="margin:8px 0">Rotating the roller sends relative steps on this CC/channel (1 = step up, 127 = step down). Your DAW or plugin decides what a step does, so no articulation list is stored here.</div>
-    <div class="uacc-note m4l-note" style="margin:0 0 8px"><span class="m4l-chip">Max for Live</span><span class="m4l-text">In Ableton Live, the CC Remapper device on the track turns these steps into keyswitch notes. <a class="m4l-link" href="pages/cc-remapper.html" target="_blank" rel="noopener">Set up CC Remapper<svg class="m4l-ext" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7 9M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg></a></span></div>
+    <div class="uacc-note m4l-note" style="margin:0 0 8px"><span class="m4l-chip">Max for Live</span><span class="m4l-text">In Ableton Live, the Map It! device in front of the instrument turns these steps into keyswitch notes. <a class="m4l-link" href="pages/map-it.html" target="_blank" rel="noopener">Set up Map It!<svg class="m4l-ext" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h4.5V7M13.5 2.5 7 9M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg></a></span></div>
     <div class="section-field-row" style="margin-top:10px">
       ${stepperFieldHtml(`b${bi}-encoder-ch`, 'MIDI channel', ctrl.channel+1, 1, 16,
         `stepCtrl(${bi},'encoder','channel',-1)`, `stepCtrl(${bi},'encoder','channel',1)`,
@@ -7901,11 +7901,12 @@ var BANK_SYMBOLS = [
 
   {id:'navigation', label:'Navigation', svg:'<rect x="6.5" y="2.5" width="11" height="8.5" rx="2"/><rect x="6.5" y="13" width="11" height="8.5" rx="2"/><path d="m9.8 7.8 2.2-2.2 2.2 2.2M9.8 16.2l2.2 2.2 2.2-2.2"/>'},
 
-  {id:'remapper', label:'CC Remapper', svg:'<rect x="2.5" y="4" width="6" height="16" rx="3"/><path d="M2.5 9.4h6M2.5 14.6h6M10.8 12h5.4M14.2 9.6l2.4 2.4-2.4 2.4"/><path d="M20.4 15.6V6.6l1.6.6"/><ellipse cx="19.2" cy="15.8" rx="1.5" ry="1.1" fill="currentColor" stroke="none"/>'},
+  {id:'remapper', label:'Map It!', svg:'<rect x="2.5" y="4" width="6" height="16" rx="3"/><path d="M2.5 9.4h6M2.5 14.6h6M10.8 12h5.4M14.2 9.6l2.4 2.4-2.4 2.4"/><path d="M20.4 15.6V6.6l1.6.6"/><ellipse cx="19.2" cy="15.8" rx="1.5" ry="1.1" fill="currentColor" stroke="none"/>'},
   {id:'mix', label:'Mix', svg:'<path d="M5 3v18M12 3v18M19 3v18" opacity=".45"/><rect x="2.8" y="13" width="4.4" height="3.2" rx=".9"/><rect x="9.8" y="6.4" width="4.4" height="3.2" rx=".9"/><rect x="16.8" y="10.4" width="4.4" height="3.2" rx=".9"/>'},
 ];
 // The roller's job names a bank that has no icon yet: Navigation sends arrow keys,
-// Relative CC feeds the CC Remapper (Frank 2026-10-24).
+// Relative CC feeds Map It! (Frank 2026-10-24). The id stays 'remapper': saved
+// configs carry i:remapper from when the device was CC REMAPPER.
 var ROLLER_MODE_ICONS = {track_nav:'i:navigation', cc_relative:'i:remapper'};
 // Browsing modes stays clean, like the seeded keyswitch range (UX audit 2026-09-25 F-1):
 // leaving a mode takes back the icon it put on the bank, unless the user picked one since.

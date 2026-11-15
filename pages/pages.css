@@ -65,13 +65,17 @@ h2[id]{scroll-margin-top:24px}
 .doc-table th,.doc-table td{padding:9px 12px 9px 0;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
 .doc-table th{width:34%;font-weight:600;color:var(--t1)}
 @media(max-width:600px){.doc-toc ol{columns:1}.doc-table th{width:40%}}
+/* Column headers (map-it.html's controls table) take no fixed width. */
+.doc-table thead th{width:auto}
+/* A third column holds short defaults ("C-2 / B0") – keep each on one line. */
+.doc-table td:nth-child(3),.doc-table thead th:nth-child(3){white-space:nowrap;padding-right:0}
 code{font:500 .86em/1 ui-monospace,Consolas,monospace;color:var(--t1);overflow-wrap:anywhere}
 .doc-figure{margin:28px 0 8px}
 .doc-figure img{display:block;max-width:100%;height:auto;border:1px solid var(--border);border-radius:var(--r-sm)}
 .doc-figure figcaption{margin-top:8px;font-size:13px;color:var(--t3)}
 
 /* FOOTER – the app's full footer (feel-fader.html › FOOTER, .site-footer),
-   used by pages that carry the same footer as the app (cc-remapper.html).
+   used by pages that carry the same footer as the app (map-it.html, arm-it.html).
    Rules copied 1:1; the app's tokens it needs are scoped onto .site-footer
    because this stylesheet doesn't define them. Change both together. */
 .site-footer{

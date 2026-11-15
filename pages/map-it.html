@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CC Remapper for Ableton Live – Feel Fader</title>
-  <meta name="description" content="CC Remapper (for Feel Fader) – the Max for Live device that turns the Feel Fader roller's Relative CC steps into keyswitch notes in Ableton Live.">
-  <meta property="og:title" content="CC Remapper for Ableton Live – Feel Fader">
-  <meta property="og:description" content="CC Remapper (for Feel Fader) – the Max for Live device that turns the Feel Fader roller's Relative CC steps into keyswitch notes in Ableton Live.">
+  <title>Map It! for Ableton Live – Feel Fader</title>
+  <meta name="description" content="Map It! – the Max for Live MIDI effect that sends the Feel Fader faders on the CCs you choose and steps through your instrument's keyswitches with the roller in Ableton Live.">
+  <meta property="og:title" content="Map It! for Ableton Live – Feel Fader">
+  <meta property="og:description" content="Map It! – the Max for Live MIDI effect that sends the Feel Fader faders on the CCs you choose and steps through your instrument's keyswitches with the roller in Ableton Live.">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cstyle%3Epath%7Bfill:%230d0d0d%7D%40media(prefers-color-scheme:dark)%7Bpath%7Bfill:%23f2f2f2%7D%7D%3C/style%3E%3Cpath d='M0 0h9v4H8V1H1v3H0zM0 5h1v4H0zM8 5h1v4H8zM2 6h1v3H2zM6 6h1v3H6zM4 4h1v5H4z'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="pages.css">
@@ -26,42 +26,72 @@
     </div>
   </header>
   <main>
-    <h1>CC Remapper for Ableton Live</h1>
+    <h1>Map It! for Ableton Live</h1>
     <p class="legal-meta">Max for Live MIDI effect · by Acoustic Empire</p>
 
-    <p><strong>CC REMAPPER (for Feel Fader)</strong> is a Max for Live device made by Acoustic Empire specifically for Feel Fader. The roller's <strong>Relative CC</strong> mode sends only up/down steps – it does not know which articulation comes next. Placed on a track in Ableton Live, the device turns those steps into keyswitch notes, so you can switch articulations with the roller while you ride the faders.</p>
+    <p><strong>Map It!</strong> is a Max for Live device made by Acoustic Empire for Feel Fader. It sits in front of an instrument and does two jobs with the Feel Fader's MIDI: the two faders send the CC numbers you choose, and the roller steps through the keyswitches of your instrument – so you can switch articulations with the roller while you ride the faders. Everything else passes through untouched. Map It! replaces the older CC REMAPPER (for Feel Fader) device.</p>
 
     <figure class="doc-figure">
-      <!-- Shown at 60 %: 169px tall = the device's fixed height in Live, so it
-           matches what Ableton draws 1:1 (the file is a ~1.67x screenshot). -->
-      <img src="cc-remapper.png" width="298" height="169"alt="CC REMAPPER (for Feel Fader) device in Ableton Live: left fader, roller and right fader slots with CC in and CC out fields">
-      <figcaption>CC REMAPPER (for Feel Fader) on a MIDI track in Ableton Live.</figcaption>
+      <!-- Stand-in until Frank takes a screenshot in Live: a preview rendered
+           without Live by feel-fader-m4l scripts/preview-view.py map-it (four
+           states side by side, 904x323). Shown at 169 px tall like the other device
+           pages: width 469 gives 169 px including the 1 px border. -->
+      <img src="map-it.png" width="469" height="169" alt="Map It! device, four views: the simple view with the keyswitch, the roller, the keyboard and the two fader lines; the ADV view with the number fields; the Roller not relative message; and the device switched off">
+      <figcaption>Map It! – simple view, ADV, Roller not relative, and Device Off.</figcaption>
     </figure>
 
     <h2>What it does</h2>
     <ul>
       <li><strong>Roller</strong> – each Relative CC step (1 = up, 127 = down) moves one note up or down inside the keyswitch range you set and plays that keyswitch. At the ends of the range it stops instead of wrapping around.</li>
-      <li><strong>Left and right fader</strong> – remap the fader's incoming CC to the CC your instrument expects.</li>
+      <li><strong>Keyboard</strong> – a click on a key inside the range picks that keyswitch directly; a click outside the range does nothing.</li>
+      <li><strong>Left and right fader</strong> – send the fader's incoming CC on the CC your instrument expects (CC in → CC out).</li>
+    </ul>
+
+    <h2>How it works</h2>
+    <p>From the top: <code>Keyswitch</code> with the range (<code>range C-2 – B0</code>), the roller next to the current keyswitch (for example <code>F#-2</code>) and its position in the range (<code>7 of 12</code>), the keyboard, and the two faders as <code>L 11 → 11</code> and <code>R 1 → 1</code> (CC in → CC out). When the roller steps, it lights up red and fades out over about two seconds; a fader's value lights up red when you move it and fades after about a second. Notes are named as in Live (middle C is C3).</p>
+    <p>Map It! releases the previous keyswitch before it sends the next one, so only one is held at a time.</p>
+    <table class="doc-table">
+      <thead>
+        <tr><th scope="col">Control</th><th scope="col">What it does</th><th scope="col">Default</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">On/off (device title bar)</th><td>Switches Map It! off; Live then treats the device as a bypassed MIDI Effect.</td><td>on</td></tr>
+        <tr><th scope="row"><strong>ADV</strong></th><td>Shows the number fields in place of the keyboard and the fader lines. Only the view changes – everything keeps working.</td><td>off</td></tr>
+        <tr><th scope="row">L in / out (ADV)</th><td>Left fader: CC in and CC out.</td><td>11 / 11</td></tr>
+        <tr><th scope="row">R in / out (ADV)</th><td>Right fader: CC in and CC out.</td><td>1 / 1</td></tr>
+        <tr><th scope="row">Roller CC (ADV)</th><td>The roller's CC number.</td><td>32</td></tr>
+        <tr><th scope="row">lo / hi (ADV)</th><td>First and last keyswitch of the range, notes C-2 to B0.</td><td>C-2 / B0</td></tr>
+      </tbody>
+    </table>
+    <p>All the number fields can be MIDI- or key-mapped like any other control in Live.</p>
+
+    <h2>Good to know</h2>
+    <ul>
+      <li><strong><code>Roller not relative</code></strong> – the roller sends something other than 1 or 127, so it is not in Relative CC. Map It! shows <code>Roller not relative</code> / <code>App › Roller: Relative CC</code>. Set the roller to Relative CC in the app; the message disappears with the first step.</li>
+      <li><strong>Opening a set or inserting the rack</strong> – Map It! shows the saved keyswitch but does not send it, so your instrument keeps its articulation. It sends no fader CC then either, and none when you edit an <em>out</em> field.</li>
+      <li>A fader always sends its current value, so a quick pull down ends at 0.</li>
+      <li><strong>One Map It! per instrument.</strong> Instances in different racks are independent.</li>
     </ul>
 
     <h2>Requirements</h2>
     <ul>
-      <li>Ableton Live with Max for Live.</li>
-      <li>Feel Fader with firmware 1.3.0 or newer.</li>
+      <li>Ableton Live 12 with Max for Live (Live Suite, or Standard with the Max for Live add-on). No Remote Script needed.</li>
+      <li>Feel Fader with firmware 1.3.0 or newer (for Relative CC).</li>
     </ul>
 
     <h2>Set up Feel Fader</h2>
     <ol>
-      <li>In the Feel Fader app, open the bank you use for the track.</li>
-      <li>Set the roller to <strong>Relative CC</strong> and pick its MIDI channel and CC (default CC 32).</li>
+      <li>In the Feel Fader app, open the bank you use for the instrument.</li>
+      <li>Set the roller to <strong>Relative CC</strong> and pick its MIDI channel and CC (default CC 32). Map It! steps only on the values 1 (up) and 127 (down) that this mode sends.</li>
       <li>Send the configuration to the device.</li>
     </ol>
 
     <h2>Install in Live</h2>
     <ol>
-      <li>Copy <code>CC REMAPPER (for Feel Fader).amxd</code> to <code>User Library/Presets/MIDI Effects/Max MIDI Effect/</code>. <span class="legal-tbd">Download link coming soon.</span></li>
-      <li>Drag the device onto the MIDI track, in front of your instrument.</li>
-      <li>Set the roller's <em>CC in</em> to the CC you chose in the app.</li>
+      <li>Copy <code>Map It!.amxd</code> to <code>User Library/Presets/MIDI Effects/Max MIDI Effect/</code>. <span class="legal-tbd">Download link coming soon.</span></li>
+      <li>Drag it onto a MIDI track, in front of the instrument. For several instruments make an <strong>Instrument Rack</strong> (Ctrl+G) with Map It! first, then the instrument, then your effects.</li>
+      <li>Click <strong>ADV</strong> and set the CC numbers and the keyswitch range (<em>lo</em> and <em>hi</em>) once. Save the rack as a preset: the settings are saved with it and come back when you drag the rack into another set.</li>
+      <li>If your set still has the older CC REMAPPER device, use Map It! instead of it – not both on the same track.</li>
     </ol>
   </main>
   <!-- Same footer as the app (feel-fader.html › .site-footer). Markup copied
