@@ -109,6 +109,7 @@
   --r:12px;
   --r-lg:18px;
   --r-pill:999px;
+  --r-chip:8px;   /* chips (bank tabs, values, steppers, keycaps) – rounded rect like the live value box; actions stay --r-pill (Frank 2026-11-15) */
   /* Type scale (UX audit 2026-09-25, K-3). Only these sizes. */
   --fs-xs:10px;
   --fs-sm:11px;
@@ -721,6 +722,17 @@ html.dark .btn-remove-bank:hover{background:color-mix(in srgb,var(--danger) 10%,
 .device-wrap.welcome-mode[data-onb-feature="roller"] #zone-roller,.device-wrap.welcome-mode[data-onb-feature="button"] #zone-macro{transition:background var(--dur-link-in) var(--ease-link) var(--link-delay),box-shadow var(--dur-link-in) var(--ease-link) var(--link-delay),outline-color var(--dur-link-in) var(--ease-link) var(--link-delay)}
 /* Roller: same ring as onboarding's [data-onb-feature="roller"] #zone-roller. */
 #zone-roller.fader-linked{background:transparent;outline-color:transparent;box-shadow:0 0 0 1.5px rgba(var(--link-ring-rgb),.9),0 0 12px 5px rgba(var(--link-ring-rgb),.6),0 0 26px 11px rgba(var(--link-ring-rgb),.32);}
+/* Physical roller turn: the window edge on the turning side lights red and fades – the Click It!
+   M4L lit edge (last_click_view.js): light from the edge INTO the window over ~57 % of its depth +
+   a 2 px #ff6b52 line on the edge, fading toward the corners. Screen blend: the light brightens the
+   red cap instead of vanishing in it. Opacity = --roll-edge, driven by rollerTurnGlow().
+   Independent of the white hover/link ring above (Frank 2026-11-15). */
+#zone-roller::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;mix-blend-mode:screen;opacity:var(--roll-edge,0);
+  background:linear-gradient(90deg,rgba(255,220,210,0),rgb(255,220,210) 50%,rgba(255,220,210,0)) top/100% 2px no-repeat,
+             linear-gradient(to bottom,rgba(255,175,155,.9),rgba(255,175,155,0)) top/100% 57% no-repeat}
+#zone-roller[data-roll="down"]::after{
+  background:linear-gradient(90deg,rgba(255,220,210,0),rgb(255,220,210) 50%,rgba(255,220,210,0)) bottom/100% 2px no-repeat,
+             linear-gradient(to top,rgba(255,175,155,.9),rgba(255,175,155,0)) bottom/100% 57% no-repeat}
 #zone-macro{border-radius:0 var(--r-pill) var(--r-pill) 0;clip-path:inset(-50px -50px -50px 0);}   /* půlkruh na hraně těla, oblouk ven; clip-path utne glow na ploché straně → čisté zalícování s hranou */
 /* The top render only shows the BUTTON as a tiny point on the device edge.
    Keep that precise visual glow, but give its hover target a usable 28px
@@ -2328,6 +2340,8 @@ html.dark .bank-name-input{color:var(--t1);}
    so a dark-only bg would alpha-fade transparent→opaque off-rhythm vs the rest of the card on theme toggle. */
 html.dark .advanced-toggle-btn{color:var(--t1);}
 
+/* Chip shape (Frank 2026-11-15, variant B): chips are rounded rects, action buttons and switches stay pills. */
+:is(.bank-block-tab,.bank-block-tab-add,.bank-block-tabs .bank-block-tab.active,.m4l-chip,.ui-keycap,.bank-position-value,.ks-bound-stepper .ks-stepval,.stepper,.stepper input,.stepper .step-btn,.icon-picker-trigger,.ks-name-input,.seq-actions button){border-radius:var(--r-chip)}
 </style>
 </head>
 <body>
@@ -5398,7 +5412,10 @@ function layoutFaders(){
   // hover zóny (roller + macro button) — px vůči obrázku; % by braly výšku celého device-wrap vč. send tlačítka
   // Match the visible roller silhouette closely; onboarding reuses this zone
   // as a glow mask, so excess hit-area would visibly produce the wrong shape.
-  stT('zone-roller',Math.round(0.39*W),Math.round(0.875*H),Math.round(0.22*W),Math.round(0.10*H));
+  // = the dark roller window measured in the photo (380x859: x146-233, y751-831, corners ~5 px),
+  // so the white ring and the turn glow follow its outline (Frank 2026-11-15).
+  stT('zone-roller',Math.round(0.3842*W),Math.round(0.8743*H),Math.round(0.2316*W),Math.round(0.0943*H));
+  document.getElementById('zone-roller').style.borderRadius = Math.max(3, Math.round(0.013*W)) + 'px';
   // The side button itself is not visible from the top render. Represent its
   // physical centre as one luminous point on the right edge, not a hollow arc.
   const macroPoint=Math.max(8,Math.round(0.032*W));
@@ -5676,6 +5693,9 @@ function onMidiMsg(event){
       maybeHintUnsentLive();
     }
     if(cc===bank.encoder.cc && ch===bank.encoder.channel){
+      // Direction (firmware): Relative CC roll up = 1, down = 127; CC mode roll up = lower list index.
+      if (bank.roller_mode === 'cc_relative') rollerTurnGlow(val < 64);
+      else if ((bank.roller_mode || 'cc') === 'cc') { const d = rollerSeqStep(bank.uacc_values.indexOf(val)); if (d) rollerTurnGlow(d < 0); }
       encLiveVal = val;
       setTxt('enc-val', val);
       // Find name — UACC standard or custom
@@ -5693,6 +5713,7 @@ function onMidiMsg(event){
   if(type===0x90 && data[2] > 0 && (bank.roller_mode||'cc')==='keyswitch'){
     const note = data[1];
     if(ch === (bank.ks_channel ?? 0) && (bank.ks_notes||[]).includes(note)){
+      { const d = rollerSeqStep(bank.ks_notes.indexOf(note)); if (d) rollerTurnGlow(d > 0); }   // keyswitch: roll up = next (higher) index
       ksLiveNote = note;
       document.querySelectorAll('.seq-row.is-live[data-ksnote]').forEach(el => el.classList.remove('is-live'));
       document.querySelector(`.seq-row[data-ksnote="${note}"]`)?.classList.add('is-live');
@@ -6604,6 +6625,34 @@ function sectionRollerLiveText() {
 // Keys and Relative CC only report a step, not a position: the slot flashes the
 // combo / arrow and fades out like the Button dot (Frank 2026-10-01).
 function rollerFlashes(mode) { return mode === 'track_nav' || mode === 'cc_relative'; }
+// Roller turn glow (Click It! lit edge): each step adds 0.45 (0.32 when steps come
+// <60 ms apart), then it decays ×0.93 per 33 ms. up = the physical roll direction.
+let _rollEdge = 0, _rollLastTick = 0, _rollRaf = 0;
+const _rollPrev = { bank: -1, idx: null };   // last sequence position, per live bank (snapshot after a bank change = baseline only)
+function rollerSeqStep(idx) {
+  if (idx < 0) return 0;
+  const prev = _rollPrev.bank === liveBank ? _rollPrev.idx : null;
+  _rollPrev.bank = liveBank; _rollPrev.idx = idx;
+  return prev === null || idx === prev ? 0 : Math.sign(idx - prev);
+}
+function rollerTurnGlow(up) {
+  const z = document.getElementById('zone-roller');
+  if (!z) return;
+  const now = performance.now();
+  _rollEdge = Math.min(1, _rollEdge + (now - _rollLastTick < 60 ? 0.32 : 0.45));
+  _rollLastTick = now;
+  z.dataset.roll = up ? 'up' : 'down';
+  z.style.setProperty('--roll-edge', _rollEdge.toFixed(3));
+  if (_rollRaf) return;
+  let last = now;
+  const step = t => {
+    _rollEdge *= Math.pow(0.93, Math.max(0, t - last) / 33); last = t;
+    if (_rollEdge < 0.01) { _rollEdge = 0; _rollRaf = 0; z.style.setProperty('--roll-edge', '0'); return; }
+    z.style.setProperty('--roll-edge', _rollEdge.toFixed(3));
+    _rollRaf = requestAnimationFrame(step);
+  };
+  _rollRaf = requestAnimationFrame(step);
+}
 function flashRollerLive() {
   const roller = sectionLiveEl('roller');
   const text = roller && sectionLiveAllowed() ? sectionRollerLiveText() : '';
@@ -6615,6 +6664,7 @@ function flashRollerLive() {
 function onRollerNavEvent(cw) {
   const bank = cfg.banks[liveBank];
   if (bank?.roller_mode !== 'track_nav') return;
+  rollerTurnGlow(cw !== !!bank.nav_invert);   // firmware: cw = (rolled up) XOR nav_invert
   navLiveKeys = cw ? (bank.nav_keys_cw || [0x52]) : (bank.nav_keys_ccw || [0x51]);
   flashRollerLive();
 }
