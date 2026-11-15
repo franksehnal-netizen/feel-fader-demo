@@ -5554,7 +5554,7 @@ function monitorMidiBacklog(event) {
 }
 function copyMidiDiagnostics() {
   const d = midiDiagnosticsData();
-  const text = ['Feel Fader diagnostics',`Generated: ${new Date().toISOString()}`,`Connection: ${d.connection}`,`MIDI input: ${d.input}`,`Active bank: ${d.bank}`,`Left fader: ${d.left}`,`Right fader: ${d.right}`,`Roller: ${d.roller}`,`Last event: ${d.lastEvent}`,`Device: ${d.device}`,`Serial number: ${DEVICE_INFO.unit_serial || 'Unavailable'}`,`Chip ID: ${DEVICE_INFO.serial || 'Unavailable'}`,`Protocol: v${protocolVersion}`,`Config hash: ${d.hash}`,`Browser: ${navigator.userAgent}`].join('\n');
+  const text = ['Feel Fader diagnostics',`Generated: ${new Date().toISOString()}`,`Connection: ${d.connection}`,`MIDI input: ${d.input}`,`Active bank: ${d.bank}`,`Left fader: ${d.left}`,`Right fader: ${d.right}`,`Roller: ${d.roller}`,`Last event: ${d.lastEvent}`,`Device: ${d.device}`,`Serial number: ${DEVICE_INFO.unit_serial || 'Unavailable'}`,`Chip ID: ${DEVICE_INFO.serial || 'Unavailable'}`,`Protocol: v${protocolVersion}`,`Config hash: ${d.hash}`,`Config source: ${DEVICE_INFO.config_source || 'Unavailable'}`,`App version: ${document.querySelector('.footer-version')?.textContent.trim() || 'Unavailable'}`,`Browser: ${navigator.userAgent}`].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('s','Diagnostics copied')).catch(()=>toast('e',t('toast.clipboard_fail')));
 }
 function initMidi(){
