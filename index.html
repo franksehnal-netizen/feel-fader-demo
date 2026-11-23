@@ -1620,8 +1620,9 @@ body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboardin
    card – so the top stays free and the stage keeps its normal spot (Frank 2026-10-01). */
 @media(max-width:600px){
   #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice{
-    top:auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));
-    padding:0;background:none;border:none;border-radius:0;
+    /* Button colour, closer to the bottom edge (Frank 2026-11-22) */
+    top:auto;bottom:calc(6px + env(safe-area-inset-bottom,0px));
+    padding:0;background:none;border:none;border-radius:0;color:var(--red-fill);
     font-size:var(--fs-sm);font-weight:400;line-height:1.45;
   }
   body:has(#welcome-screen:not(.hidden) #welcome-text-block:not(.welcome-onboarding) .welcome-browser-notice.show) .stage{padding-top:0}
