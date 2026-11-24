@@ -1892,10 +1892,11 @@ body.app-reveal .center-col>.stage-collapse{z-index:170}
 .icon-btn-label{font-size:var(--fs-sm);color:var(--t3);text-align:center;white-space:nowrap}
 .badge-btn .icon-btn-emoji{display:none}
 .icon-emoji-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.icon-btn-emoji-only,.icon-btn-emoji-only:focus-visible{border-radius:var(--r-pill)}   /* round like the bank chips (Frank 2026-11-24); beats the global :focus-visible radius */
 .icon-btn-emoji-only{min-width:0;aspect-ratio:1;justify-content:center;padding:0}
 .icon-image-row{margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px solid var(--border)}
 .bank-icon-img{display:block;width:1.1em;height:1.1em;border-radius:50%;object-fit:cover}
-.bank-icon-svg{display:block;width:1.15em;height:1.15em;flex:none}
+.bank-icon-svg{display:block;width:1.15em;height:1.15em;flex:none;color:var(--red-fill)}   /* vector icons in the CTA orange (Frank 2026-11-24) */
 /* Bank images use all the room the control has and follow its curvature
    (Frank 2026-10-01). Tab: a circle concentric with the pill's left end
    (30px pill − 1px border − 1px gap = 26px). Trigger and picker tile: the
