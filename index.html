@@ -662,7 +662,7 @@ padding:6px 14px;font:600 var(--fs-md) 'Mulish',sans-serif;color:var(--t1)}
   display:flex;align-items:center;justify-content:center;
   min-width:28px;min-height:28px;flex-shrink:0;
 }
-html.dark .icon-picker-trigger svg{opacity:.7;}
+html.dark .icon-picker-trigger .bank-icon-empty svg{opacity:.7;}   /* only the empty placeholder – a picked vector icon keeps the full --red-fill (2026-11-25) */
 .bank-name-input{
   flex:1;min-width:0;
   /* Same cap as .fader-title-input (~1833, section titles) — Frank
@@ -2331,14 +2331,10 @@ html.dark .bank-block-tabs .bank-block-tab.active{background:var(--bg-input);fon
 .advanced-toggle-btn.is-open .section-chevron{transform:rotate(90deg)}
 
 /* Settings-style groups under the controls (spec 2026-09-26 §7). */
-.group-cap{margin:var(--space-4) 18px calc(-1 * var(--space-2));font-size:var(--fs-base);color:var(--t2)}
-/* .settings-col>*{width:100%} + the 18px side margins pushed the caption 18px past the column – visible as a 2px page overflow once the column is window-limited (900–1000px). */
-.settings-col>.group-cap{width:auto}
-/* .panels-row has gap:0 (unlike .center-col's 16px), so the negative bottom
-   margin above pulls the next group up into the caption text instead of just
-   closing the flex gap – "Bank" caption ends up half hidden (final review 1). */
-.panels-row>.group-cap{margin:var(--space-6) 18px var(--space-2)}
 .settings-group{background:var(--bg-card);border-radius:var(--r);overflow:hidden;box-shadow:none}
+/* The "Feel Fader" caption is gone (2026-11-25); keep the section break it made
+   (gap to the bank card was 48 px mobile / 56 px desktop, without it 12 / 16). */
+.settings-col>.settings-group[data-group="feel-fader"]{margin-top:calc(var(--space-6) + var(--space-4))}
 .group-row{position:relative;display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:50px;padding:0 18px;border:0;background:none;color:var(--t1);font:400 var(--fs-lg) 'Mulish',sans-serif;text-align:left;cursor:pointer;box-sizing:border-box;transition:background var(--hover-out)}
 .group-row+.group-row::before,.group-row+div:not(.group-row)::before,div:not(.group-row)+.group-row::before{content:'';position:absolute;top:0;left:18px;right:0;border-top:1px solid var(--border);transition:opacity var(--hover-out)}
 /* Same full-bleed row as .bank-section.fader-linked: the inset hairlines above and
@@ -2463,8 +2459,8 @@ html.dark .advanced-toggle-btn{color:var(--t1);}
 
   
 
-  <!-- DEVICE & SETTINGS + HELP (Feel Fader group, sloučené Device Info + Advanced) -->
-  <div class="group-cap">Feel Fader</div>
+  <!-- DEVICE & SETTINGS + HELP (Feel Fader group, sloučené Device Info + Advanced).
+       No "Feel Fader" caption: the header wordmark already says it (Frank 2026-11-25). -->
   <div class="settings-group panel-wide" data-group="feel-fader">
     <button class="advanced-toggle-btn group-row" onclick="toggleBankActions()" id="bank-actions-toggle-btn" aria-expanded="false" aria-controls="bank-actions-body">
       <span class="group-row-label">Bank actions</span>
@@ -2873,9 +2869,14 @@ function setSectionSummary(id, summary) {
 const SECTION_MARKS = {
   fader1: 'L',
   fader2: 'R',
-  // Minimal pair (Frank 2026-09-29, set C): the roller scrolls up/down. The button is an outlined
-  // key cap, not a dot – a dot reads as the MIDI status dot in the header (UI audit 2026-10-24 K-7).
-  roller: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M4.5 5.5 7 3l2.5 2.5M4.5 8.5 7 11l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  // The marks depict the physical control. Roller (Frank 2026-11-25, variant D): the device
+  // photo's roller – a bit wider than tall, ends bulging (horizontal axis) – filled, with the
+  // highlight cut out (evenodd, so it works on any background). Filled vs. the outlined button
+  // cap keeps the two near-square marks apart; up/down chevrons were dropped because the
+  // Navigation bank icon (key caps with arrows) said the same thing in a different drawing.
+  // The button is an outlined key cap, not a dot – a dot reads as the MIDI status dot in the
+  // header (UI audit 2026-10-24 K-7).
+  roller: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3.4 3h7.2q1.5 4 0 8H3.4q-1.5-4 0-8zM4.95 5.05h4.1a.55.55 0 0 1 0 1.1h-4.1a.55.55 0 0 1 0-1.1z"/></svg>',
   macro: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
 };
 const SECTION_CHEVRON = '<svg class="section-chevron" viewBox="0 0 9 14" aria-hidden="true"><path d="M1.5 1.5L7 7l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -8123,7 +8124,7 @@ var BANK_SYMBOLS = [
 
   {id:'navigation', label:'Navigation', svg:'<rect x="6.5" y="2.5" width="11" height="8.5" rx="2"/><rect x="6.5" y="13" width="11" height="8.5" rx="2"/><path d="m9.8 7.8 2.2-2.2 2.2 2.2M9.8 16.2l2.2 2.2 2.2-2.2"/>'},
 
-  {id:'remapper', label:'Map It!', svg:'<rect x="2.5" y="4" width="6" height="16" rx="3"/><path d="M2.5 9.4h6M2.5 14.6h6M10.8 12h5.4M14.2 9.6l2.4 2.4-2.4 2.4"/><path d="M20.4 15.6V6.6l1.6.6"/><ellipse cx="19.2" cy="15.8" rx="1.5" ry="1.1" fill="currentColor" stroke="none"/>'},
+  {id:'remapper', label:'Map It!', svg:'<path fill="currentColor" stroke="none" fill-rule="evenodd" d="M2.6 8h6.4q1.3 4 0 8H2.6q-1.3-4 0-8zM3.95 9.85h3.7a.55.55 0 0 1 0 1.1h-3.7a.55.55 0 0 1 0-1.1z"/><path d="M10.8 12h5.4M14.2 9.6l2.4 2.4-2.4 2.4"/><path d="M20.4 15.6V6.6l1.6.6"/><ellipse cx="19.2" cy="15.8" rx="1.5" ry="1.1" fill="currentColor" stroke="none"/>'},
   {id:'mix', label:'Mix', svg:'<path d="M5 3v18M12 3v18M19 3v18" opacity=".45"/><rect x="2.8" y="13" width="4.4" height="3.2" rx=".9"/><rect x="9.8" y="6.4" width="4.4" height="3.2" rx=".9"/><rect x="16.8" y="10.4" width="4.4" height="3.2" rx=".9"/>'},
 ];
 // The roller's job names a bank that has no icon yet: Navigation sends arrow keys,
